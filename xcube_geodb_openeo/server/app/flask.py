@@ -29,7 +29,7 @@ from ..api import API_URL_PREFIX
 from ..config import Config
 from ..context import AppContext
 from ...backend import catalog
-from ...version import __version__
+from ...backend import backend_info
 
 app = flask.Flask(
     __name__,
@@ -45,10 +45,9 @@ ctx = AppContext(app.logger)
 
 @api.route('/')
 def get_info():
-    return {
-        'name': __name__,
-        'version': __version__
-    }
+    return backend_info.get_root(
+        ctx.for_request(flask.request.root_url)
+    )
 
 
 @api.route('/catalog')
