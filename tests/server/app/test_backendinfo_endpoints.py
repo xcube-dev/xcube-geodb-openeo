@@ -6,6 +6,7 @@ import xcube_geodb_openeo.server.api as api
 import urllib3
 import multiprocessing
 import json
+import time
 
 
 class BackendInfoEndpointTest(unittest.TestCase):
@@ -21,6 +22,7 @@ class BackendInfoEndpointTest(unittest.TestCase):
             args=({}, '127.0.0.1', cli.DEFAULT_PORT + 1, False, False)
         )
         cls.server.start()
+        time.sleep(5)  # allow for server to start
 
     @classmethod
     def tearDownClass(cls) -> None:
