@@ -33,7 +33,7 @@ from ..api import API_URL_PREFIX
 from ..config import Config
 from ..context import AppContext
 from ..context import RequestContext
-from ...version import __version__
+from ...backend import backend_info
 
 RequestHandlerType = Type[tornado.web.RequestHandler]
 
@@ -170,10 +170,14 @@ class BaseHandler(tornado.web.RequestHandler):
 @app.route('/')
 class MainHandler(BaseHandler):
     async def get(self):
-        return await self.finish({
-            'name': __name__,
-            'version': __version__
-        })
+        return await self.finish(backend_info.get_root(ctx.config))
+
+
+# noinspection PyAbstractClass,PyMethodMayBeStatic
+@app.route('/.well-known/openeo', prefix='')
+class MainHandler(BaseHandler):
+    async def get(self):
+        return await self.finish(backend_info.get_well_known(ctx.config))
 
 
 # noinspection PyAbstractClass,PyMethodMayBeStatic
