@@ -38,16 +38,20 @@ app = flask.Flask(
     )
 )
 
+well_known = flask.Blueprint('well_known', __name__)
 api = flask.Blueprint('api', __name__, url_prefix=API_URL_PREFIX)
 
 ctx = AppContext(app.logger)
 
 
+@well_known.route('/.well-known/openeo')
+def get_well_known():
+    return backend_info.get_well_known(ctx.config)
+
+
 @api.route('/')
 def get_info():
-    return backend_info.get_root(
-        ctx.for_request(flask.request.root_url)
-    )
+    return backend_info.get_root(ctx.config)
 
 
 @api.route('/catalog')
@@ -115,5 +119,6 @@ def serve(
     if verbose or debug:
         ctx.logger.setLevel(logging.DEBUG)
 
+    app.register_blueprint(well_known)
     app.register_blueprint(api)
     app.run(host=address, port=port, debug=debug)

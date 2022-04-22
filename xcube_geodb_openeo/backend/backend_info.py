@@ -19,15 +19,15 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from xcube_geodb_openeo.server.context import RequestContext
+from ..server.config import Config
 from ..version import __version__
 
 
-def get_root(ctx: RequestContext):
+def get_root(config: Config):
     return {
-        'api_version': '1.1.0',
+        'api_version': config['api_version'],
         'backend_version': __version__,
-        'stac_version': '1.0.0',
+        'stac_version': config['stac_version'],
         'type': 'catalog',
         'id': 'xcube-geodb-openeo',
         'title': 'xcube geoDB for openEO',
@@ -41,5 +41,16 @@ def get_root(ctx: RequestContext):
             # TODO - this shall contain "Links related to this service,
             #  e.g. the homepage of the service provider or the terms of
             #  service."
+        ]
+    }
+
+
+def get_well_known(config: Config):
+    return {
+        'versions': [
+            {
+                'url': config['url'],
+                'api_version': config['api_version']
+            }
         ]
     }

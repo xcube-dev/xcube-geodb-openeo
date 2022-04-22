@@ -33,7 +33,7 @@ DEFAULT_PORT = 5000
 
 
 @click.command()
-@click.option('--config', '-c', 'config_path',
+@click.option('--config', '-c', 'config_path', default=DEFAULT_CONFIG_PATH,
               help='Path to configuration YAML file.')
 @click.option('--address', '-a', default=DEFAULT_ADDRESS,
               help='Server address.')
