@@ -1,0 +1,52 @@
+name: Unit-level tests xcube-geodb-openeo
+
+
+on:
+  workflow_dispatch:
+  push:
+
+
+env:
+  APP_NAME: xcube-geodb-openeo
+  ORG_NAME: bcdev
+
+  SKIP_UNITTESTS: "0"
+
+
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - run: |
+          echo "SKIP_UNITTESTS: ${{ env.SKIP_UNITTESTS }}"
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        if: ${{ env.SKIP_UNITTESTS == '0' }}
+        with:
+          mamba-version: "*"
+          channels: conda-forge
+          auto-update-conda: false
+          activate-environment: xcube-geodb-openeo
+          environment-file: environment.yml
+      - run: |
+          conda info
+          conda list
+          conda config --show-sources
+          conda config --show
+          printenv | sort
+      - name: setup-xcube-geodb-openeo
+        if: ${{ env.RUN_UNITTESTS == '1' }}
+        run: |
+          python setup.py develop
+      - name: unittest-xcube-geodb-openeo
+        if: ${{ env.RUN_UNITTESTS == '1' }}
+        run: |
+          pytest --cov=./ --cov-report=xml
+      - uses: codecov/codecov-action@v1
+        if: ${{ env.RUN_UNITTESTS == '1' }}
+        with:
+          fail_ci_if_error: true
+          verbose: true
