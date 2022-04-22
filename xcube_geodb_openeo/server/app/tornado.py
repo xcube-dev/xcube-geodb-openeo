@@ -33,7 +33,7 @@ from ..api import API_URL_PREFIX
 from ..config import Config
 from ..context import AppContext
 from ..context import RequestContext
-from ...backend import backend_info
+from ...backend import capabilities
 
 RequestHandlerType = Type[tornado.web.RequestHandler]
 
@@ -170,14 +170,21 @@ class BaseHandler(tornado.web.RequestHandler):
 @app.route('/')
 class MainHandler(BaseHandler):
     async def get(self):
-        return await self.finish(backend_info.get_root(ctx.config))
+        return await self.finish(capabilities.get_root(ctx.config, _get_request_ctx(self)))
 
 
 # noinspection PyAbstractClass,PyMethodMayBeStatic
 @app.route('/.well-known/openeo', prefix='')
 class MainHandler(BaseHandler):
     async def get(self):
-        return await self.finish(backend_info.get_well_known(ctx.config))
+        return await self.finish(capabilities.get_well_known(ctx.config))
+
+
+# noinspection PyAbstractClass,PyMethodMayBeStatic
+@app.route('/conformance')
+class CatalogConformanceHandler(BaseHandler):
+    async def get(self):
+        return await self.finish(capabilities.get_conformance())
 
 
 # noinspection PyAbstractClass,PyMethodMayBeStatic
@@ -186,16 +193,6 @@ class CatalogRootHandler(BaseHandler):
     async def get(self):
         from xcube_geodb_openeo.backend import catalog
         return await self.finish(catalog.get_root(
-            _get_request_ctx(self)
-        ))
-
-
-# noinspection PyAbstractClass,PyMethodMayBeStatic
-@app.route("/catalog/conformance")
-class CatalogConformanceHandler(BaseHandler):
-    async def get(self):
-        from xcube_geodb_openeo.backend import catalog
-        return await self.finish(catalog.get_conformance(
             _get_request_ctx(self)
         ))
 

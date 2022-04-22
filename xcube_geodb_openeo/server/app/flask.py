@@ -29,7 +29,7 @@ from ..api import API_URL_PREFIX
 from ..config import Config
 from ..context import AppContext
 from ...backend import catalog
-from ...backend import backend_info
+from ...backend import capabilities
 
 app = flask.Flask(
     __name__,
@@ -46,19 +46,19 @@ ctx = AppContext(app.logger)
 
 @well_known.route('/.well-known/openeo')
 def get_well_known():
-    return backend_info.get_well_known(ctx.config)
+    return capabilities.get_well_known(ctx.config)
 
 
 @api.route('/')
 def get_info():
-    return backend_info.get_root(ctx.config)
-
-
-@api.route('/catalog')
-def get_catalog_root():
-    return catalog.get_root(
-        ctx.for_request(flask.request.root_url)
+    return capabilities.get_root(
+        ctx.config, ctx.for_request(flask.request.root_url)
     )
+
+
+@api.route('/conformance')
+def get_conformance():
+    return capabilities.get_conformance()
 
 
 @api.route('/catalog/collections')

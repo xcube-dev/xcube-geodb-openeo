@@ -25,74 +25,8 @@ import datetime
 from xcube_geodb_openeo.core.vectorcube import VectorCube, Feature
 from xcube_geodb_openeo.server.context import RequestContext
 
-STAC_VERSION = '0.9.0'
 
 GEODB_COLLECTION_ID = "geodb"
-
-
-def get_root(ctx: RequestContext):
-    return {
-        "stac_version": STAC_VERSION,
-        # TODO: get from config
-        "id": "xcube-geodb-openeo",
-        # TODO: get from config
-        "title": "xcube geoDB Server, openEO API",
-        # TODO: get from config
-        "description": "Catalog of geoDB collections.",
-        "links": [
-            {
-                "rel": "self",
-                "href": ctx.get_url('catalog'),
-                "type": "application/json",
-                "title": "this document"
-            },
-            {
-                "rel": "service-desc",
-                "href": ctx.get_url('catalog/api'),
-                "type": "application/vnd.oai.openapi+json;version=3.0",
-                "title": "the API definition"
-            },
-            {
-                "rel": "service-doc",
-                "href": ctx.get_url('catalog/api.html'),
-                "type": "text/html",
-                "title": "the API documentation"
-            },
-            {
-                "rel": "conformance",
-                "href": ctx.get_url('catalog/conformance'),
-                "type": "application/json",
-                "title": "OGC API conformance classes"
-                         " implemented by this server"
-            },
-            {
-                "rel": "data",
-                "href": ctx.get_url('catalog/collections'),
-                "type": "application/json",
-                "title": "Information about the feature collections"
-            },
-            {
-                "rel": "search",
-                "href": ctx.get_url('catalog/search'),
-                "type": "application/json",
-                "title": "Search across feature collections"
-            }
-        ],
-
-    }
-
-
-# noinspection PyUnusedLocal
-def get_conformance(ctx: RequestContext):
-    return {
-        "conformsTo": [
-            # TODO: fix this list so it becomes true
-            "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
-            "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30",
-            "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/html",
-            "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson"
-        ]
-    }
 
 
 def get_collections(ctx: RequestContext):
