@@ -45,7 +45,7 @@ jobs:
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         run: |
           pytest --cov=./ --cov-report=xml
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         with:
           fail_ci_if_error: true
