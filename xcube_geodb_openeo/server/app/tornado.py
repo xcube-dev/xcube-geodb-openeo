@@ -170,7 +170,9 @@ class BaseHandler(tornado.web.RequestHandler):
 @app.route('/')
 class MainHandler(BaseHandler):
     async def get(self):
-        return await self.finish(capabilities.get_root(ctx.config, _get_request_ctx(self)))
+        return await self.finish(
+            capabilities.get_root(ctx.config, _get_request_ctx(self))
+        )
 
 
 # noinspection PyAbstractClass,PyMethodMayBeStatic
@@ -188,22 +190,12 @@ class CatalogConformanceHandler(BaseHandler):
 
 
 # noinspection PyAbstractClass,PyMethodMayBeStatic
-@app.route("/catalog")
-class CatalogRootHandler(BaseHandler):
-    async def get(self):
-        from xcube_geodb_openeo.backend import catalog
-        return await self.finish(catalog.get_root(
-            _get_request_ctx(self)
-        ))
-
-
-# noinspection PyAbstractClass,PyMethodMayBeStatic
-@app.route("/catalog/collections")
+@app.route("/collections")
 class CatalogCollectionsHandler(BaseHandler):
     async def get(self):
         from xcube_geodb_openeo.backend import catalog
         return await self.finish(catalog.get_collections(
-            _get_request_ctx(self)
+            ctx.config, _get_request_ctx(self)
         ))
 
 
@@ -233,9 +225,7 @@ class CatalogCollectionItemsHandler(BaseHandler):
 class CatalogCollectionItemHandler(BaseHandler):
     async def get(self, collection_id: str, feature_id: str):
         return await self.finish(catalog.get_collection_item(
-            _get_request_ctx(self),
-            collection_id,
-            feature_id
+            ctx.config, _get_request_ctx(self), collection_id, feature_id
         ))
 
 

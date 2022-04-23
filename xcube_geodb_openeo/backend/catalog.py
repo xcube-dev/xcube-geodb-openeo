@@ -24,33 +24,24 @@ import datetime
 
 from xcube_geodb_openeo.core.vectorcube import VectorCube, Feature
 from xcube_geodb_openeo.server.context import RequestContext
+from ..server.config import Config
 
 
 GEODB_COLLECTION_ID = "geodb"
 
 
-def get_collections(ctx: RequestContext):
+def get_collections(config: Config, ctx: RequestContext):
     return {
-        # TODO: what is this?
-        # "links": [
-        #     {
-        #         "href": "http://www.geoserver.example/stac/naip/child/catalog.json",
-        #         "rel": "child",
-        #         "type": "application/geo+json",
-        #         "hreflang": "en",
-        #         "title": "NAIP Child Catalog",
-        #         "length": 0,
-        #         "method": "GET",
-        #         "headers": {},
-        #         "body": {},
-        #         "merge": False
-        #     }
-        # ],
-        "collections": [
-            _get_vector_cube_collection(ctx,
+        'collections': [
+            _get_vector_cube_collection(config, ctx,
                                         ctx.get_vector_cube(collection_id),
                                         details=False)
             for collection_id in ctx.collection_ids
+        ],
+        'links': [
+            # todo - if too many collections are listed, implement
+            #  pagination. See
+            #  https://openeo.org/documentation/1.0/developers/api/reference.html#operation/list-collections
         ]
     }
 
@@ -83,13 +74,13 @@ def get_collection_items(ctx: RequestContext,
     }
 
 
-def get_collection_item(ctx: RequestContext,
+def get_collection_item(config: Config, ctx: RequestContext,
                         collection_id: str,
                         feature_id: str):
     vector_cube = _get_vector_cube(ctx, collection_id)
     for feature in vector_cube.get("features", []):
         if feature.get("id") == feature_id:
-            return _get_vector_cube_item(ctx,
+            return _get_vector_cube_item(config, ctx,
                                          vector_cube,
                                          feature,
                                          details=True)
@@ -103,13 +94,13 @@ def search(ctx: RequestContext):
     return {}
 
 
-def _get_vector_cube_collection(ctx: RequestContext,
+def _get_vector_cube_collection(config: Config, ctx: RequestContext,
                                 vector_cube: VectorCube,
                                 details: bool = False):
     vector_cube_id = vector_cube["id"]
     metadata = vector_cube.get("metadata", {})
     return {
-        "stac_version": STAC_VERSION,
+        "stac_version": config['stac_version'],
         "stac_extensions": ["xcube-geodb"],
         "id": vector_cube_id,
         # TODO: fill in values
@@ -139,7 +130,7 @@ def _get_vector_cube_collection(ctx: RequestContext,
     }
 
 
-def _get_vector_cube_item(ctx: RequestContext,
+def _get_vector_cube_item(config: Config, ctx: RequestContext,
                           vector_cube: VectorCube,
                           feature: Feature,
                           details: bool = False):
@@ -150,7 +141,7 @@ def _get_vector_cube_item(ctx: RequestContext,
     feature_properties = feature.get("properties", {})
 
     return {
-        "stac_version": STAC_VERSION,
+        "stac_version": config['stac_version'],
         "stac_extensions": ["xcube-geodb"],
         "type": "Feature",
         "id": feature_id,

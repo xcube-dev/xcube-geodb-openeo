@@ -61,11 +61,11 @@ def get_conformance():
     return capabilities.get_conformance()
 
 
-@api.route('/catalog/collections')
+@api.route('/collections')
 def get_catalog_collections():
-    return catalog.get_collections(
-        ctx.for_request(flask.request.root_url)
-    )
+    return catalog.get_collections(ctx.config,
+                                   ctx.for_request(flask.request.root_url)
+                                   )
 
 
 @api.route('/catalog/collections/<string:collection_id>')
@@ -87,11 +87,11 @@ def get_catalog_collection_items(collection_id: str):
 @api.route('/catalog/collections/<string:collection_id>/'
            'items/<string:feature_id>')
 def get_catalog_collection_item(collection_id: str, feature_id: str):
-    return catalog.get_collection_item(
-        ctx.for_request(flask.request.root_url),
-        collection_id,
-        feature_id
-    )
+    return catalog.get_collection_item(ctx.config,
+                                       ctx.for_request(flask.request.root_url),
+                                       collection_id,
+                                       feature_id
+                                       )
 
 
 @api.route('/catalog/search')
