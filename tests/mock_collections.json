@@ -1,0 +1,41 @@
+{
+  "_MOCK_COLLECTIONS_LIST": [
+    {
+      "id": "collection_1",
+      "metadata": {
+        "title": "I am collection #1"
+      },
+      "features": [
+        {
+          "type": "Feature",
+          "id": "feature_1",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              11,
+              53
+            ]
+          },
+          "properties": {
+            "ndvi": 0.3,
+            "area": 203.4
+          }
+        }
+      ]
+    },
+    {
+      "id": "collection_2",
+      "metadata": {
+        "title": "I am collection #2"
+      },
+      "features": []
+    },
+    {
+      "id": "collection_3",
+      "metadata": {
+        "title": "I am collection #3"
+      },
+      "features": []
+    }
+  ]
+}

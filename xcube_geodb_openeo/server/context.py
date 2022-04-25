@@ -21,50 +21,13 @@
 
 
 import abc
+import importlib
 import logging
 from typing import Sequence
 
 from xcube_geodb_openeo.core.vectorcube import VectorCube
+from xcube_geodb_openeo.core.datastore import Datastore
 from xcube_geodb_openeo.server.config import Config
-
-_MOCK_COLLECTIONS_LIST = [
-    {
-        "id": "collection_1",
-        "metadata": {
-            "title": "I am collection #1",
-        },
-        "features": [
-            {
-                "type": "Feature",
-                "id": "feature_1",
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": [11, 53],
-                },
-                "properties": {
-                    "ndvi": 0.3,
-                    "area": 203.4
-                }
-            }
-        ],
-    },
-    {
-        "id": "collection_2",
-        "metadata": {
-            "title": "I am collection #2",
-        },
-        "features": [],
-    },
-    {
-        "id": "collection_3",
-        "metadata": {
-            "title": "I am collection #3",
-        },
-        "features": [],
-    },
-]
-
-_MOCK_COLLECTIONS = {v["id"]: v for v in _MOCK_COLLECTIONS_LIST}
 
 
 class Context(abc.ABC):
@@ -108,12 +71,23 @@ class AppContext(Context):
         self._config = dict(config)
 
     @property
+    def datastore(self) -> Datastore:
+        if not self.config:
+            raise RuntimeError('config not set')
+        datastore_class = self.config['datastore-class']
+        datastore_module = datastore_class[:datastore_class.rindex('.')]
+        class_name = datastore_class[datastore_class.rindex('.') + 1:]
+        module = importlib.import_module(datastore_module)
+        cls = getattr(module, class_name)
+        return cls()
+
+    @property
     def collection_ids(self) -> Sequence[str]:
         # TODO: fetch from geoDB
-        return tuple(_MOCK_COLLECTIONS.keys())
+        return tuple(self.datastore.get_collection_keys())
 
     def get_vector_cube(self, collection_id: str) -> VectorCube:
-        return _MOCK_COLLECTIONS[collection_id]
+        return self.datastore.get_vector_cube(collection_id)
 
     @property
     def logger(self) -> logging.Logger:

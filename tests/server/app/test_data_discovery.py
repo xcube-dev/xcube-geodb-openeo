@@ -8,6 +8,8 @@ import urllib3
 import multiprocessing
 import json
 
+from xcube_geodb_openeo.server.config import load_config
+
 
 class DataDiscoveryTest(unittest.TestCase):
     flask = None
@@ -15,11 +17,13 @@ class DataDiscoveryTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        config = load_config('../../test_config.yml')
+
         cls.flask_base_url = f'http://127.0.0.1:{cli.DEFAULT_PORT + 1}'
 
         cls.flask = multiprocessing.Process(
             target=flask_server.serve,
-            args=({'stac_version': '0.9.0'}, '127.0.0.1', cli.DEFAULT_PORT + 1,
+            args=(config, '127.0.0.1', cli.DEFAULT_PORT + 1,
                   False, False)
         )
         cls.flask.start()
@@ -27,7 +31,7 @@ class DataDiscoveryTest(unittest.TestCase):
         cls.tornado_base_url = f'http://127.0.0.1:{cli.DEFAULT_PORT + 2}'
         cls.tornado = multiprocessing.Process(
             target=tornado_server.serve,
-            args=({'stac_version': '0.9.0'}, '127.0.0.1', cli.DEFAULT_PORT + 2,
+            args=(config, '127.0.0.1', cli.DEFAULT_PORT + 2,
                   False, False)
         )
         cls.tornado.start()
@@ -47,4 +51,3 @@ class DataDiscoveryTest(unittest.TestCase):
             collections_data = json.loads(response.data)
             self.assertIsNotNone(collections_data['collections'])
             self.assertIsNotNone(collections_data['links'])
-

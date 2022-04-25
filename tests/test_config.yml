@@ -4,4 +4,4 @@ url: http://www.brockmann-consult.de/xcube-geoDB-openEO
 id: xcube-geodb-openeo
 title: xcube geoDB Server, openEO API
 description: Catalog of geoDB collections.
-datastore-class: xcube_geodb_openeo.core.GeoDBDataStore
+datastore-class: tests.core.mock_datastore.MockDatastore
