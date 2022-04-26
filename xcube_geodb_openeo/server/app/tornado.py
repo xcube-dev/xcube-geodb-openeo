@@ -195,12 +195,12 @@ class CatalogCollectionsHandler(BaseHandler):
     async def get(self):
         from xcube_geodb_openeo.backend import catalog
         return await self.finish(catalog.get_collections(
-            ctx.config, _get_request_ctx(self)
+            _get_request_ctx(self)
         ))
 
 
 # noinspection PyAbstractClass,PyMethodMayBeStatic
-@app.route("/catalog/collections/{collection_id}")
+@app.route("/collections/{collection_id}")
 class CatalogCollectionHandler(BaseHandler):
     async def get(self, collection_id: str):
         from xcube_geodb_openeo.backend import catalog
@@ -211,7 +211,7 @@ class CatalogCollectionHandler(BaseHandler):
 
 
 # noinspection PyAbstractClass,PyMethodMayBeStatic
-@app.route("/catalog/collections/{collection_id}/items")
+@app.route("/collections/{collection_id}/items")
 class CatalogCollectionItemsHandler(BaseHandler):
     async def get(self, collection_id: str):
         return await self.finish(catalog.get_collection_items(
@@ -225,7 +225,7 @@ class CatalogCollectionItemsHandler(BaseHandler):
 class CatalogCollectionItemHandler(BaseHandler):
     async def get(self, collection_id: str, feature_id: str):
         return await self.finish(catalog.get_collection_item(
-            ctx.config, _get_request_ctx(self), collection_id, feature_id
+            _get_request_ctx(self), collection_id, feature_id
         ))
 
 

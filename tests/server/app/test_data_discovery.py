@@ -51,3 +51,22 @@ class DataDiscoveryTest(unittest.TestCase):
             collections_data = json.loads(response.data)
             self.assertIsNotNone(collections_data['collections'])
             self.assertIsNotNone(collections_data['links'])
+
+    def test_collection(self):
+        for base_url in [self.flask_base_url, self.tornado_base_url]:
+            url = f'{base_url}{api.API_URL_PREFIX}/collections/collection_1'
+            response = self.http.request('GET', url)
+            self.assertEqual(200, response.status, base_url)
+            collection_data = json.loads(response.data)
+            self.assertIsNotNone(collection_data)
+
+    def test_get_items(self):
+        for base_url in [self.flask_base_url, self.tornado_base_url]:
+            url = f'{base_url}' \
+                  f'{api.API_URL_PREFIX}/collections/collection_1/items'
+            response = self.http.request('GET', url)
+            self.assertEqual(200, response.status, base_url)
+            items_data = json.loads(response.data)
+            self.assertIsNotNone(items_data)
+            self.assertEqual('FeatureCollection', items_data['type'])
+            self.assertIsNotNone('', items_data['features'])

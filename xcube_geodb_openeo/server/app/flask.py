@@ -52,7 +52,8 @@ def get_well_known():
 @api.route('/')
 def get_info():
     return capabilities.get_root(
-        ctx.config, ctx.for_request(flask.request.root_url)
+        ctx.config, ctx.for_request(f'{flask.request.root_url}'
+                                    f'{api.url_prefix}')
     )
 
 
@@ -63,23 +64,24 @@ def get_conformance():
 
 @api.route('/collections')
 def get_catalog_collections():
-    return catalog.get_collections(ctx.config,
-                                   ctx.for_request(flask.request.root_url)
+    return catalog.get_collections(ctx.for_request(f'{flask.request.root_url}'
+                                                   f'{api.url_prefix}')
                                    )
 
 
-@api.route('/catalog/collections/<string:collection_id>')
+@api.route('/collections/<string:collection_id>')
 def get_catalog_collection(collection_id: str):
-    return catalog.get_collection(
-        ctx.for_request(flask.request.root_url),
-        collection_id
-    )
+    return catalog.get_collection(ctx.for_request(f'{flask.request.root_url}'
+                                                  f'{api.url_prefix}'),
+                                  collection_id
+                                  )
 
 
-@api.route('/catalog/collections/<string:collection_id>/items')
+@api.route('/collections/<string:collection_id>/items')
 def get_catalog_collection_items(collection_id: str):
     return catalog.get_collection_items(
-        ctx.for_request(flask.request.root_url),
+        ctx.for_request(f'{flask.request.root_url}'
+                        f'{api.url_prefix}'),
         collection_id
     )
 
@@ -87,8 +89,7 @@ def get_catalog_collection_items(collection_id: str):
 @api.route('/catalog/collections/<string:collection_id>/'
            'items/<string:feature_id>')
 def get_catalog_collection_item(collection_id: str, feature_id: str):
-    return catalog.get_collection_item(ctx.config,
-                                       ctx.for_request(flask.request.root_url),
+    return catalog.get_collection_item(ctx.for_request(flask.request.root_url),
                                        collection_id,
                                        feature_id
                                        )

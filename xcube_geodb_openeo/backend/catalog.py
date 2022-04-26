@@ -30,10 +30,10 @@ from ..server.config import Config
 GEODB_COLLECTION_ID = "geodb"
 
 
-def get_collections(config: Config, ctx: RequestContext):
+def get_collections(ctx: RequestContext):
     return {
         'collections': [
-            _get_vector_cube_collection(config, ctx,
+            _get_vector_cube_collection(ctx,
                                         ctx.get_vector_cube(collection_id),
                                         details=False)
             for collection_id in ctx.collection_ids
@@ -74,13 +74,13 @@ def get_collection_items(ctx: RequestContext,
     }
 
 
-def get_collection_item(config: Config, ctx: RequestContext,
+def get_collection_item(ctx: RequestContext,
                         collection_id: str,
                         feature_id: str):
     vector_cube = _get_vector_cube(ctx, collection_id)
     for feature in vector_cube.get("features", []):
         if feature.get("id") == feature_id:
-            return _get_vector_cube_item(config, ctx,
+            return _get_vector_cube_item(ctx,
                                          vector_cube,
                                          feature,
                                          details=True)
@@ -94,9 +94,10 @@ def search(ctx: RequestContext):
     return {}
 
 
-def _get_vector_cube_collection(config: Config, ctx: RequestContext,
+def _get_vector_cube_collection(ctx: RequestContext,
                                 vector_cube: VectorCube,
                                 details: bool = False):
+    config = ctx.config
     vector_cube_id = vector_cube["id"]
     metadata = vector_cube.get("metadata", {})
     return {
@@ -115,11 +116,11 @@ def _get_vector_cube_collection(config: Config, ctx: RequestContext,
             {
                 "rel": "self",
                 "href": ctx.get_url(
-                    f"catalog/collections/{vector_cube_id}")
+                    f"collections/{vector_cube_id}")
             },
             {
                 "rel": "root",
-                "href": ctx.get_url("catalog/collections")
+                "href": ctx.get_url("collections")
             },
             # {
             #     "rel": "license",
@@ -130,10 +131,11 @@ def _get_vector_cube_collection(config: Config, ctx: RequestContext,
     }
 
 
-def _get_vector_cube_item(config: Config, ctx: RequestContext,
+def _get_vector_cube_item(ctx: RequestContext,
                           vector_cube: VectorCube,
                           feature: Feature,
                           details: bool = False):
+    config = ctx.config
     collection_id = vector_cube["id"]
     feature_id = feature["id"]
     feature_bbox = feature.get("bbox")
