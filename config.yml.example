@@ -1,0 +1,14 @@
+# adapt to your needs and save as config.yml
+api_version: 1.1.0
+stac_version: 0.9.0
+url: http://www.brockmann-consult.de/xcube-geoDB-openEO
+id: xcube-geodb-openeo
+title: xcube geoDB Server, openEO API
+description: Catalog of geoDB collections.
+datastore-class: xcube_geodb_openeo.core.geodb_datastore.GeoDBDataStore
+
+server_url:     <geoDB-PostGREST server url>
+server_port:    <geoDB-PostGREST server port>
+client_id:      <your client id>
+client_secret:  <your client secret>
+auth_domain:    <your auth domain>

@@ -19,8 +19,67 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from functools import cached_property
+
 from xcube_geodb_openeo.core.datastore import Datastore
+from xcube_geodb.core.geodb import GeoDBClient
+
+from xcube_geodb_openeo.core.vectorcube import VectorCube
+from xcube_geodb_openeo.server.config import Config
 
 
 class GeoDBDataStore(Datastore):
-    pass
+
+    def __init__(self, config: Config):
+        self.config = config
+
+    @cached_property
+    def geodb(self):
+        assert self.config
+
+        server_url = self.config['server_url']
+        server_port = self.config['server_port']
+        client_id = self.config['client_id']
+        client_secret = self.config['client_secret']
+        auth_domain = self.config['auth_domain']
+
+        return GeoDBClient(
+            server_url=server_url,
+            server_port=server_port,
+            client_id=client_id,
+            client_secret=client_secret,
+            auth_aud=auth_domain
+        )
+
+    def get_collection_keys(self):
+        database_names = self.geodb.get_my_databases().get('name').array
+        collections = None
+        for n in database_names:
+            if collections:
+                collections.concat(self.geodb.get_my_collections(n))
+            else:
+                collections = self.geodb.get_my_collections(n)
+        return collections.get('collection')
+
+    def get_vector_cube(self, collection_id) -> VectorCube:
+        vector_cube = self.geodb.get_collection_info(collection_id)
+        vector_cube['id'] = collection_id
+        collection = self.geodb.get_collection(collection_id)
+        bounds = collection.bounds
+        # geometries = collection.to_wkt().get('geometry')
+        # print(geometries)
+        vector_cube['features'] = []
+        for i, row in enumerate(collection.iterrows()):
+            bbox = bounds.iloc[i]
+            vector_cube['features'].append({
+                'stac_version': self.config['stac_version'],
+                'stac_extensions': ['xcube-geodb'],
+                'type': 'Feature',
+                'id': collection_id,
+                'bbox': [f'{bbox["minx"]:.4f}',
+                         f'{bbox["miny"]:.4f}',
+                         f'{bbox["maxx"]:.4f}',
+                         f'{bbox["maxy"]:.4f}']
+            })
+
+        return vector_cube

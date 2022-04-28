@@ -60,6 +60,7 @@ def main(config_path: Optional[str],
     from xcube_geodb_openeo.server.config import load_config
 
     config = load_config(config_path) if config_path else {}
+    db_config = load_config(config_path) if config_path else {}
 
     module = importlib.import_module(
         f'xcube_geodb_openeo.server.app.{framework}'

@@ -24,7 +24,6 @@ import datetime
 
 from xcube_geodb_openeo.core.vectorcube import VectorCube, Feature
 from xcube_geodb_openeo.server.context import RequestContext
-from ..server.config import Config
 
 
 GEODB_COLLECTION_ID = "geodb"

@@ -23,7 +23,9 @@
 import abc
 import importlib
 import logging
+
 from typing import Sequence
+from functools import cached_property
 
 from xcube_geodb_openeo.core.vectorcube import VectorCube
 from xcube_geodb_openeo.core.datastore import Datastore
@@ -70,7 +72,7 @@ class AppContext(Context):
         assert isinstance(config, dict)
         self._config = dict(config)
 
-    @property
+    @cached_property
     def datastore(self) -> Datastore:
         if not self.config:
             raise RuntimeError('config not set')
@@ -79,11 +81,10 @@ class AppContext(Context):
         class_name = datastore_class[datastore_class.rindex('.') + 1:]
         module = importlib.import_module(datastore_module)
         cls = getattr(module, class_name)
-        return cls()
+        return cls(self.config)
 
     @property
     def collection_ids(self) -> Sequence[str]:
-        # TODO: fetch from geoDB
         return tuple(self.datastore.get_collection_keys())
 
     def get_vector_cube(self, collection_id: str) -> VectorCube:

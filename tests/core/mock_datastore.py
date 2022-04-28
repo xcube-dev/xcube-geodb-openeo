@@ -23,12 +23,13 @@ import json
 from typing import Sequence
 from xcube_geodb_openeo.core.datastore import Datastore
 from xcube_geodb_openeo.core.vectorcube import VectorCube
+from xcube_geodb_openeo.server.config import Config
 import importlib.resources as resources
 
 
 class MockDatastore(Datastore):
 
-    def __init__(self):
+    def __init__(self, config: Config):
         with resources.open_text('tests', 'mock_collections.json') as text:
             mock_collections = json.load(text)['_MOCK_COLLECTIONS_LIST']
         self._MOCK_COLLECTIONS = {v["id"]: v for v in mock_collections}
