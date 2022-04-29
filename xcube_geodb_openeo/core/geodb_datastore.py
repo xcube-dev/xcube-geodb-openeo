@@ -63,23 +63,8 @@ class GeoDBDataStore(Datastore):
 
     def get_vector_cube(self, collection_id) -> VectorCube:
         vector_cube = self.geodb.get_collection_info(collection_id)
-        vector_cube['id'] = collection_id
         collection = self.geodb.get_collection(collection_id)
-        bounds = collection.bounds
-        # geometries = collection.to_wkt().get('geometry')
-        # print(geometries)
-        vector_cube['features'] = []
-        for i, row in enumerate(collection.iterrows()):
-            bbox = bounds.iloc[i]
-            vector_cube['features'].append({
-                'stac_version': self.config['stac_version'],
-                'stac_extensions': ['xcube-geodb'],
-                'type': 'Feature',
-                'id': collection_id,
-                'bbox': [f'{bbox["minx"]:.4f}',
-                         f'{bbox["miny"]:.4f}',
-                         f'{bbox["maxx"]:.4f}',
-                         f'{bbox["maxy"]:.4f}']
-            })
+        self.add_collection_to_vector_cube(collection, collection_id,
+                                           vector_cube, self.config)
 
         return vector_cube

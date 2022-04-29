@@ -20,7 +20,13 @@
 # DEALINGS IN THE SOFTWARE.
 
 import abc
+from typing import Union
+
+from geopandas import GeoDataFrame
+from pandas import DataFrame
+
 from xcube_geodb_openeo.core.vectorcube import VectorCube
+from xcube_geodb_openeo.server.config import Config
 
 
 class Datastore(abc.ABC):
@@ -32,3 +38,28 @@ class Datastore(abc.ABC):
     @abc.abstractmethod
     def get_vector_cube(self, collection_id) -> VectorCube:
         pass
+
+    @staticmethod
+    def add_collection_to_vector_cube(
+            collection: Union[GeoDataFrame, DataFrame],
+            collection_id: str,
+            vector_cube: VectorCube,
+            config: Config):
+        bounds = collection.bounds
+        vector_cube['id'] = collection_id
+        # geometries = collection.to_wkt().get('geometry')
+        # print(geometries)
+        vector_cube['features'] = []
+        for i, row in enumerate(collection.iterrows()):
+            bbox = bounds.iloc[i]
+            vector_cube['features'].append({
+                'stac_version': config['stac_version'],
+                'stac_extensions': ['xcube-geodb'],
+                'type': 'Feature',
+                'id': collection_id,
+                'bbox': [f'{bbox["minx"]:.4f}',
+                         f'{bbox["miny"]:.4f}',
+                         f'{bbox["maxx"]:.4f}',
+                         f'{bbox["maxy"]:.4f}']
+            })
+

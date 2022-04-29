@@ -70,3 +70,22 @@ class DataDiscoveryTest(unittest.TestCase):
             self.assertIsNotNone(items_data)
             self.assertEqual('FeatureCollection', items_data['type'])
             self.assertIsNotNone('', items_data['features'])
+            self.assertEqual(2, len(items_data['features']))
+            self.assertEqual(['9.0000', '52.0000', '11.0000', '54.0000'],
+                             items_data['features'][0]['bbox'])
+            self.assertEqual(['8.7000', '51.3000', '8.8000', '51.8000'],
+                             items_data['features'][1]['bbox'])
+
+            self.assertEqual('0.1.0',
+                             items_data['features'][0]['stac_version'])
+            self.assertEqual(['xcube-geodb'],
+                             items_data['features'][0]['stac_extensions'])
+            self.assertEqual('Feature',
+                             items_data['features'][0]['type'])
+
+            self.assertEqual('0.1.0',
+                             items_data['features'][1]['stac_version'])
+            self.assertEqual(['xcube-geodb'],
+                             items_data['features'][1]['stac_extensions'])
+            self.assertEqual('Feature',
+                             items_data['features'][1]['type'])
