@@ -53,8 +53,7 @@ def get_well_known():
 def get_info():
     return capabilities.get_root(
         ctx.config, ctx.for_request(f'{flask.request.root_url}'
-                                    f'{api.url_prefix}')
-    )
+                                    f'{api.url_prefix}'))
 
 
 @api.route('/conformance')
