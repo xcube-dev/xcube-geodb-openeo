@@ -73,8 +73,7 @@ def get_catalog_collections():
 def get_catalog_collection(collection_id: str):
     return catalog.get_collection(ctx.for_request(f'{flask.request.root_url}'
                                                   f'{api.url_prefix}'),
-                                  collection_id
-                                  )
+                                  collection_id)
 
 
 @api.route('/collections/<string:collection_id>/items')
