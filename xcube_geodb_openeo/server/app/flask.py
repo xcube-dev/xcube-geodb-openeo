@@ -65,8 +65,7 @@ def get_conformance():
 @api.route('/collections')
 def get_catalog_collections():
     return catalog.get_collections(ctx.for_request(f'{flask.request.root_url}'
-                                                   f'{api.url_prefix}')
-                                   )
+                                                   f'{api.url_prefix}'))
 
 
 @api.route('/collections/<string:collection_id>')
