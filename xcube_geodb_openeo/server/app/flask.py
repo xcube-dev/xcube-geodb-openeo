@@ -91,8 +91,7 @@ def get_catalog_collection_items(collection_id: str):
 def get_catalog_collection_item(collection_id: str, feature_id: str):
     return catalog.get_collection_item(ctx.for_request(flask.request.root_url),
                                        collection_id,
-                                       feature_id
-                                       )
+                                       feature_id)
 
 
 @api.route('/catalog/search')
