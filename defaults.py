@@ -19,22 +19,9 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import json
-from typing import Sequence
-from xcube_geodb_openeo.core.datastore import DataStore
-from xcube_geodb_openeo.core.vectorcube import VectorCube
-import importlib.resources as resources
-
-
-class MockDataStore(DataStore):
-
-    def __init__(self):
-        with resources.open_text('tests', 'mock_collections.json') as text:
-            mock_collections = json.load(text)['_MOCK_COLLECTIONS_LIST']
-        self._MOCK_COLLECTIONS = {v["id"]: v for v in mock_collections}
-
-    def get_collection_keys(self) -> Sequence:
-        return list(self._MOCK_COLLECTIONS.keys())
-
-    def get_vector_cube(self, collection_id) -> VectorCube:
-        return self._MOCK_COLLECTIONS[collection_id]
+API_VERSION = '1.1.0'
+STAC_VERSION = '0.9.0'
+SERVER_URL = 'http://www.brockmann-consult.de/xcube-geoDB-openEO'
+SERVER_ID = 'xcube-geodb-openeo'
+SERVER_TITLE = 'xcube geoDB Server, openEO API'
+SERVER_DESCRIPTION = 'Catalog of geoDB collections.'

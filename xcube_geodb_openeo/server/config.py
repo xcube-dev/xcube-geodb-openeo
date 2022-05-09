@@ -24,9 +24,25 @@ from typing import Dict, Any, Union
 
 import yaml
 
+from defaults import API_VERSION, STAC_VERSION, SERVER_URL, SERVER_ID, \
+    SERVER_TITLE, SERVER_DESCRIPTION
+
 Config = Dict[str, Any]
 
 
 def load_config(config_path: Union[str, Path]) -> Config:
     with open(config_path, 'r') as fp:
-        return yaml.safe_load(fp)
+        config = yaml.safe_load(fp)
+        if 'API_VERSION' not in config:
+            config['API_VERSION'] = API_VERSION
+        if 'STAC_VERSION' not in config:
+            config['STAC_VERSION'] = STAC_VERSION
+        if 'SERVER_URL' not in config:
+            config['SERVER_URL'] = SERVER_URL
+        if 'SERVER_ID' not in config:
+            config['SERVER_ID'] = SERVER_ID
+        if 'SERVER_TITLE' not in config:
+            config['SERVER_TITLE'] = SERVER_TITLE
+        if 'SERVER_DESCRIPTION' not in config:
+            config['SERVER_DESCRIPTION'] = SERVER_DESCRIPTION
+        return config

@@ -19,8 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from xcube_geodb_openeo.core.datastore import Datastore
+from .datastore import DataStore
 
 
-class GeoDBDataStore(Datastore):
+class GeoDBDataStore(DataStore):
     pass

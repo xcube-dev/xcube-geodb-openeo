@@ -20,10 +20,10 @@
 # DEALINGS IN THE SOFTWARE.
 
 import abc
-from xcube_geodb_openeo.core.vectorcube import VectorCube
+from .vectorcube import VectorCube
 
 
-class Datastore(abc.ABC):
+class DataStore(abc.ABC):
 
     @abc.abstractmethod
     def get_collection_keys(self):

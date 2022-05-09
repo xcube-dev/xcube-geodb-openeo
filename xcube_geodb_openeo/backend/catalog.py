@@ -22,12 +22,8 @@
 
 import datetime
 
-from xcube_geodb_openeo.core.vectorcube import VectorCube, Feature
-from xcube_geodb_openeo.server.context import RequestContext
-from ..server.config import Config
-
-
-GEODB_COLLECTION_ID = "geodb"
+from ..core.vectorcube import VectorCube, Feature
+from ..server.context import RequestContext
 
 
 def get_collections(ctx: RequestContext):
@@ -101,7 +97,7 @@ def _get_vector_cube_collection(ctx: RequestContext,
     vector_cube_id = vector_cube["id"]
     metadata = vector_cube.get("metadata", {})
     return {
-        "stac_version": config['stac_version'],
+        "stac_version": config['STAC_VERSION'],
         "stac_extensions": ["xcube-geodb"],
         "id": vector_cube_id,
         # TODO: fill in values
@@ -143,7 +139,7 @@ def _get_vector_cube_item(ctx: RequestContext,
     feature_properties = feature.get("properties", {})
 
     return {
-        "stac_version": config['stac_version'],
+        "stac_version": config['STAC_VERSION'],
         "stac_extensions": ["xcube-geodb"],
         "type": "Feature",
         "id": feature_id,

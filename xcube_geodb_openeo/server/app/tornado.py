@@ -28,12 +28,12 @@ import tornado.escape
 import tornado.ioloop
 import tornado.web
 
-from xcube_geodb_openeo.backend import catalog
 from ..api import API_URL_PREFIX
 from ..config import Config
 from ..context import AppContext
 from ..context import RequestContext
 from ...backend import capabilities
+from ...backend import catalog
 
 RequestHandlerType = Type[tornado.web.RequestHandler]
 
