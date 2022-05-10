@@ -58,6 +58,7 @@ class BaseTest(unittest.TestCase):
         )
         cls.flask.start()
         # cls.servers = {'flask': f'http://localhost:{flask_port}'}
+        cls.servers = {}
 
         tornado_port = find_free_port()
         cls.tornado = multiprocessing.Process(
