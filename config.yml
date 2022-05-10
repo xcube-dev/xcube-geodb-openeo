@@ -1,0 +1,1 @@
+datastore-class: xcube_geodb_openeo.core.GeoDBDataStore

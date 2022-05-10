@@ -25,13 +25,13 @@ from typing import Sequence
 import geopandas
 from shapely.geometry import Polygon
 
-from xcube_geodb_openeo.core.datastore import Datastore
+from xcube_geodb_openeo.core.datastore import DataStore
 from xcube_geodb_openeo.core.vectorcube import VectorCube
 from xcube_geodb_openeo.server.config import Config
 import importlib.resources as resources
 
 
-class MockDatastore(Datastore):
+class MockDataStore(DataStore):
 
     def __init__(self, config: Config):
         with resources.open_text('tests', 'mock_collections.json') as text:

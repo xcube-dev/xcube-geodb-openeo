@@ -21,14 +21,14 @@
 
 from functools import cached_property
 
-from xcube_geodb_openeo.core.datastore import Datastore
+from .datastore import DataStore
 from xcube_geodb.core.geodb import GeoDBClient
 
 from xcube_geodb_openeo.core.vectorcube import VectorCube
 from xcube_geodb_openeo.server.config import Config
 
 
-class GeoDBDataStore(Datastore):
+class GeoDBDataStore(DataStore):
 
     def __init__(self, config: Config):
         self.config = config

@@ -1,87 +1,58 @@
-import unittest
-
-import xcube_geodb_openeo.server.app.flask as flask_server
-import xcube_geodb_openeo.server.app.tornado as tornado_server
-import xcube_geodb_openeo.server.cli as cli
 import xcube_geodb_openeo.server.api as api
-import urllib3
-import multiprocessing
 import json
 
-from xcube_geodb_openeo.server.config import load_config
+from .base_test import BaseTest
 
 
-class DataDiscoveryTest(unittest.TestCase):
+class DataDiscoveryTest(BaseTest):
     flask = None
     tornado = None
 
-    @classmethod
-    def setUpClass(cls) -> None:
-        config = load_config('../../test_config.yml')
-
-        cls.flask_base_url = f'http://127.0.0.1:{cli.DEFAULT_PORT + 1}'
-
-        cls.flask = multiprocessing.Process(
-            target=flask_server.serve,
-            args=(config, '127.0.0.1', cli.DEFAULT_PORT + 1,
-                  False, False)
-        )
-        cls.flask.start()
-
-        cls.tornado_base_url = f'http://127.0.0.1:{cli.DEFAULT_PORT + 2}'
-        cls.tornado = multiprocessing.Process(
-            target=tornado_server.serve,
-            args=(config, '127.0.0.1', cli.DEFAULT_PORT + 2,
-                  False, False)
-        )
-        cls.tornado.start()
-
-        cls.http = urllib3.PoolManager()
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        cls.flask.terminate()
-        cls.tornado.terminate()
-
     def test_collections(self):
-        for base_url in [self.flask_base_url, self.tornado_base_url]:
+        for server_name in self.servers:
+            base_url = self.servers[server_name]
             url = f'{base_url}{api.API_URL_PREFIX}/collections'
+            msg = f'in server {server_name} running on {url}'
             response = self.http.request('GET', url)
-            self.assertEqual(200, response.status, base_url)
+            self.assertEqual(200, response.status, msg)
             collections_data = json.loads(response.data)
-            self.assertIsNotNone(collections_data['collections'])
-            self.assertIsNotNone(collections_data['links'])
+            self.assertIsNotNone(collections_data['collections'], msg)
+            self.assertIsNotNone(collections_data['links'], msg)
 
     def test_collection(self):
-        for base_url in [self.flask_base_url, self.tornado_base_url]:
+        for server_name in self.servers:
+            base_url = self.servers[server_name]
             url = f'{base_url}{api.API_URL_PREFIX}/collections/collection_1'
+            msg = f'in server {server_name} running on {url}'
             response = self.http.request('GET', url)
-            self.assertEqual(200, response.status, base_url)
+            self.assertEqual(200, response.status, msg)
             collection_data = json.loads(response.data)
-            self.assertIsNotNone(collection_data)
+            self.assertIsNotNone(collection_data, msg)
 
     def test_get_items(self):
-        for base_url in [self.flask_base_url, self.tornado_base_url]:
+        for server_name in self.servers:
+            base_url = self.servers[server_name]
             url = f'{base_url}' \
                   f'{api.API_URL_PREFIX}/collections/collection_1/items'
+            msg = f'in server {server_name} running on {url}'
             response = self.http.request('GET', url)
-            self.assertEqual(200, response.status, base_url)
+            self.assertEqual(200, response.status, msg)
             items_data = json.loads(response.data)
             self.assertIsNotNone(items_data)
-            self.assertEqual('FeatureCollection', items_data['type'])
-            self.assertIsNotNone('', items_data['features'])
-            self.assertEqual(2, len(items_data['features']))
+            self.assertEqual('FeatureCollection', items_data['type'], msg)
+            self.assertIsNotNone('', items_data['features'], msg)
+            self.assertEqual(2, len(items_data['features']), msg)
             self.assertEqual(['9.0000', '52.0000', '11.0000', '54.0000'],
-                             items_data['features'][0]['bbox'])
+                             items_data['features'][0]['bbox'], msg)
             self.assertEqual(['8.7000', '51.3000', '8.8000', '51.8000'],
-                             items_data['features'][1]['bbox'])
+                             items_data['features'][1]['bbox'], msg)
 
             self.assertEqual('0.1.0',
-                             items_data['features'][0]['stac_version'])
+                             items_data['features'][0]['stac_version'], msg)
             self.assertEqual(['xcube-geodb'],
-                             items_data['features'][0]['stac_extensions'])
+                             items_data['features'][0]['stac_extensions'], msg)
             self.assertEqual('Feature',
-                             items_data['features'][0]['type'])
+                             items_data['features'][0]['type'], msg)
 
             self.assertEqual('0.1.0',
                              items_data['features'][1]['stac_version'])

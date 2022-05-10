@@ -20,9 +20,8 @@
 # DEALINGS IN THE SOFTWARE.
 
 from ..server.config import Config
+from ..server.context import RequestContext
 from ..version import __version__
-
-from xcube_geodb_openeo.server.context import RequestContext
 
 '''
 Implements the endpoints listed under
@@ -32,13 +31,13 @@ https://openeo.org/documentation/1.0/developers/api/reference.html#tag/Capabilit
 
 def get_root(config: Config, ctx: RequestContext):
     return {
-        'api_version': config['api_version'],
+        'api_version': config['API_VERSION'],
         'backend_version': __version__,
-        'stac_version': config['stac_version'],
+        'stac_version': config['STAC_VERSION'],
         'type': 'catalog',
-        "id": config['id'],
-        "title": config['title'],
-        "description": config['description'],
+        "id": config['SERVER_ID'],
+        "title": config['SERVER_TITLE'],
+        "description": config['SERVER_DESCRIPTION'],
         'endpoints': [
             {'path': '/collections', 'methods': ['GET']},
             # TODO - only list endpoints, which are implemented and are
@@ -90,8 +89,8 @@ def get_well_known(config: Config):
     return {
         'versions': [
             {
-                'url': config['url'],
-                'api_version': config['api_version']
+                'url': config['SERVER_URL'],
+                'api_version': config['API_VERSION']
             }
         ]
     }

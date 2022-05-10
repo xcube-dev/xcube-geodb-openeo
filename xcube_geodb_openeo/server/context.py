@@ -23,13 +23,11 @@
 import abc
 import importlib
 import logging
-
 from typing import Sequence
-from functools import cached_property
 
-from xcube_geodb_openeo.core.vectorcube import VectorCube
-from xcube_geodb_openeo.core.datastore import Datastore
-from xcube_geodb_openeo.server.config import Config
+from ..core.vectorcube import VectorCube
+from ..core.datastore import DataStore
+from ..server.config import Config
 
 
 class Context(abc.ABC):
@@ -73,22 +71,22 @@ class AppContext(Context):
         self._config = dict(config)
 
     @cached_property
-    def datastore(self) -> Datastore:
+    def data_store(self) -> DataStore:
         if not self.config:
             raise RuntimeError('config not set')
-        datastore_class = self.config['datastore-class']
-        datastore_module = datastore_class[:datastore_class.rindex('.')]
-        class_name = datastore_class[datastore_class.rindex('.') + 1:]
-        module = importlib.import_module(datastore_module)
+        data_store_class = self.config['datastore-class']
+        data_store_module = data_store_class[:data_store_class.rindex('.')]
+        class_name = data_store_class[data_store_class.rindex('.') + 1:]
+        module = importlib.import_module(data_store_module)
         cls = getattr(module, class_name)
-        return cls(self.config)
+        return cls()
 
     @property
     def collection_ids(self) -> Sequence[str]:
-        return tuple(self.datastore.get_collection_keys())
+        return tuple(self.data_store.get_collection_keys())
 
     def get_vector_cube(self, collection_id: str) -> VectorCube:
-        return self.datastore.get_vector_cube(collection_id)
+        return self.data_store.get_vector_cube(collection_id)
 
     @property
     def logger(self) -> logging.Logger:

@@ -22,14 +22,13 @@
 import abc
 from typing import Union
 
+from .vectorcube import VectorCube
+from ..server.config import Config
+
 from geopandas import GeoDataFrame
 from pandas import DataFrame
 
-from xcube_geodb_openeo.core.vectorcube import VectorCube
-from xcube_geodb_openeo.server.config import Config
-
-
-class Datastore(abc.ABC):
+class DataStore(abc.ABC):
 
     @abc.abstractmethod
     def get_collection_keys(self):
