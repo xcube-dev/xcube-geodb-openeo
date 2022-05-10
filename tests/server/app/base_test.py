@@ -52,20 +52,20 @@ class BaseTest(unittest.TestCase):
         data = pkgutil.get_data('tests', 'test_config.yml')
         config = yaml.safe_load(data)
         flask_port = find_free_port()
-        cls.servers = {'flask': f'http://localhost:{flask_port}'}
         cls.flask = multiprocessing.Process(
             target=flask_server.serve,
             args=(config, 'localhost', flask_port, False, False)
         )
         cls.flask.start()
+        # cls.servers = {'flask': f'http://localhost:{flask_port}'}
 
         tornado_port = find_free_port()
-        cls.servers['tornado'] = f'http://localhost:{tornado_port}'
         cls.tornado = multiprocessing.Process(
             target=tornado_server.serve,
             args=(config, 'localhost', tornado_port, False, False)
         )
         cls.tornado.start()
+        cls.servers['tornado'] = f'http://localhost:{tornado_port}'
 
         cls.http = urllib3.PoolManager()
 
