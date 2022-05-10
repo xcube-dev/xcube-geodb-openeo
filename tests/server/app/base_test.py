@@ -29,6 +29,7 @@ import multiprocessing
 import pkgutil
 
 import yaml
+import time
 
 import socket
 from contextlib import closing
@@ -57,8 +58,8 @@ class BaseTest(unittest.TestCase):
             args=(config, 'localhost', flask_port, False, False)
         )
         cls.flask.start()
-        # cls.servers = {'flask': f'http://localhost:{flask_port}'}
-        cls.servers = {}
+        cls.servers = {'flask': f'http://localhost:{flask_port}'}
+        time.sleep(10)
 
         tornado_port = find_free_port()
         cls.tornado = multiprocessing.Process(
@@ -69,6 +70,8 @@ class BaseTest(unittest.TestCase):
         cls.servers['tornado'] = f'http://localhost:{tornado_port}'
 
         cls.http = urllib3.PoolManager()
+
+        time.sleep(10)
 
     @classmethod
     def tearDownClass(cls) -> None:
