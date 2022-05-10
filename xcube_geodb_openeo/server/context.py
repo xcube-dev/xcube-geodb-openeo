@@ -23,6 +23,7 @@
 import abc
 import importlib
 import logging
+from functools import cached_property
 from typing import Sequence
 
 from ..core.vectorcube import VectorCube
@@ -79,7 +80,7 @@ class AppContext(Context):
         class_name = data_store_class[data_store_class.rindex('.') + 1:]
         module = importlib.import_module(data_store_module)
         cls = getattr(module, class_name)
-        return cls()
+        return cls(self.config)
 
     @property
     def collection_ids(self) -> Sequence[str]:

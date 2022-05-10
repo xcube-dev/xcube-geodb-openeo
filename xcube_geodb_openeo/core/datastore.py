@@ -52,7 +52,7 @@ class DataStore(abc.ABC):
         for i, row in enumerate(collection.iterrows()):
             bbox = bounds.iloc[i]
             vector_cube['features'].append({
-                'stac_version': config['stac_version'],
+                'stac_version': config['STAC_VERSION'],
                 'stac_extensions': ['xcube-geodb'],
                 'type': 'Feature',
                 'id': collection_id,

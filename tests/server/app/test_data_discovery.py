@@ -40,21 +40,21 @@ class DataDiscoveryTest(BaseTest):
             items_data = json.loads(response.data)
             self.assertIsNotNone(items_data)
             self.assertEqual('FeatureCollection', items_data['type'], msg)
-            self.assertIsNotNone('', items_data['features'], msg)
+            self.assertIsNotNone(items_data['features'], msg)
             self.assertEqual(2, len(items_data['features']), msg)
             self.assertEqual(['9.0000', '52.0000', '11.0000', '54.0000'],
                              items_data['features'][0]['bbox'], msg)
             self.assertEqual(['8.7000', '51.3000', '8.8000', '51.8000'],
                              items_data['features'][1]['bbox'], msg)
 
-            self.assertEqual('0.1.0',
+            self.assertEqual('2.3.4',
                              items_data['features'][0]['stac_version'], msg)
             self.assertEqual(['xcube-geodb'],
                              items_data['features'][0]['stac_extensions'], msg)
             self.assertEqual('Feature',
                              items_data['features'][0]['type'], msg)
 
-            self.assertEqual('0.1.0',
+            self.assertEqual('2.3.4',
                              items_data['features'][1]['stac_version'])
             self.assertEqual(['xcube-geodb'],
                              items_data['features'][1]['stac_extensions'])
