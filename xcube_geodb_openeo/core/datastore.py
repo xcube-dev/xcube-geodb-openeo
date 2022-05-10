@@ -20,13 +20,23 @@
 # DEALINGS IN THE SOFTWARE.
 
 import abc
-from typing import Union
+from typing import Union, Dict
 
 from .vectorcube import VectorCube
 from ..server.config import Config
 
 from geopandas import GeoDataFrame
 from pandas import DataFrame
+import shapely.wkt
+import shapely.geometry
+
+
+def get_coords(feature: Dict) -> Dict:
+    geometry = feature['geometry']
+    feature_wkt = shapely.wkt.loads(geometry.wkt)
+    coords = shapely.geometry.mapping(feature_wkt)
+    return coords
+
 
 class DataStore(abc.ABC):
 
@@ -46,19 +56,23 @@ class DataStore(abc.ABC):
             config: Config):
         bounds = collection.bounds
         vector_cube['id'] = collection_id
-        # geometries = collection.to_wkt().get('geometry')
-        # print(geometries)
         vector_cube['features'] = []
         for i, row in enumerate(collection.iterrows()):
             bbox = bounds.iloc[i]
+            feature = row[1]
+            coords = get_coords(feature)
+            properties = {key: feature[key] for key in feature.keys() if key
+                          not in ['id', 'geometry']}
+
             vector_cube['features'].append({
                 'stac_version': config['STAC_VERSION'],
                 'stac_extensions': ['xcube-geodb'],
                 'type': 'Feature',
-                'id': collection_id,
+                'id': feature['id'],
                 'bbox': [f'{bbox["minx"]:.4f}',
                          f'{bbox["miny"]:.4f}',
                          f'{bbox["maxx"]:.4f}',
-                         f'{bbox["maxy"]:.4f}']
+                         f'{bbox["maxy"]:.4f}'],
+                'geometry': coords,
+                'properties': properties
             })
-

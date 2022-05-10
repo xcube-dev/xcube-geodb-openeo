@@ -45,6 +45,7 @@ class MockDataStore(DataStore):
     def get_vector_cube(self, collection_id) -> VectorCube:
         vector_cube = {}
         data = {
+            'id': ['0', '1'],
             'name': ['hamburg', 'paderborn'],
             'geometry': [Polygon(((9, 52), (9, 54), (11, 54), (11, 52),
                                   (10, 53), (9.8, 53.4), (9.2, 52.1),
