@@ -27,9 +27,9 @@ import xcube_geodb_openeo.server.app.tornado as tornado_server
 import urllib3
 import multiprocessing
 import pkgutil
-
 import yaml
 import time
+import os
 
 import socket
 from contextlib import closing
@@ -50,6 +50,9 @@ class BaseTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        wait_for_server_startup = os.environ.get('WAIT_FOR_STARTUP',
+                                                 '0') == '1'
+
         data = pkgutil.get_data('tests', 'test_config.yml')
         config = yaml.safe_load(data)
         flask_port = find_free_port()
@@ -59,7 +62,8 @@ class BaseTest(unittest.TestCase):
         )
         cls.flask.start()
         cls.servers = {'flask': f'http://localhost:{flask_port}'}
-        time.sleep(10)
+        if wait_for_server_startup:
+            time.sleep(10)
 
         tornado_port = find_free_port()
         cls.tornado = multiprocessing.Process(
@@ -71,7 +75,8 @@ class BaseTest(unittest.TestCase):
 
         cls.http = urllib3.PoolManager()
 
-        time.sleep(10)
+        if wait_for_server_startup:
+            time.sleep(10)
 
     @classmethod
     def tearDownClass(cls) -> None:
