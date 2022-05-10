@@ -55,7 +55,7 @@ class BaseTest(unittest.TestCase):
         cls.servers = {'flask': f'http://localhost:{flask_port}'}
         cls.flask = multiprocessing.Process(
             target=flask_server.serve,
-            args=(config, '', flask_port, False, False)
+            args=(config, 'localhost', flask_port, False, False)
         )
         cls.flask.start()
 
@@ -63,7 +63,7 @@ class BaseTest(unittest.TestCase):
         cls.servers['tornado'] = f'http://localhost:{tornado_port}'
         cls.tornado = multiprocessing.Process(
             target=tornado_server.serve,
-            args=(config, '', tornado_port, False, False)
+            args=(config, 'localhost', tornado_port, False, False)
         )
         cls.tornado.start()
 
