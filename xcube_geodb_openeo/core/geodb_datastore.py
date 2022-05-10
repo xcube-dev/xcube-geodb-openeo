@@ -37,8 +37,8 @@ class GeoDBDataStore(DataStore):
     def geodb(self):
         assert self.config
 
-        server_url = self.config['server_url']
-        server_port = self.config['server_port']
+        server_url = self.config['postgrest_url']
+        server_port = self.config['postgrest_port']
         client_id = self.config['client_id']
         client_secret = self.config['client_secret']
         auth_domain = self.config['auth_domain']
