@@ -49,4 +49,4 @@ jobs:
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         with:
           fail_ci_if_error: true
-          verbose: true
+          verbose: false

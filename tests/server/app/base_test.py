@@ -23,7 +23,6 @@ import unittest
 
 import xcube_geodb_openeo.server.app.flask as flask_server
 import xcube_geodb_openeo.server.app.tornado as tornado_server
-import xcube_geodb_openeo.server.cli as cli
 
 import urllib3
 import multiprocessing

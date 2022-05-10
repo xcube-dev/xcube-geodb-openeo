@@ -23,6 +23,7 @@ class DataDiscoveryTest(BaseTest):
         for server_name in self.servers:
             base_url = self.servers[server_name]
             url = f'{base_url}{api.API_URL_PREFIX}/collections/collection_1'
+            print('test_collection: ' + url)
             msg = f'in server {server_name} running on {url}'
             response = self.http.request('GET', url)
             self.assertEqual(200, response.status, msg)
@@ -34,6 +35,7 @@ class DataDiscoveryTest(BaseTest):
             base_url = self.servers[server_name]
             url = f'{base_url}' \
                   f'{api.API_URL_PREFIX}/collections/collection_1/items'
+            print('test_get_items: ' + url)
             msg = f'in server {server_name} running on {url}'
             response = self.http.request('GET', url)
             self.assertEqual(200, response.status, msg)
