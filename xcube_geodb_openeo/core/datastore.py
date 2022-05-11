@@ -45,7 +45,8 @@ class DataStore(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_vector_cube(self, collection_id) -> VectorCube:
+    def get_vector_cube(self, collection_id: str, limit: int, offset: int) \
+            -> VectorCube:
         pass
 
     @staticmethod

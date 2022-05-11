@@ -21,17 +21,23 @@
 
 
 import datetime
+from typing import Optional
 
 from ..core.vectorcube import VectorCube, Feature
 from ..server.context import RequestContext
 
+STAC_DEFAULT_ITEMS_LIMIT = 10
+STAC_DEFAULT_COLLECTIONS_LIMIT = 10
+STAC_MAX_ITEMS_LIMIT = 10000
 
-def get_collections(ctx: RequestContext):
+
+def get_collections(ctx: RequestContext,
+                    limit: Optional[int] = STAC_DEFAULT_COLLECTIONS_LIMIT):
     return {
         'collections': [
-            _get_vector_cube_collection(ctx,
-                                        ctx.get_vector_cube(collection_id),
-                                        details=False)
+            #  todo - implement pagination
+            _get_vector_cube_collection(
+                ctx, ctx.get_vector_cube(collection_id, limit), details=False)
             for collection_id in ctx.collection_ids
         ],
         'links': [
@@ -43,16 +49,21 @@ def get_collections(ctx: RequestContext):
 
 
 def get_collection(ctx: RequestContext,
-                   collection_id: str):
-    vector_cube = _get_vector_cube(ctx, collection_id)
+                   collection_id: str,
+                   limit: Optional[int] = STAC_DEFAULT_ITEMS_LIMIT):
+    _validate(limit)
+    vector_cube = _get_vector_cube(ctx, collection_id, limit)
     return _get_vector_cube_collection(ctx,
                                        vector_cube,
                                        details=True)
 
 
 def get_collection_items(ctx: RequestContext,
-                         collection_id: str):
-    vector_cube = _get_vector_cube(ctx, collection_id)
+                         collection_id: str,
+                         limit: Optional[int] = STAC_DEFAULT_ITEMS_LIMIT,
+                         offset: Optional[int] = 0):
+    _validate(limit)
+    vector_cube = _get_vector_cube(ctx, collection_id, limit, offset)
     stac_features = [
         _get_vector_cube_item(ctx,
                               vector_cube,
@@ -73,7 +84,9 @@ def get_collection_items(ctx: RequestContext,
 def get_collection_item(ctx: RequestContext,
                         collection_id: str,
                         feature_id: str):
-    vector_cube = _get_vector_cube(ctx, collection_id)
+    # todo - this currently fetches the whole vector cube and returns a single
+    #  feature!
+    vector_cube = _get_vector_cube(ctx, collection_id, 10000, 0)
     for feature in vector_cube.get("features", []):
         if str(feature.get("id")) == feature_id:
             return _get_vector_cube_item(ctx,
@@ -176,12 +189,19 @@ def _utc_now():
                .isoformat() + 'Z'
 
 
-def _get_vector_cube(ctx, collection_id):
+def _get_vector_cube(ctx, collection_id: str, limit: int, offset: int):
     if collection_id not in ctx.collection_ids:
         raise CollectionNotFoundException(
             f'Unknown collection {collection_id!r}'
         )
-    return ctx.get_vector_cube(collection_id)
+    return ctx.get_vector_cube(collection_id, limit, offset)
+
+
+def _validate(limit: int):
+    if limit < 1 or limit > STAC_MAX_ITEMS_LIMIT:
+        raise InvalidParameterException(f'if specified, limit has to be '
+                                        f'between 1 and '
+                                        f'{STAC_MAX_ITEMS_LIMIT}')
 
 
 class CollectionNotFoundException(Exception):
@@ -189,4 +209,8 @@ class CollectionNotFoundException(Exception):
 
 
 class ItemNotFoundException(Exception):
+    pass
+
+
+class InvalidParameterException(Exception):
     pass

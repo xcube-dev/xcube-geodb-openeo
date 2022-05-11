@@ -61,9 +61,11 @@ class GeoDBDataStore(DataStore):
                 collections = self.geodb.get_my_collections(n)
         return collections.get('collection')
 
-    def get_vector_cube(self, collection_id) -> VectorCube:
+    def get_vector_cube(self, collection_id: str, limit: int, offset: int) \
+            -> VectorCube:
         vector_cube = self.geodb.get_collection_info(collection_id)
-        collection = self.geodb.get_collection(collection_id)
+        collection = self.geodb.get_collection(collection_id, limit=limit,
+                                               offset=offset)
         self.add_collection_to_vector_cube(collection, collection_id,
                                            vector_cube, self.config)
 

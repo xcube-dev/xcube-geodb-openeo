@@ -34,6 +34,7 @@ from ..context import AppContext
 from ..context import RequestContext
 from ...backend import capabilities
 from ...backend import catalog
+from ...backend.catalog import STAC_DEFAULT_ITEMS_LIMIT
 
 RequestHandlerType = Type[tornado.web.RequestHandler]
 
@@ -214,9 +215,12 @@ class CatalogCollectionHandler(BaseHandler):
 @app.route("/collections/{collection_id}/items")
 class CatalogCollectionItemsHandler(BaseHandler):
     async def get(self, collection_id: str):
+        limit = int(self.get_argument("limit",
+                                      str(STAC_DEFAULT_ITEMS_LIMIT), True))
+        offset = int(self.get_argument("offset", '0', True))
         return await self.finish(catalog.get_collection_items(
             _get_request_ctx(self),
-            collection_id
+            collection_id, limit, offset
         ))
 
 

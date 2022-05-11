@@ -30,6 +30,8 @@ from ..config import Config
 from ..context import AppContext
 from ...backend import catalog
 from ...backend import capabilities
+from ...backend.catalog import STAC_DEFAULT_ITEMS_LIMIT
+
 
 app = flask.Flask(
     __name__,
@@ -76,10 +78,14 @@ def get_catalog_collection(collection_id: str):
 
 @api.route('/collections/<string:collection_id>/items')
 def get_catalog_collection_items(collection_id: str):
+    limit = int(flask.request.args['limit']) \
+        if 'limit' in flask.request.args else STAC_DEFAULT_ITEMS_LIMIT
+    offset = int(flask.request.args['offset']) \
+        if 'offset' in flask.request.args else 0
     return catalog.get_collection_items(
         ctx.for_request(f'{flask.request.root_url}'
                         f'{api.url_prefix}'),
-        collection_id
+        collection_id, limit, offset
     )
 
 

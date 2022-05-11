@@ -44,7 +44,8 @@ class Context(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_vector_cube(self, collection_id: str) -> VectorCube:
+    def get_vector_cube(self, collection_id: str, limit: int, offset: int) \
+            -> VectorCube:
         pass
 
     @property
@@ -86,8 +87,9 @@ class AppContext(Context):
     def collection_ids(self) -> Sequence[str]:
         return tuple(self.data_store.get_collection_keys())
 
-    def get_vector_cube(self, collection_id: str) -> VectorCube:
-        return self.data_store.get_vector_cube(collection_id)
+    def get_vector_cube(self, collection_id: str, limit: int, offset: int) \
+            -> VectorCube:
+        return self.data_store.get_vector_cube(collection_id, limit, offset)
 
     @property
     def logger(self) -> logging.Logger:
@@ -115,8 +117,9 @@ class RequestContext(Context):
     def collection_ids(self) -> Sequence[str]:
         return self._ctx.collection_ids
 
-    def get_vector_cube(self, collection_id: str) -> VectorCube:
-        return self._ctx.get_vector_cube(collection_id)
+    def get_vector_cube(self, collection_id: str, limit: int, offset: int) \
+            -> VectorCube:
+        return self._ctx.get_vector_cube(collection_id, limit, offset)
 
     @property
     def logger(self) -> logging.Logger:

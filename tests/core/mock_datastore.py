@@ -42,7 +42,8 @@ class MockDataStore(DataStore):
     def get_collection_keys(self) -> Sequence:
         return list(self._MOCK_COLLECTIONS.keys())
 
-    def get_vector_cube(self, collection_id) -> VectorCube:
+    def get_vector_cube(self, collection_id: str, limit: int, offset: int) \
+            -> VectorCube:
         vector_cube = {}
         data = {
             'id': ['0', '1'],
@@ -56,6 +57,7 @@ class MockDataStore(DataStore):
             'population': [1700000, 150000]
         }
         collection = geopandas.GeoDataFrame(data, crs="EPSG:4326")
+        collection = collection[offset:offset + limit]
         self.add_collection_to_vector_cube(collection, collection_id,
                                            vector_cube, self.config)
         return vector_cube
