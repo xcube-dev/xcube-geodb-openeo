@@ -221,7 +221,7 @@ class CatalogCollectionItemsHandler(BaseHandler):
 
 
 # noinspection PyAbstractClass,PyMethodMayBeStatic
-@app.route("/catalog/collections/{collection_id}/items/{feature_id}")
+@app.route("/collections/{collection_id}/items/{feature_id}")
 class CatalogCollectionItemHandler(BaseHandler):
     async def get(self, collection_id: str, feature_id: str):
         return await self.finish(catalog.get_collection_item(

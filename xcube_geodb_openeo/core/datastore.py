@@ -61,6 +61,7 @@ class DataStore(abc.ABC):
             bbox = bounds.iloc[i]
             feature = row[1]
             coords = get_coords(feature)
+            # todo - unsure if this is correct
             properties = {key: feature[key] for key in feature.keys() if key
                           not in ['id', 'geometry']}
 

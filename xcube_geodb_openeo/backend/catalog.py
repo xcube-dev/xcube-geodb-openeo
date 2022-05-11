@@ -75,7 +75,7 @@ def get_collection_item(ctx: RequestContext,
                         feature_id: str):
     vector_cube = _get_vector_cube(ctx, collection_id)
     for feature in vector_cube.get("features", []):
-        if feature.get("id") == feature_id:
+        if str(feature.get("id")) == feature_id:
             return _get_vector_cube_item(ctx,
                                          vector_cube,
                                          feature,
@@ -150,8 +150,7 @@ def _get_vector_cube_item(ctx: RequestContext,
         "links": [
             {
                 "rel": "self",
-                'href': ctx.get_url(f'catalog/'
-                                    f'collections/{collection_id}/'
+                'href': ctx.get_url(f'collections/{collection_id}/'
                                     f'items/{feature_id}')
             }
         ],

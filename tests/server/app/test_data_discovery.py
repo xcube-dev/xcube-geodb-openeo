@@ -38,7 +38,7 @@ class DataDiscoveryTest(BaseTest):
             response = self.http.request('GET', url)
             self.assertEqual(200, response.status, msg)
             items_data = json.loads(response.data)
-            self.assertIsNotNone(items_data)
+            self.assertIsNotNone(items_data, msg)
             self.assertEqual('FeatureCollection', items_data['type'], msg)
             self.assertIsNotNone(items_data['features'], msg)
             self.assertEqual(2, len(items_data['features']), msg)
@@ -84,3 +84,29 @@ class DataDiscoveryTest(BaseTest):
                              items_data['features'][1]['geometry'], msg)
             self.assertEqual({'name': 'paderborn', 'population': 150000},
                              items_data['features'][1]['properties'], msg)
+
+    def test_get_item(self):
+        for server_name in self.servers:
+            base_url = self.servers[server_name]
+            url = f'{base_url}' \
+                  f'{api.API_URL_PREFIX}/collections/collection_1/items/1'
+            msg = f'in server {server_name} running on {url}'
+            response = self.http.request('GET', url)
+            self.assertEqual(200, response.status, msg)
+            item_data = json.loads(response.data)
+            self.assertIsNotNone(item_data, msg)
+            self.assertEqual('2.3.4', item_data['stac_version'])
+            self.assertEqual(['xcube-geodb'], item_data['stac_extensions'])
+            self.assertEqual('Feature', item_data['type'])
+            self.assertEqual('1', item_data['id'], msg)
+            self.assertEqual(['8.7000', '51.3000', '8.8000', '51.8000'],
+                             item_data['bbox'], msg)
+            self.assertEqual({'type': 'Polygon', 'coordinates': [[[8.7, 51.3],
+                                                                  [8.7, 51.8],
+                                                                  [8.8, 51.8],
+                                                                  [8.8, 51.3],
+                                                                  [8.7, 51.3]
+                                                                  ]]},
+                             item_data['geometry'], msg)
+            self.assertEqual({'name': 'paderborn', 'population': 150000},
+                             item_data['properties'], msg)
