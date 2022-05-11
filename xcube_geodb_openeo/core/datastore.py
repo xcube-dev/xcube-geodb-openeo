@@ -45,19 +45,17 @@ class DataStore(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_vector_cube(self, collection_id: str, limit: int, offset: int) \
+    def get_vector_cube(self, collection_id: str, limit: int, offset: int,
+                        with_items: bool) \
             -> VectorCube:
         pass
 
     @staticmethod
-    def add_collection_to_vector_cube(
+    def add_items_to_vector_cube(
             collection: Union[GeoDataFrame, DataFrame],
-            collection_id: str,
             vector_cube: VectorCube,
             config: Config):
         bounds = collection.bounds
-        vector_cube['id'] = collection_id
-        vector_cube['features'] = []
         for i, row in enumerate(collection.iterrows()):
             bbox = bounds.iloc[i]
             feature = row[1]

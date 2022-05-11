@@ -37,7 +37,9 @@ def get_collections(ctx: RequestContext,
         'collections': [
             #  todo - implement pagination
             _get_vector_cube_collection(
-                ctx, ctx.get_vector_cube(collection_id, limit), details=False)
+                ctx, _get_vector_cube(ctx, collection_id, limit,
+                                      with_items=False),
+                details=False)
             for collection_id in ctx.collection_ids
         ],
         'links': [
@@ -52,7 +54,7 @@ def get_collection(ctx: RequestContext,
                    collection_id: str,
                    limit: Optional[int] = STAC_DEFAULT_ITEMS_LIMIT):
     _validate(limit)
-    vector_cube = _get_vector_cube(ctx, collection_id, limit)
+    vector_cube = _get_vector_cube(ctx, collection_id, limit, with_items=False)
     return _get_vector_cube_collection(ctx,
                                        vector_cube,
                                        details=True)
@@ -189,12 +191,13 @@ def _utc_now():
                .isoformat() + 'Z'
 
 
-def _get_vector_cube(ctx, collection_id: str, limit: int, offset: int):
+def _get_vector_cube(ctx, collection_id: str, limit: int, offset: int = 0,
+                     with_items: bool = True):
     if collection_id not in ctx.collection_ids:
         raise CollectionNotFoundException(
             f'Unknown collection {collection_id!r}'
         )
-    return ctx.get_vector_cube(collection_id, limit, offset)
+    return ctx.get_vector_cube(collection_id, limit, offset, with_items)
 
 
 def _validate(limit: int):
