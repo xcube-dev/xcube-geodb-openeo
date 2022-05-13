@@ -219,7 +219,7 @@ class CatalogCollectionItemsHandler(BaseHandler):
                                       str(STAC_DEFAULT_ITEMS_LIMIT), True))
         offset = int(self.get_argument("offset", '0', True))
         # sample query parameter: bbox=160.6,-55.95,-170,-25.89
-        query_bbox = str(self.get_argument('bbox', None, True))
+        query_bbox = str(self.get_argument('bbox', '', True))
         if query_bbox:
             bbox = tuple(query_bbox.split(','))
         else:
