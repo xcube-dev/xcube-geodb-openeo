@@ -20,7 +20,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import json
-from typing import Sequence
+from typing import Sequence, Tuple
 
 import geopandas
 from shapely.geometry import Polygon
@@ -43,7 +43,8 @@ class MockDataStore(DataStore):
         return list(self._MOCK_COLLECTIONS.keys())
 
     def get_vector_cube(self, collection_id: str, limit: int, offset: int,
-                        with_items: bool) -> VectorCube:
+                        with_items: bool,
+                        bbox: Tuple[float, float, float, float]) -> VectorCube:
         vector_cube = {}
         data = {
             'id': ['0', '1'],
@@ -57,6 +58,10 @@ class MockDataStore(DataStore):
             'population': [1700000, 150000]
         }
         collection = geopandas.GeoDataFrame(data, crs="EPSG:4326")
+        if bbox:
+            # simply dropping one entry; we don't need to implement this
+            # logic here
+            collection = collection.drop([1, 1])
         collection = collection[offset:offset + limit]
         vector_cube['id'] = collection_id
         vector_cube['features'] = []

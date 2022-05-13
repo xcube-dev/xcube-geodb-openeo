@@ -20,7 +20,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import abc
-from typing import Union, Dict
+from typing import Union, Dict, Tuple
 
 from .vectorcube import VectorCube
 from ..server.config import Config
@@ -46,7 +46,8 @@ class DataStore(abc.ABC):
 
     @abc.abstractmethod
     def get_vector_cube(self, collection_id: str, limit: int, offset: int,
-                        with_items: bool) \
+                        with_items: bool,
+                        bbox: Tuple[float, float, float, float]) \
             -> VectorCube:
         pass
 

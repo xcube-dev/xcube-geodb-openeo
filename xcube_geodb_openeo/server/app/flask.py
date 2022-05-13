@@ -82,10 +82,16 @@ def get_catalog_collection_items(collection_id: str):
         if 'limit' in flask.request.args else STAC_DEFAULT_ITEMS_LIMIT
     offset = int(flask.request.args['offset']) \
         if 'offset' in flask.request.args else 0
+    # sample query parameter: bbox=160.6,-55.95,-170,-25.89
+    if 'bbox' in flask.request.args:
+        query_bbox = str(flask.request.args['bbox'])
+        bbox = tuple(query_bbox.split(','))
+    else:
+        bbox = None
     return catalog.get_collection_items(
         ctx.for_request(f'{flask.request.root_url}'
                         f'{api.url_prefix}'),
-        collection_id, limit, offset
+        collection_id, limit, offset, bbox
     )
 
 

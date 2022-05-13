@@ -21,7 +21,7 @@
 
 
 import datetime
-from typing import Optional
+from typing import Optional, Tuple
 
 from ..core.vectorcube import VectorCube, Feature
 from ..server.context import RequestContext
@@ -63,9 +63,12 @@ def get_collection(ctx: RequestContext,
 def get_collection_items(ctx: RequestContext,
                          collection_id: str,
                          limit: Optional[int] = STAC_DEFAULT_ITEMS_LIMIT,
-                         offset: Optional[int] = 0):
+                         offset: Optional[int] = 0,
+                         bbox: Optional[Tuple[float, float, float, float]] =
+                         None):
     _validate(limit)
-    vector_cube = _get_vector_cube(ctx, collection_id, limit, offset)
+    vector_cube = _get_vector_cube(ctx, collection_id, limit=limit,
+                                   offset=offset, bbox=bbox)
     stac_features = [
         _get_vector_cube_item(ctx,
                               vector_cube,
@@ -78,7 +81,9 @@ def get_collection_items(ctx: RequestContext,
         "type": "FeatureCollection",
         "features": stac_features,
         "timeStamp": _utc_now(),
-        "numberMatched": len(stac_features),
+        "numberMatched": len(stac_features),  # todo - that's not correct.
+        # And it's hard to determine the correct number. Maybe drop,
+        # it's not strictly required.
         "numberReturned": len(stac_features),
     }
 
@@ -192,12 +197,13 @@ def _utc_now():
 
 
 def _get_vector_cube(ctx, collection_id: str, limit: int, offset: int = 0,
-                     with_items: bool = True):
+                     with_items: bool = True,
+                     bbox: Tuple[float, float, float, float] = None):
     if collection_id not in ctx.collection_ids:
         raise CollectionNotFoundException(
             f'Unknown collection {collection_id!r}'
         )
-    return ctx.get_vector_cube(collection_id, limit, offset, with_items)
+    return ctx.get_vector_cube(collection_id, limit, offset, with_items, bbox)
 
 
 def _validate(limit: int):

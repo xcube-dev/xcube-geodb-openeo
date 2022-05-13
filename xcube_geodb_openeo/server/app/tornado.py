@@ -218,9 +218,15 @@ class CatalogCollectionItemsHandler(BaseHandler):
         limit = int(self.get_argument("limit",
                                       str(STAC_DEFAULT_ITEMS_LIMIT), True))
         offset = int(self.get_argument("offset", '0', True))
+        # sample query parameter: bbox=160.6,-55.95,-170,-25.89
+        query_bbox = str(self.get_argument('bbox', None, True))
+        if query_bbox:
+            bbox = tuple(query_bbox.split(','))
+        else:
+            bbox = None
         return await self.finish(catalog.get_collection_items(
             _get_request_ctx(self),
-            collection_id, limit, offset
+            collection_id, limit, offset, bbox
         ))
 
 

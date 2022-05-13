@@ -24,7 +24,7 @@ import abc
 import importlib
 import logging
 from functools import cached_property
-from typing import Sequence
+from typing import Sequence, Tuple
 
 from ..core.vectorcube import VectorCube
 from ..core.datastore import DataStore
@@ -45,7 +45,8 @@ class Context(abc.ABC):
 
     @abc.abstractmethod
     def get_vector_cube(self, collection_id: str, limit: int, offset: int,
-                        with_items: bool) -> VectorCube:
+                        with_items: bool,
+                        bbox: Tuple[float, float, float, float]) -> VectorCube:
         pass
 
     @property
@@ -88,9 +89,10 @@ class AppContext(Context):
         return tuple(self.data_store.get_collection_keys())
 
     def get_vector_cube(self, collection_id: str, limit: int, offset: int,
-                        with_items: bool) -> VectorCube:
+                        with_items: bool,
+                        bbox: Tuple[float, float, float, float]) -> VectorCube:
         return self.data_store.get_vector_cube(collection_id, limit, offset,
-                                               with_items)
+                                               with_items, bbox)
 
     @property
     def logger(self) -> logging.Logger:
@@ -119,9 +121,10 @@ class RequestContext(Context):
         return self._ctx.collection_ids
 
     def get_vector_cube(self, collection_id: str, limit: int, offset: int,
-                        with_items: bool) -> VectorCube:
+                        with_items: bool,
+                        bbox: Tuple[float, float, float, float]) -> VectorCube:
         return self._ctx.get_vector_cube(collection_id, limit, offset,
-                                         with_items)
+                                         with_items, bbox)
 
     @property
     def logger(self) -> logging.Logger:

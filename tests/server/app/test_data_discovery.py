@@ -84,6 +84,22 @@ class DataDiscoveryTest(BaseTest):
                 response = self.http.request('GET', url)
                 self.assertEqual(500, response.status, msg)
 
+    def test_get_items_by_bbox(self):
+        for server_name in self.servers:
+            base_url = self.servers[server_name]
+            bbox_param = '?bbox=9.01,50.01,10.01,51.01'
+            url = f'{base_url}' \
+                  f'{api.API_URL_PREFIX}/collections/collection_1/items' \
+                  f'{bbox_param}'
+            msg = f'in server {server_name} running on {url}'
+            response = self.http.request('GET', url)
+            self.assertEqual(200, response.status, msg)
+            items_data = json.loads(response.data)
+            self.assertEqual('FeatureCollection', items_data['type'], msg)
+            self.assertIsNotNone(items_data['features'], msg)
+            self.assertEqual(1, len(items_data['features']), msg)
+
+
     def _assert_paderborn(self, item_data, msg):
         self.assertIsNotNone(item_data, msg)
         self.assertEqual('2.3.4', item_data['stac_version'])
