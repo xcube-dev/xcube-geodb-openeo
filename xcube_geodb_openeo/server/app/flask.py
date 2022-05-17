@@ -30,9 +30,8 @@ from ..config import Config
 from ..context import AppContext
 from ...backend import catalog
 from ...backend import capabilities
+from ...backend.catalog import STAC_DEFAULT_COLLECTIONS_LIMIT
 from ...backend.catalog import STAC_DEFAULT_ITEMS_LIMIT
-
-STAC_DEFAULT_COLLECTIONS_LIMIT = 10
 
 
 app = flask.Flask(

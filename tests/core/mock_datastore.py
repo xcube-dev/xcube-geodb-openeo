@@ -20,7 +20,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import json
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Optional
 
 import geopandas
 from shapely.geometry import Polygon
@@ -42,9 +42,10 @@ class MockDataStore(DataStore):
     def get_collection_keys(self) -> Sequence:
         return list(self._MOCK_COLLECTIONS.keys())
 
-    def get_vector_cube(self, collection_id: str, limit: int, offset: int,
-                        with_items: bool,
-                        bbox: Tuple[float, float, float, float]) -> VectorCube:
+    def get_vector_cube(self, collection_id: str, with_items: bool,
+                        bbox: Tuple[float, float, float, float],
+                        limit: Optional[int] = 1, offset: Optional[int] = 0) \
+            -> VectorCube:
         vector_cube = {}
         data = {
             'id': ['0', '1'],
@@ -65,6 +66,7 @@ class MockDataStore(DataStore):
         collection = collection[offset:offset + limit]
         vector_cube['id'] = collection_id
         vector_cube['features'] = []
+        vector_cube['total_feature_count'] = len(collection)
         if with_items:
             self.add_items_to_vector_cube(collection, vector_cube, self.config)
         return vector_cube

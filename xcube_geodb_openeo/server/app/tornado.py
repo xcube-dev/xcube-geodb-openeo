@@ -195,8 +195,12 @@ class CatalogConformanceHandler(BaseHandler):
 class CatalogCollectionsHandler(BaseHandler):
     async def get(self):
         from xcube_geodb_openeo.backend import catalog
+        limit = int(self.get_argument("limit",
+                                      str(STAC_DEFAULT_ITEMS_LIMIT), True))
+        offset = int(self.get_argument("offset", '0', True))
+        url = _get_request_ctx(self).get_url('/collections')
         return await self.finish(catalog.get_collections(
-            _get_request_ctx(self)
+            _get_request_ctx(self), url, limit, offset
         ))
 
 

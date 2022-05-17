@@ -26,6 +26,7 @@ from typing import Optional, Tuple
 from ..core.vectorcube import VectorCube, Feature
 from ..server.context import RequestContext
 
+STAC_DEFAULT_COLLECTIONS_LIMIT = 10
 STAC_DEFAULT_ITEMS_LIMIT = 10
 STAC_MAX_ITEMS_LIMIT = 10000
 
@@ -35,8 +36,8 @@ def get_collections(ctx: RequestContext, url: str, limit: int, offset: int):
     collections = {
         'collections': [
             _get_vector_cube_collection(
-                ctx, _get_vector_cube(ctx, collection_id, limit,
-                                      with_items=False), details=False)
+                ctx, _get_vector_cube(ctx, collection_id, with_items=False),
+                details=False)
             for collection_id in ctx.collection_ids[offset:offset + limit]
         ],
         'links': links
@@ -75,24 +76,20 @@ def get_collections_links(limit: int, offset: int, url: str,
 
 
 def get_collection(ctx: RequestContext,
-                   collection_id: str,
-                   limit: Optional[int] = STAC_DEFAULT_ITEMS_LIMIT):
-    _validate(limit)
-    vector_cube = _get_vector_cube(ctx, collection_id, limit, with_items=False)
-    return _get_vector_cube_collection(ctx,
-                                       vector_cube,
-                                       details=True)
+                   collection_id: str):
+    vector_cube = _get_vector_cube(ctx, collection_id, with_items=False)
+    return _get_vector_cube_collection(ctx, vector_cube, details=True)
 
 
 def get_collection_items(ctx: RequestContext,
                          collection_id: str,
-                         limit: Optional[int] = STAC_DEFAULT_ITEMS_LIMIT,
-                         offset: Optional[int] = 0,
+                         limit: int,
+                         offset: int,
                          bbox: Optional[Tuple[float, float, float, float]] =
                          None):
     _validate(limit)
-    vector_cube = _get_vector_cube(ctx, collection_id, limit=limit,
-                                   offset=offset, bbox=bbox)
+    vector_cube = _get_vector_cube(ctx, collection_id, with_items=True,
+                                   limit=limit, offset=offset, bbox=bbox)
     stac_features = [
         _get_vector_cube_item(ctx,
                               vector_cube,
@@ -105,9 +102,7 @@ def get_collection_items(ctx: RequestContext,
         "type": "FeatureCollection",
         "features": stac_features,
         "timeStamp": _utc_now(),
-        "numberMatched": len(stac_features),  # todo - that's not correct.
-        # And it's hard to determine the correct number. Maybe drop,
-        # it's not strictly required.
+        "numberMatched": vector_cube['total_feature_count'],
         "numberReturned": len(stac_features),
     }
 
@@ -117,7 +112,8 @@ def get_collection_item(ctx: RequestContext,
                         feature_id: str):
     # todo - this currently fetches the whole vector cube and returns a single
     #  feature!
-    vector_cube = _get_vector_cube(ctx, collection_id, 10000, 0)
+    vector_cube = _get_vector_cube(ctx, collection_id, True, limit=10000,
+                                   offset=0)
     for feature in vector_cube.get("features", []):
         if str(feature.get("id")) == feature_id:
             return _get_vector_cube_item(ctx,
@@ -220,14 +216,14 @@ def _utc_now():
                .isoformat() + 'Z'
 
 
-def _get_vector_cube(ctx, collection_id: str, limit: int, offset: int = 0,
-                     with_items: bool = True,
-                     bbox: Tuple[float, float, float, float] = None):
+def _get_vector_cube(ctx, collection_id: str, with_items: bool,
+                     bbox: Tuple[float, float, float, float] = None,
+                     limit: Optional[int] = 1, offset: Optional[int] = 0):
     if collection_id not in ctx.collection_ids:
         raise CollectionNotFoundException(
             f'Unknown collection {collection_id!r}'
         )
-    return ctx.get_vector_cube(collection_id, limit, offset, with_items, bbox)
+    return ctx.get_vector_cube(collection_id, with_items, bbox, limit, offset)
 
 
 def _validate(limit: int):

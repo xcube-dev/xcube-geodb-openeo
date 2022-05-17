@@ -24,7 +24,7 @@ import abc
 import importlib
 import logging
 from functools import cached_property
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Optional
 
 from ..core.vectorcube import VectorCube
 from ..core.datastore import DataStore
@@ -44,9 +44,10 @@ class Context(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_vector_cube(self, collection_id: str, limit: int, offset: int,
-                        with_items: bool,
-                        bbox: Tuple[float, float, float, float]) -> VectorCube:
+    def get_vector_cube(self, collection_id: str, with_items: bool,
+                        bbox: Tuple[float, float, float, float],
+                        limit: Optional[int] = 1, offset: Optional[int] = 0) \
+            -> VectorCube:
         pass
 
     @property
@@ -88,11 +89,12 @@ class AppContext(Context):
     def collection_ids(self) -> Sequence[str]:
         return tuple(self.data_store.get_collection_keys())
 
-    def get_vector_cube(self, collection_id: str, limit: int, offset: int,
-                        with_items: bool,
-                        bbox: Tuple[float, float, float, float]) -> VectorCube:
-        return self.data_store.get_vector_cube(collection_id, limit, offset,
-                                               with_items, bbox)
+    def get_vector_cube(self, collection_id: str, with_items: bool,
+                        bbox: Tuple[float, float, float, float],
+                        limit: Optional[int] = 1, offset: Optional[int] = 0) \
+            -> VectorCube:
+        return self.data_store.get_vector_cube(collection_id, with_items,
+                                               bbox, limit, offset)
 
     @property
     def logger(self) -> logging.Logger:
@@ -120,11 +122,12 @@ class RequestContext(Context):
     def collection_ids(self) -> Sequence[str]:
         return self._ctx.collection_ids
 
-    def get_vector_cube(self, collection_id: str, limit: int, offset: int,
-                        with_items: bool,
-                        bbox: Tuple[float, float, float, float]) -> VectorCube:
-        return self._ctx.get_vector_cube(collection_id, limit, offset,
-                                         with_items, bbox)
+    def get_vector_cube(self, collection_id: str, with_items: bool,
+                        bbox: Tuple[float, float, float, float],
+                        limit: Optional[int] = 1, offset: Optional[int] = 0) \
+            -> VectorCube:
+        return self._ctx.get_vector_cube(collection_id, with_items, bbox,
+                                         limit, offset)
 
     @property
     def logger(self) -> logging.Logger:

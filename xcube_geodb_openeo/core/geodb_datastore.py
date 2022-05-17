@@ -20,7 +20,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 from functools import cached_property
-from typing import Tuple
+from typing import Tuple, Optional
 
 from .datastore import DataStore
 from xcube_geodb.core.geodb import GeoDBClient
@@ -62,9 +62,9 @@ class GeoDBDataStore(DataStore):
                 collections = self.geodb.get_my_collections(n)
         return collections.get('collection')
 
-    def get_vector_cube(self, collection_id: str, limit: int, offset: int,
-                        with_items: bool,
-                        bbox: Tuple[float, float, float, float]) \
+    def get_vector_cube(self, collection_id: str, with_items: bool,
+                        bbox: Tuple[float, float, float, float],
+                        limit: Optional[int] = 1, offset: Optional[int] = 0) \
             -> VectorCube:
         vector_cube = self.geodb.get_collection_info(collection_id)
         vector_cube['id'] = collection_id
