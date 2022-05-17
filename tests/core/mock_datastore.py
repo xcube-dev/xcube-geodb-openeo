@@ -43,9 +43,9 @@ class MockDataStore(DataStore):
         return list(self._MOCK_COLLECTIONS.keys())
 
     def get_vector_cube(self, collection_id: str, with_items: bool,
-                        bbox: Tuple[float, float, float, float],
-                        limit: Optional[int] = 1, offset: Optional[int] = 0) \
-            -> VectorCube:
+                        bbox: Tuple[float, float, float, float] = None,
+                        limit: Optional[int] = None, offset: Optional[int] =
+                        0) -> VectorCube:
         vector_cube = {}
         data = {
             'id': ['0', '1'],
@@ -63,7 +63,8 @@ class MockDataStore(DataStore):
             # simply dropping one entry; we don't need to test this
             # logic here, as it is implemented within the geoDB module
             collection = collection.drop([1, 1])
-        collection = collection[offset:offset + limit]
+        if limit:
+            collection = collection[offset:offset + limit]
         vector_cube['id'] = collection_id
         vector_cube['features'] = []
         vector_cube['total_feature_count'] = len(collection)

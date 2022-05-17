@@ -46,7 +46,7 @@ class Context(abc.ABC):
     @abc.abstractmethod
     def get_vector_cube(self, collection_id: str, with_items: bool,
                         bbox: Tuple[float, float, float, float],
-                        limit: Optional[int] = 1, offset: Optional[int] = 0) \
+                        limit: Optional[int], offset: Optional[int]) \
             -> VectorCube:
         pass
 
@@ -91,7 +91,7 @@ class AppContext(Context):
 
     def get_vector_cube(self, collection_id: str, with_items: bool,
                         bbox: Tuple[float, float, float, float],
-                        limit: Optional[int] = 1, offset: Optional[int] = 0) \
+                        limit: Optional[int], offset: Optional[int]) \
             -> VectorCube:
         return self.data_store.get_vector_cube(collection_id, with_items,
                                                bbox, limit, offset)
@@ -124,7 +124,7 @@ class RequestContext(Context):
 
     def get_vector_cube(self, collection_id: str, with_items: bool,
                         bbox: Tuple[float, float, float, float],
-                        limit: Optional[int] = 1, offset: Optional[int] = 0) \
+                        limit: Optional[int], offset: Optional[int]) \
             -> VectorCube:
         return self._ctx.get_vector_cube(collection_id, with_items, bbox,
                                          limit, offset)

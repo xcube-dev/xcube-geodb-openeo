@@ -21,7 +21,7 @@
 
 
 import datetime
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 from ..core.vectorcube import VectorCube, Feature
 from ..server.context import RequestContext
@@ -36,7 +36,8 @@ def get_collections(ctx: RequestContext, url: str, limit: int, offset: int):
     collections = {
         'collections': [
             _get_vector_cube_collection(
-                ctx, _get_vector_cube(ctx, collection_id, with_items=False),
+                ctx, _get_vector_cube(ctx, collection_id, with_items=False,
+                                      bbox=None, limit=limit, offset=offset),
                 details=False)
             for collection_id in ctx.collection_ids[offset:offset + limit]
         ],
@@ -110,10 +111,7 @@ def get_collection_items(ctx: RequestContext,
 def get_collection_item(ctx: RequestContext,
                         collection_id: str,
                         feature_id: str):
-    # todo - this currently fetches the whole vector cube and returns a single
-    #  feature!
-    vector_cube = _get_vector_cube(ctx, collection_id, True, limit=10000,
-                                   offset=0)
+    vector_cube = _get_vector_cube(ctx, collection_id, True)
     for feature in vector_cube.get("features", []):
         if str(feature.get("id")) == feature_id:
             return _get_vector_cube_item(ctx,
@@ -217,8 +215,9 @@ def _utc_now():
 
 
 def _get_vector_cube(ctx, collection_id: str, with_items: bool,
-                     bbox: Tuple[float, float, float, float] = None,
-                     limit: Optional[int] = 1, offset: Optional[int] = 0):
+                     bbox: Union[Tuple[float, float, float, float], None] =
+                     None,
+                     limit: Optional[int] = None, offset: Optional[int] = 0):
     if collection_id not in ctx.collection_ids:
         raise CollectionNotFoundException(
             f'Unknown collection {collection_id!r}'

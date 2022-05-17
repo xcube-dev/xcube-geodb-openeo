@@ -63,8 +63,9 @@ class GeoDBDataStore(DataStore):
         return collections.get('collection')
 
     def get_vector_cube(self, collection_id: str, with_items: bool,
-                        bbox: Tuple[float, float, float, float],
-                        limit: Optional[int] = 1, offset: Optional[int] = 0) \
+                        bbox: Tuple[float, float, float, float] = None,
+                        limit: Optional[int] = None, offset: Optional[int] =
+                        0) \
             -> VectorCube:
         vector_cube = self.geodb.get_collection_info(collection_id)
         vector_cube['id'] = collection_id
