@@ -25,8 +25,8 @@ from typing import Tuple
 from .datastore import DataStore
 from xcube_geodb.core.geodb import GeoDBClient
 
-from xcube_geodb_openeo.core.vectorcube import VectorCube
-from xcube_geodb_openeo.server.config import Config
+from vectorcube import VectorCube
+from ..server.config import Config
 
 
 class GeoDBDataStore(DataStore):

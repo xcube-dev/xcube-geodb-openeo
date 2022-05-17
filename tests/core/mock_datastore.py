@@ -59,8 +59,8 @@ class MockDataStore(DataStore):
         }
         collection = geopandas.GeoDataFrame(data, crs="EPSG:4326")
         if bbox:
-            # simply dropping one entry; we don't need to implement this
-            # logic here
+            # simply dropping one entry; we don't need to test this
+            # logic here, as it is implemented within the geoDB module
             collection = collection.drop([1, 1])
         collection = collection[offset:offset + limit]
         vector_cube['id'] = collection_id
