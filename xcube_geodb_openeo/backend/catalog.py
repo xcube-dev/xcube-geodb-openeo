@@ -27,27 +27,51 @@ from ..core.vectorcube import VectorCube, Feature
 from ..server.context import RequestContext
 
 STAC_DEFAULT_ITEMS_LIMIT = 10
-STAC_DEFAULT_COLLECTIONS_LIMIT = 10
 STAC_MAX_ITEMS_LIMIT = 10000
 
 
-def get_collections(ctx: RequestContext,
-                    limit: Optional[int] = STAC_DEFAULT_COLLECTIONS_LIMIT):
-    return {
+def get_collections(ctx: RequestContext, url: str, limit: int, offset: int):
+    links = get_collections_links(limit, offset, url, len(ctx.collection_ids))
+    collections = {
         'collections': [
-            #  todo - implement pagination
             _get_vector_cube_collection(
                 ctx, _get_vector_cube(ctx, collection_id, limit,
-                                      with_items=False),
-                details=False)
-            for collection_id in ctx.collection_ids
+                                      with_items=False), details=False)
+            for collection_id in ctx.collection_ids[offset:offset + limit]
         ],
-        'links': [
-            # todo - if too many collections are listed, implement
-            #  pagination. See
-            #  https://openeo.org/documentation/1.0/developers/api/reference.html#operation/list-collections
-        ]
+        'links': links
     }
+    return collections
+
+
+def get_collections_links(limit: int, offset: int, url: str,
+                          collection_count: int):
+    links = []
+    next_offset = offset + limit
+    next_link = {'rel': 'next',
+                 'href': f'{url}?limit={limit}&offset='f'{next_offset}',
+                 'title': 'next'}
+    prev_offset = offset - limit
+    prev_link = {'rel': 'prev',
+                 'href': f'{url}?limit={limit}&offset='f'{prev_offset}',
+                 'title': 'prev'}
+    first_link = {'rel': 'first',
+                  'href': f'{url}?limit={limit}&offset=0',
+                  'title': 'first'}
+    last_offset = collection_count - limit
+    last_link = {'rel': 'last',
+                 'href': f'{url}?limit={limit}&offset='f'{last_offset}',
+                 'title': 'last'}
+
+    if next_offset < collection_count:
+        links.append(next_link)
+    if offset > 0:
+        links.append(prev_link)
+        links.append(first_link)
+    if limit + offset < collection_count:
+        links.append(last_link)
+
+    return links
 
 
 def get_collection(ctx: RequestContext,

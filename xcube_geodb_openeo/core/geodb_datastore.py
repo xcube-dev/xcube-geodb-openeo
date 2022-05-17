@@ -25,7 +25,7 @@ from typing import Tuple
 from .datastore import DataStore
 from xcube_geodb.core.geodb import GeoDBClient
 
-from vectorcube import VectorCube
+from .vectorcube import VectorCube
 from ..server.config import Config
 
 
@@ -70,10 +70,15 @@ class GeoDBDataStore(DataStore):
         vector_cube['id'] = collection_id
         vector_cube['features'] = []
         if bbox:
+            vector_cube['total_feature_count'] = \
+                self.geodb.count_collection_by_bbox(collection_id, bbox)
             items = self.geodb.get_collection_by_bbox(collection_id, bbox,
                                                       limit=limit,
                                                       offset=offset)
         else:
+            vector_cube['total_feature_count'] = \
+                self.geodb.count_collection_by_bbox(collection_id,
+                                                    (-180, 90, 180, -90))
             items = self.geodb.get_collection(collection_id, limit=limit,
                                               offset=offset)
 

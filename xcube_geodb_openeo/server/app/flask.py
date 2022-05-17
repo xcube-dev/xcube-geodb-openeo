@@ -32,6 +32,8 @@ from ...backend import catalog
 from ...backend import capabilities
 from ...backend.catalog import STAC_DEFAULT_ITEMS_LIMIT
 
+STAC_DEFAULT_COLLECTIONS_LIMIT = 10
+
 
 app = flask.Flask(
     __name__,
@@ -65,8 +67,14 @@ def get_conformance():
 
 @api.route('/collections')
 def get_catalog_collections():
-    return catalog.get_collections(ctx.for_request(f'{flask.request.root_url}'
-                                                   f'{api.url_prefix}'))
+    limit = int(flask.request.args['limit']) \
+        if 'limit' in flask.request.args else STAC_DEFAULT_COLLECTIONS_LIMIT
+    offset = int(flask.request.args['offset']) \
+        if 'offset' in flask.request.args else 0
+    request_ctx = ctx.for_request(f'{flask.request.root_url}{api.url_prefix}')
+    return catalog.get_collections(request_ctx,
+                                   request_ctx.get_url('/collections'),
+                                   limit, offset)
 
 
 @api.route('/collections/<string:collection_id>')
