@@ -86,4 +86,12 @@ class GeoDBDataStore(DataStore):
         if with_items:
             self.add_items_to_vector_cube(items, vector_cube, self.config)
 
+        vector_cube['metadata'] = {
+            'title': collection_id,
+            'extent': {
+                'spatial': {
+                    'bbox': []
+                }
+            },
+        }
         return vector_cube

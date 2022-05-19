@@ -138,9 +138,9 @@ def _get_vector_cube_collection(ctx: RequestContext,
         "stac_version": config['STAC_VERSION'],
         "stac_extensions": ["xcube-geodb"],
         "id": vector_cube_id,
-        # TODO: fill in values
         "title": metadata.get("title", ""),
-        "description": metadata.get("description", ""),
+        "description": metadata.get("description", "No description "
+                                                   "available."),
         "license": metadata.get("license", "proprietary"),
         "keywords": metadata.get("keywords", []),
         "providers": metadata.get("providers", []),
