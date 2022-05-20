@@ -18,7 +18,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
-
+import json
+import numpy as np
 from functools import cached_property
 from typing import Tuple, Optional
 
@@ -86,11 +87,26 @@ class GeoDBDataStore(DataStore):
         if with_items:
             self.add_items_to_vector_cube(items, vector_cube, self.config)
 
+        res = self.geodb.get_collection_bbox(collection_id)
+        srid = self.geodb.get_collection_srid(collection_id)
+        collection_bbox = list(json.loads(res)[0].values())[0][4:-1]
+        collection_bbox = np.fromstring(collection_bbox.replace(',', ' '),
+                                        dtype=float, sep=' ')
+        if srid is not None and srid != '4326':
+            collection_bbox = self.geodb.transform_bbox_crs(
+                collection_bbox,
+                srid, '4326',
+                wsg84_order='lon_lat')
+
         vector_cube['metadata'] = {
             'title': collection_id,
             'extent': {
                 'spatial': {
-                    'bbox': []
+                    'bbox': collection_bbox,
+                    'crs': 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
+                },
+                'temporal': {
+                    'interval': [['null']]
                 }
             },
         }
