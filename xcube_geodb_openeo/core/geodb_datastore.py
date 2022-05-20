@@ -74,17 +74,19 @@ class GeoDBDataStore(DataStore):
         if bbox:
             vector_cube['total_feature_count'] = \
                 self.geodb.count_collection_by_bbox(collection_id, bbox)
-            items = self.geodb.get_collection_by_bbox(collection_id, bbox,
-                                                      limit=limit,
-                                                      offset=offset)
         else:
             vector_cube['total_feature_count'] = \
                 self.geodb.count_collection_by_bbox(collection_id,
                                                     (-180, 90, 180, -90))
-            items = self.geodb.get_collection(collection_id, limit=limit,
-                                              offset=offset)
 
         if with_items:
+            if bbox:
+                items = self.geodb.get_collection_by_bbox(collection_id, bbox,
+                                                          limit=limit,
+                                                          offset=offset)
+            else:
+                items = self.geodb.get_collection(collection_id, limit=limit,
+                                                  offset=offset)
             self.add_items_to_vector_cube(items, vector_cube, self.config)
 
         res = self.geodb.get_collection_bbox(collection_id)
