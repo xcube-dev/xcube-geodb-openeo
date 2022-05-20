@@ -17,9 +17,9 @@ class CapabilitiesTest(BaseTest):
                 'application/json' in response.headers['content-type'], msg
             )
             metainfo = json.loads(response.data)
-            self.assertEqual('0.1.2', metainfo['api_version'], msg)
+            self.assertEqual('1.1.0', metainfo['api_version'], msg)
             self.assertEqual('0.0.1.dev0', metainfo['backend_version'], msg)
-            self.assertEqual('2.3.4', metainfo['stac_version'], msg)
+            self.assertEqual('0.9.0', metainfo['stac_version'], msg)
             self.assertEqual('catalog', metainfo['type'], msg)
             self.assertEqual('xcube-geodb-openeo', metainfo['id'], msg)
             self.assertEqual(
@@ -44,7 +44,7 @@ class CapabilitiesTest(BaseTest):
             well_known_data = json.loads(response.data)
             self.assertEqual('http://xcube-geoDB-openEO.de',
                              well_known_data['versions'][0]['url'], msg)
-            self.assertEqual('0.1.2',
+            self.assertEqual('1.1.0',
                              well_known_data['versions'][0]['api_version'],
                              msg)
 

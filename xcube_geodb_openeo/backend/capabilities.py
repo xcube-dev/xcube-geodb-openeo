@@ -19,6 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from .catalog import API_VERSION
+from .catalog import STAC_VERSION
 from ..server.config import Config
 from ..server.context import RequestContext
 from ..version import __version__
@@ -31,9 +33,9 @@ https://openeo.org/documentation/1.0/developers/api/reference.html#tag/Capabilit
 
 def get_root(config: Config, ctx: RequestContext):
     return {
-        'api_version': config['API_VERSION'],
+        'api_version': API_VERSION,
         'backend_version': __version__,
-        'stac_version': config['STAC_VERSION'],
+        'stac_version': STAC_VERSION,
         'type': 'catalog',
         "id": config['SERVER_ID'],
         "title": config['SERVER_TITLE'],
@@ -90,7 +92,7 @@ def get_well_known(config: Config):
         'versions': [
             {
                 'url': config['SERVER_URL'],
-                'api_version': config['API_VERSION']
+                'api_version': API_VERSION
             }
         ]
     }

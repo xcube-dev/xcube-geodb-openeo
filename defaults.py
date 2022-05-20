@@ -19,9 +19,9 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-API_VERSION = '1.1.0'
-STAC_VERSION = '0.9.0'
-SERVER_URL = 'http://www.brockmann-consult.de/xcube-geoDB-openEO'
-SERVER_ID = 'xcube-geodb-openeo'
-SERVER_TITLE = 'xcube geoDB Server, openEO API'
-SERVER_DESCRIPTION = 'Catalog of geoDB collections.'
+default_config = {
+    'SERVER_URL': 'http://www.brockmann-consult.de/xcube-geoDB-openEO',
+    'SERVER_ID': 'xcube-geodb-openeo',
+    'SERVER_TITLE': 'xcube geoDB Server, openEO API',
+    'SERVER_DESCRIPTION': 'Catalog of geoDB collections.'
+}

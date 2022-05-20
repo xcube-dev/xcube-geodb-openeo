@@ -1,5 +1,3 @@
-API_VERSION: 0.1.2
-STAC_VERSION: 2.3.4
 SERVER_URL: http://xcube-geoDB-openEO.de
 SERVER_ID: xcube-geodb-openeo
 SERVER_TITLE: xcube geoDB Server, openEO API

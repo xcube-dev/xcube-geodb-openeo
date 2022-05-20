@@ -74,7 +74,7 @@ class AppContext(Context):
     def data_source(self) -> DataSource:
         if not self.config:
             raise RuntimeError('config not set')
-        data_source_class = self.config['data-source-class']
+        data_source_class = self.config['datasource-class']
         data_source_module = data_source_class[:data_source_class.rindex('.')]
         class_name = data_source_class[data_source_class.rindex('.') + 1:]
         module = importlib.import_module(data_source_module)

@@ -25,6 +25,8 @@ import datetime
 from ..core.vectorcube import VectorCube, Feature
 from ..server.context import RequestContext
 
+API_VERSION = '1.1.0'
+STAC_VERSION = '0.9.0'
 
 def get_collections(ctx: RequestContext):
     return {
@@ -97,7 +99,7 @@ def _get_vector_cube_collection(ctx: RequestContext,
     vector_cube_id = vector_cube["id"]
     metadata = vector_cube.get("metadata", {})
     return {
-        "stac_version": config['STAC_VERSION'],
+        "stac_version": STAC_VERSION,
         "stac_extensions": ["xcube-geodb"],
         "id": vector_cube_id,
         # TODO: fill in values
@@ -131,7 +133,6 @@ def _get_vector_cube_item(ctx: RequestContext,
                           vector_cube: VectorCube,
                           feature: Feature,
                           details: bool = False):
-    config = ctx.config
     collection_id = vector_cube["id"]
     feature_id = feature["id"]
     feature_bbox = feature.get("bbox")
@@ -139,7 +140,7 @@ def _get_vector_cube_item(ctx: RequestContext,
     feature_properties = feature.get("properties", {})
 
     return {
-        "stac_version": config['STAC_VERSION'],
+        "stac_version": STAC_VERSION,
         "stac_extensions": ["xcube-geodb"],
         "type": "Feature",
         "id": feature_id,
