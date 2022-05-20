@@ -19,8 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from .datastore import DataStore
+from .datasource import DataSource
 
 
-class GeoDBDataStore(DataStore):
+class GeoDBDataSource(DataSource):
     pass

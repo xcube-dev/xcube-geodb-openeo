@@ -21,12 +21,12 @@
 
 import json
 from typing import Sequence
-from xcube_geodb_openeo.core.datastore import DataStore
+from xcube_geodb_openeo.core.datasource import DataSource
 from xcube_geodb_openeo.core.vectorcube import VectorCube
 import importlib.resources as resources
 
 
-class MockDataStore(DataStore):
+class MockDataSource(DataSource):
 
     def __init__(self):
         with resources.open_text('tests', 'mock_collections.json') as text:

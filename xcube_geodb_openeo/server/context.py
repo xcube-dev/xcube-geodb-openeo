@@ -26,7 +26,7 @@ import logging
 from typing import Sequence
 
 from ..core.vectorcube import VectorCube
-from ..core.datastore import DataStore
+from ..core.datasource import DataSource
 from ..server.config import Config
 
 
@@ -71,23 +71,23 @@ class AppContext(Context):
         self._config = dict(config)
 
     @property
-    def data_store(self) -> DataStore:
+    def data_source(self) -> DataSource:
         if not self.config:
             raise RuntimeError('config not set')
-        data_store_class = self.config['datastore-class']
-        data_store_module = data_store_class[:data_store_class.rindex('.')]
-        class_name = data_store_class[data_store_class.rindex('.') + 1:]
-        module = importlib.import_module(data_store_module)
+        data_source_class = self.config['data-source-class']
+        data_source_module = data_source_class[:data_source_class.rindex('.')]
+        class_name = data_source_class[data_source_class.rindex('.') + 1:]
+        module = importlib.import_module(data_source_module)
         cls = getattr(module, class_name)
         return cls()
 
     @property
     def collection_ids(self) -> Sequence[str]:
         # TODO: fetch from geoDB
-        return tuple(self.data_store.get_collection_keys())
+        return tuple(self.data_source.get_collection_keys())
 
     def get_vector_cube(self, collection_id: str) -> VectorCube:
-        return self.data_store.get_vector_cube(collection_id)
+        return self.data_source.get_vector_cube(collection_id)
 
     @property
     def logger(self) -> logging.Logger:

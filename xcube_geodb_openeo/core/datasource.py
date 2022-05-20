@@ -23,7 +23,7 @@ import abc
 from .vectorcube import VectorCube
 
 
-class DataStore(abc.ABC):
+class DataSource(abc.ABC):
 
     @abc.abstractmethod
     def get_collection_keys(self):
