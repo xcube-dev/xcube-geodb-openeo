@@ -18,6 +18,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
+
 import json
 import numpy as np
 from functools import cached_property
@@ -100,6 +101,12 @@ class GeoDBDataStore(DataStore):
                 srid, '4326',
                 wsg84_order='lon_lat')
 
+        properties = self.geodb.get_properties(collection_id)
+        summaries = {
+            'properties': []
+        }
+        for p in properties['column_name'].to_list():
+            summaries['properties'].append({'name': p})
         vector_cube['metadata'] = {
             'title': collection_id,
             'extent': {
@@ -111,5 +118,6 @@ class GeoDBDataStore(DataStore):
                     'interval': [['null']]
                 }
             },
+            'summaries': summaries
         }
         return vector_cube
