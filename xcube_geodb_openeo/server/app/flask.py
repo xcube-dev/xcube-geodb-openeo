@@ -91,6 +91,11 @@ def get_catalog_collection_item(collection_id: str, feature_id: str):
                                        feature_id)
 
 
+@api.route('/file_formats')
+def get_file_formats():
+    return catalog.FILE_FORMATS
+
+
 @api.route('/catalog/search')
 def get_catalog_search():
     return catalog.search(

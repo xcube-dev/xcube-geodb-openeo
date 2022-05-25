@@ -1,6 +1,7 @@
 import xcube_geodb_openeo.server.api as api
 import json
 
+from xcube_geodb_openeo.backend import catalog
 from .base_test import BaseTest
 
 
@@ -59,3 +60,15 @@ class CapabilitiesTest(BaseTest):
             self.assertEqual(200, response.status, msg)
             conformance_data = json.loads(response.data)
             self.assertIsNotNone(conformance_data['conformsTo'], msg)
+
+    def test_get_file_formats(self):
+        for server_name in self.servers:
+            url = self.servers[server_name]
+            msg = f'in server {server_name} running on {url}'
+
+            response = self.http.request(
+                'GET', f'{url}{api.API_URL_PREFIX}/file_formats'
+            )
+            self.assertEqual(200, response.status, msg)
+            file_formats = json.loads(response.data)
+            self.assertDictEqual(catalog.FILE_FORMATS, file_formats, msg)

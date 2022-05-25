@@ -229,6 +229,13 @@ class CatalogCollectionItemHandler(BaseHandler):
         ))
 
 
+# noinspection PyAbstractClass
+@app.route("/file_formats")
+class FileFormatHandler(BaseHandler):
+    async def get(self):
+        return await self.finish(catalog.FILE_FORMATS)
+
+
 # noinspection PyAbstractClass,PyMethodMayBeStatic
 @app.route("/catalog/search")
 class CatalogSearchHandler(BaseHandler):

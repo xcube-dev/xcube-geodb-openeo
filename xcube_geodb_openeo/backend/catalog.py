@@ -28,6 +28,65 @@ from ..server.context import RequestContext
 API_VERSION = '1.1.0'
 STAC_VERSION = '0.9.0'
 
+FILE_FORMATS = {
+    'output': {
+        'GeoPandas Dataframe': {
+            'title': 'GeoDataFrame',
+            'description': 'A GeoDataFrame is a tabular data '
+                           'structure that contains a geometry '
+                           'column.',
+            'gis_data_types': ['vector'],
+            'links': [{
+                'href': 'https://geopandas.org/en/stable/docs/'
+                        'reference/api/geopandas.GeoDataFrame.html',
+                'rel': 'about',
+                'title': 'geopandas.GeoDataFrame'
+            }]
+        }
+    },
+    'input': {
+        'CSV': {
+            'title': 'Comma Separated Value (.csv)',
+            'description': 'Must be structured in a way understood '
+                           'by the Pandas/GeoPandas Python library.',
+            'gis_data_types': ['vector'],
+            'links': [{
+                'href': 'https://gdal.org/drivers/vector/'
+                        'csv.html#vector-csv',
+                'rel': 'about',
+                'title': 'Comma Separated Value (.csv) - GDAL '
+                         'documentation'
+            }]
+        },
+        'GeoJSON': {
+            'title': 'GeoJSON',
+            'description': 'Must be structured in a way understood '
+                           'by the Pandas/GeoPandas Python library.',
+            'gis_data_types': ['vector'],
+            'links': [{
+                'href': 'https://gdal.org/drivers/vector/'
+                        'geojson.html#vector-geojson',
+                'rel': 'about',
+                'title': 'GeoJSON - GDAL documentation'
+            }]
+        },
+        'ESRI Shapefile': {
+            'title': 'ESRI Shapefile / DBF',
+            'description': 'Must be structured in a way understood '
+                           'by the Pandas/GeoPandas Python library.',
+            'gis_data_types': ['vector'],
+            'links': [{
+                'href': 'https://gdal.org/drivers/vector/'
+                        'shapefile.html#vector-shapefile',
+                'rel': 'about',
+                'title': 'ESRI Shapefile / DBF - GDAL documentation'
+            }]
+        }
+
+    }
+}
+
+
 def get_collections(ctx: RequestContext):
     return {
         'collections': [
