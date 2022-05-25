@@ -41,7 +41,8 @@ FILE_FORMATS = {
                         'reference/api/geopandas.GeoDataFrame.html',
                 'rel': 'about',
                 'title': 'geopandas.GeoDataFrame'
-            }]
+            }],
+            'parameters': {}
         }
     },
     'input': {
@@ -56,7 +57,8 @@ FILE_FORMATS = {
                 'rel': 'about',
                 'title': 'Comma Separated Value (.csv) - GDAL '
                          'documentation'
-            }]
+            }],
+            'parameters': {}
         },
         'GeoJSON': {
             'title': 'GeoJSON',
@@ -68,7 +70,8 @@ FILE_FORMATS = {
                         'geojson.html#vector-geojson',
                 'rel': 'about',
                 'title': 'GeoJSON - GDAL documentation'
-            }]
+            }],
+            'parameters': {}
         },
         'ESRI Shapefile': {
             'title': 'ESRI Shapefile / DBF',
@@ -80,7 +83,8 @@ FILE_FORMATS = {
                         'shapefile.html#vector-shapefile',
                 'rel': 'about',
                 'title': 'ESRI Shapefile / DBF - GDAL documentation'
-            }]
+            }],
+            'parameters': {}
         }
 
     }
