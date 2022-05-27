@@ -24,7 +24,7 @@ from typing import Dict, Any, Union
 
 import yaml
 
-from defaults import default_config
+from ..defaults import default_config
 
 Config = Dict[str, Any]
 
