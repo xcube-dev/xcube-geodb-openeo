@@ -78,7 +78,7 @@ class AppContext(Context):
     def data_store(self) -> DataStore:
         if not self.config:
             raise RuntimeError('config not set')
-        data_store_class = self.config['datastore-class']
+        data_store_class = self.config['datastore_class']
         data_store_module = data_store_class[:data_store_class.rindex('.')]
         class_name = data_store_class[data_store_class.rindex('.') + 1:]
         module = importlib.import_module(data_store_module)

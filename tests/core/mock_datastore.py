@@ -27,17 +27,15 @@ from shapely.geometry import Polygon
 
 from xcube_geodb_openeo.core.datastore import DataStore
 from xcube_geodb_openeo.core.vectorcube import VectorCube
-from xcube_geodb_openeo.server.config import Config
 import importlib.resources as resources
 
 
 class MockDataStore(DataStore):
 
-    def __init__(self, config: Config):
+    def __init__(self):
         with resources.open_text('tests', 'mock_collections.json') as text:
             mock_collections = json.load(text)['_MOCK_COLLECTIONS_LIST']
         self._MOCK_COLLECTIONS = {v["id"]: v for v in mock_collections}
-        self.config = config
 
     def get_collection_keys(self) -> Sequence:
         return list(self._MOCK_COLLECTIONS.keys())
@@ -69,5 +67,5 @@ class MockDataStore(DataStore):
         vector_cube['features'] = []
         vector_cube['total_feature_count'] = len(collection)
         if with_items:
-            self.add_items_to_vector_cube(collection, vector_cube, self.config)
+            self.add_items_to_vector_cube(collection, vector_cube)
         return vector_cube

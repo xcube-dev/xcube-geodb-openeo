@@ -4,4 +4,4 @@ SERVER_URL: http://xcube-geoDB-openEO.de
 SERVER_ID: xcube-geodb-openeo
 SERVER_TITLE: xcube geoDB Server, openEO API
 SERVER_DESCRIPTION: Catalog of geoDB collections.
-datastore-class: tests.core.mock_datastore.MockDataStore
+datastore_class: tests.core.mock_datastore.MockDataStore

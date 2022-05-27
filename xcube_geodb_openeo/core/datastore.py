@@ -23,10 +23,9 @@ import abc
 from typing import Union, Dict, Tuple, Optional
 
 from .vectorcube import VectorCube
-from ..server.config import Config
+from ..defaults import STAC_VERSION
 
 from geopandas import GeoDataFrame
-from pandas import DataFrame
 import shapely.wkt
 import shapely.geometry
 
@@ -53,20 +52,20 @@ class DataStore(abc.ABC):
 
     @staticmethod
     def add_items_to_vector_cube(
-            collection: Union[GeoDataFrame, DataFrame],
-            vector_cube: VectorCube,
-            config: Config):
+            collection: GeoDataFrame, vector_cube: VectorCube):
         bounds = collection.bounds
         for i, row in enumerate(collection.iterrows()):
             bbox = bounds.iloc[i]
             feature = row[1]
             coords = get_coords(feature)
-            # todo - unsure if this is correct
-            properties = {key: feature[key] for key in feature.keys() if key
-                          not in ['id', 'geometry']}
+            properties = {}
+            for k, key in enumerate(feature.keys()):
+                if not key == 'id' and not \
+                        collection.dtypes.values[k].name == 'geometry':
+                    properties[key] = feature[key]
 
             vector_cube['features'].append({
-                'stac_version': config['STAC_VERSION'],
+                'stac_version': STAC_VERSION,
                 'stac_extensions': ['xcube-geodb'],
                 'type': 'Feature',
                 'id': feature['id'],

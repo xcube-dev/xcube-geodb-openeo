@@ -26,7 +26,7 @@ WEB_FRAMEWORK_TORNADO = 'tornado'
 WEB_FRAMEWORK_FLASK = 'flask'
 WEB_FRAMEWORKS = [WEB_FRAMEWORK_FLASK, WEB_FRAMEWORK_TORNADO]
 
-DEFAULT_CONFIG_PATH = 'config.yml'
+DEFAULT_CONFIG_PATH = 'xcube_geodb_openeo/config.yml'
 DEFAULT_WEB_FRAMEWORK = WEB_FRAMEWORK_FLASK
 DEFAULT_ADDRESS = '0.0.0.0'
 DEFAULT_PORT = 5000
@@ -60,7 +60,6 @@ def main(config_path: Optional[str],
     from xcube_geodb_openeo.server.config import load_config
 
     config = load_config(config_path) if config_path else {}
-    db_config = load_config(config_path) if config_path else {}
 
     module = importlib.import_module(
         f'xcube_geodb_openeo.server.app.{framework}'
