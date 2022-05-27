@@ -22,101 +22,87 @@
 
 import datetime
 
-from xcube_geodb_openeo.core.vectorcube import VectorCube, Feature
-from xcube_geodb_openeo.server.context import RequestContext
+from ..core.vectorcube import VectorCube, Feature
+from ..server.context import RequestContext
 
+API_VERSION = '1.1.0'
 STAC_VERSION = '0.9.0'
 
-GEODB_COLLECTION_ID = "geodb"
-
-
-def get_root(ctx: RequestContext):
-    return {
-        "stac_version": STAC_VERSION,
-        # TODO: get from config
-        "id": "xcube-geodb-openeo",
-        # TODO: get from config
-        "title": "xcube geoDB Server, openEO API",
-        # TODO: get from config
-        "description": "Catalog of geoDB collections.",
-        "links": [
-            {
-                "rel": "self",
-                "href": ctx.get_url('catalog'),
-                "type": "application/json",
-                "title": "this document"
-            },
-            {
-                "rel": "service-desc",
-                "href": ctx.get_url('catalog/api'),
-                "type": "application/vnd.oai.openapi+json;version=3.0",
-                "title": "the API definition"
-            },
-            {
-                "rel": "service-doc",
-                "href": ctx.get_url('catalog/api.html'),
-                "type": "text/html",
-                "title": "the API documentation"
-            },
-            {
-                "rel": "conformance",
-                "href": ctx.get_url('catalog/conformance'),
-                "type": "application/json",
-                "title": "OGC API conformance classes"
-                         " implemented by this server"
-            },
-            {
-                "rel": "data",
-                "href": ctx.get_url('catalog/collections'),
-                "type": "application/json",
-                "title": "Information about the feature collections"
-            },
-            {
-                "rel": "search",
-                "href": ctx.get_url('catalog/search'),
-                "type": "application/json",
-                "title": "Search across feature collections"
-            }
-        ],
+FILE_FORMATS = {
+    'output': {
+        'GeoPandas Dataframe': {
+            'title': 'GeoDataFrame',
+            'description': 'A GeoDataFrame is a tabular data '
+                           'structure that contains a geometry '
+                           'column.',
+            'gis_data_types': ['vector'],
+            'links': [{
+                'href': 'https://geopandas.org/en/stable/docs/'
+                        'reference/api/geopandas.GeoDataFrame.html',
+                'rel': 'about',
+                'title': 'geopandas.GeoDataFrame'
+            }],
+            'parameters': {}
+        }
+    },
+    'input': {
+        'CSV': {
+            'title': 'Comma Separated Value (.csv)',
+            'description': 'Must be structured in a way understood '
+                           'by the Pandas/GeoPandas Python library.',
+            'gis_data_types': ['vector'],
+            'links': [{
+                'href': 'https://gdal.org/drivers/vector/'
+                        'csv.html#vector-csv',
+                'rel': 'about',
+                'title': 'Comma Separated Value (.csv) - GDAL '
+                         'documentation'
+            }],
+            'parameters': {}
+        },
+        'GeoJSON': {
+            'title': 'GeoJSON',
+            'description': 'Must be structured in a way understood '
+                           'by the Pandas/GeoPandas Python library.',
+            'gis_data_types': ['vector'],
+            'links': [{
+                'href': 'https://gdal.org/drivers/vector/'
+                        'geojson.html#vector-geojson',
+                'rel': 'about',
+                'title': 'GeoJSON - GDAL documentation'
+            }],
+            'parameters': {}
+        },
+        'ESRI Shapefile': {
+            'title': 'ESRI Shapefile / DBF',
+            'description': 'Must be structured in a way understood '
+                           'by the Pandas/GeoPandas Python library.',
+            'gis_data_types': ['vector'],
+            'links': [{
+                'href': 'https://gdal.org/drivers/vector/'
+                        'shapefile.html#vector-shapefile',
+                'rel': 'about',
+                'title': 'ESRI Shapefile / DBF - GDAL documentation'
+            }],
+            'parameters': {}
+        }
 
     }
-
-
-# noinspection PyUnusedLocal
-def get_conformance(ctx: RequestContext):
-    return {
-        "conformsTo": [
-            # TODO: fix this list so it becomes true
-            "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
-            "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30",
-            "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/html",
-            "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson"
-        ]
-    }
+}
 
 
 def get_collections(ctx: RequestContext):
     return {
-        # TODO: what is this?
-        # "links": [
-        #     {
-        #         "href": "http://www.geoserver.example/stac/naip/child/catalog.json",
-        #         "rel": "child",
-        #         "type": "application/geo+json",
-        #         "hreflang": "en",
-        #         "title": "NAIP Child Catalog",
-        #         "length": 0,
-        #         "method": "GET",
-        #         "headers": {},
-        #         "body": {},
-        #         "merge": False
-        #     }
-        # ],
-        "collections": [
+        'collections': [
             _get_vector_cube_collection(ctx,
                                         ctx.get_vector_cube(collection_id),
                                         details=False)
             for collection_id in ctx.collection_ids
+        ],
+        'links': [
+            # todo - if too many collections are listed, implement
+            #  pagination. See
+            #  https://openeo.org/documentation/1.0/developers/api/reference.html#operation/list-collections
         ]
     }
 
@@ -172,6 +158,7 @@ def search(ctx: RequestContext):
 def _get_vector_cube_collection(ctx: RequestContext,
                                 vector_cube: VectorCube,
                                 details: bool = False):
+    config = ctx.config
     vector_cube_id = vector_cube["id"]
     metadata = vector_cube.get("metadata", {})
     return {
@@ -190,11 +177,11 @@ def _get_vector_cube_collection(ctx: RequestContext,
             {
                 "rel": "self",
                 "href": ctx.get_url(
-                    f"catalog/collections/{vector_cube_id}")
+                    f"collections/{vector_cube_id}")
             },
             {
                 "rel": "root",
-                "href": ctx.get_url("catalog/collections")
+                "href": ctx.get_url("collections")
             },
             # {
             #     "rel": "license",

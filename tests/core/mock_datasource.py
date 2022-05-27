@@ -19,21 +19,22 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from pathlib import Path
-from typing import Dict, Any, Union
-
-import yaml
-
-from ..defaults import default_config
-
-Config = Dict[str, Any]
+import json
+from typing import Sequence
+from xcube_geodb_openeo.core.datasource import DataSource
+from xcube_geodb_openeo.core.vectorcube import VectorCube
+import importlib.resources as resources
 
 
-def load_config(config_path: Union[str, Path]) -> Config:
-    with open(config_path, 'r') as fp:
-        config = yaml.safe_load(fp)
-        for key in default_config.keys():
-            if key not in config:
-                config[key] = default_config[key]
+class MockDataSource(DataSource):
 
-        return config
+    def __init__(self):
+        with resources.open_text('tests', 'mock_collections.json') as text:
+            mock_collections = json.load(text)['_MOCK_COLLECTIONS_LIST']
+        self._MOCK_COLLECTIONS = {v["id"]: v for v in mock_collections}
+
+    def get_collection_keys(self) -> Sequence:
+        return list(self._MOCK_COLLECTIONS.keys())
+
+    def get_vector_cube(self, collection_id) -> VectorCube:
+        return self._MOCK_COLLECTIONS[collection_id]

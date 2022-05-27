@@ -28,12 +28,12 @@ import tornado.escape
 import tornado.ioloop
 import tornado.web
 
-from xcube_geodb_openeo.backend import catalog
 from ..api import API_URL_PREFIX
 from ..config import Config
 from ..context import AppContext
 from ..context import RequestContext
-from ...version import __version__
+from ...backend import capabilities
+from ...backend import catalog
 
 RequestHandlerType = Type[tornado.web.RequestHandler]
 
@@ -170,34 +170,27 @@ class BaseHandler(tornado.web.RequestHandler):
 @app.route('/')
 class MainHandler(BaseHandler):
     async def get(self):
-        return await self.finish({
-            'name': __name__,
-            'version': __version__
-        })
+        return await self.finish(
+            capabilities.get_root(ctx.config, _get_request_ctx(self))
+        )
 
 
 # noinspection PyAbstractClass,PyMethodMayBeStatic
-@app.route("/catalog")
-class CatalogRootHandler(BaseHandler):
+@app.route('/.well-known/openeo', prefix='')
+class MainHandler(BaseHandler):
     async def get(self):
-        from xcube_geodb_openeo.backend import catalog
-        return await self.finish(catalog.get_root(
-            _get_request_ctx(self)
-        ))
+        return await self.finish(capabilities.get_well_known(ctx.config))
 
 
 # noinspection PyAbstractClass,PyMethodMayBeStatic
-@app.route("/catalog/conformance")
+@app.route('/conformance')
 class CatalogConformanceHandler(BaseHandler):
     async def get(self):
-        from xcube_geodb_openeo.backend import catalog
-        return await self.finish(catalog.get_conformance(
-            _get_request_ctx(self)
-        ))
+        return await self.finish(capabilities.get_conformance())
 
 
 # noinspection PyAbstractClass,PyMethodMayBeStatic
-@app.route("/catalog/collections")
+@app.route("/collections")
 class CatalogCollectionsHandler(BaseHandler):
     async def get(self):
         from xcube_geodb_openeo.backend import catalog
@@ -207,7 +200,7 @@ class CatalogCollectionsHandler(BaseHandler):
 
 
 # noinspection PyAbstractClass,PyMethodMayBeStatic
-@app.route("/catalog/collections/{collection_id}")
+@app.route("/collections/{collection_id}")
 class CatalogCollectionHandler(BaseHandler):
     async def get(self, collection_id: str):
         from xcube_geodb_openeo.backend import catalog
@@ -218,7 +211,7 @@ class CatalogCollectionHandler(BaseHandler):
 
 
 # noinspection PyAbstractClass,PyMethodMayBeStatic
-@app.route("/catalog/collections/{collection_id}/items")
+@app.route("/collections/{collection_id}/items")
 class CatalogCollectionItemsHandler(BaseHandler):
     async def get(self, collection_id: str):
         return await self.finish(catalog.get_collection_items(
@@ -232,10 +225,15 @@ class CatalogCollectionItemsHandler(BaseHandler):
 class CatalogCollectionItemHandler(BaseHandler):
     async def get(self, collection_id: str, feature_id: str):
         return await self.finish(catalog.get_collection_item(
-            _get_request_ctx(self),
-            collection_id,
-            feature_id
+            _get_request_ctx(self), collection_id, feature_id
         ))
+
+
+# noinspection PyAbstractClass
+@app.route("/file_formats")
+class FileFormatHandler(BaseHandler):
+    async def get(self):
+        return await self.finish(catalog.FILE_FORMATS)
 
 
 # noinspection PyAbstractClass,PyMethodMayBeStatic

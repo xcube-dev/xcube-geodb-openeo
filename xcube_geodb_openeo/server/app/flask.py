@@ -29,7 +29,8 @@ from ..api import API_URL_PREFIX
 from ..config import Config
 from ..context import AppContext
 from ...backend import catalog
-from ...version import __version__
+from ...backend import capabilities
+
 
 app = flask.Flask(
     __name__,
@@ -38,45 +39,47 @@ app = flask.Flask(
     )
 )
 
+well_known = flask.Blueprint('well_known', __name__)
 api = flask.Blueprint('api', __name__, url_prefix=API_URL_PREFIX)
 
 ctx = AppContext(app.logger)
 
 
+@well_known.route('/.well-known/openeo')
+def get_well_known():
+    return capabilities.get_well_known(ctx.config)
+
+
 @api.route('/')
 def get_info():
-    return {
-        'name': __name__,
-        'version': __version__
-    }
+    return capabilities.get_root(
+        ctx.config, ctx.for_request(f'{flask.request.root_url}'
+                                    f'{api.url_prefix}'))
 
 
-@api.route('/catalog')
-def get_catalog_root():
-    return catalog.get_root(
-        ctx.for_request(flask.request.root_url)
-    )
+@api.route('/conformance')
+def get_conformance():
+    return capabilities.get_conformance()
 
 
-@api.route('/catalog/collections')
+@api.route('/collections')
 def get_catalog_collections():
-    return catalog.get_collections(
-        ctx.for_request(flask.request.root_url)
-    )
+    return catalog.get_collections(ctx.for_request(f'{flask.request.root_url}'
+                                                   f'{api.url_prefix}'))
 
 
-@api.route('/catalog/collections/<string:collection_id>')
+@api.route('/collections/<string:collection_id>')
 def get_catalog_collection(collection_id: str):
-    return catalog.get_collection(
-        ctx.for_request(flask.request.root_url),
-        collection_id
-    )
+    return catalog.get_collection(ctx.for_request(f'{flask.request.root_url}'
+                                                  f'{api.url_prefix}'),
+                                  collection_id)
 
 
-@api.route('/catalog/collections/<string:collection_id>/items')
+@api.route('/collections/<string:collection_id>/items')
 def get_catalog_collection_items(collection_id: str):
     return catalog.get_collection_items(
-        ctx.for_request(flask.request.root_url),
+        ctx.for_request(f'{flask.request.root_url}'
+                        f'{api.url_prefix}'),
         collection_id
     )
 
@@ -84,11 +87,14 @@ def get_catalog_collection_items(collection_id: str):
 @api.route('/catalog/collections/<string:collection_id>/'
            'items/<string:feature_id>')
 def get_catalog_collection_item(collection_id: str, feature_id: str):
-    return catalog.get_collection_item(
-        ctx.for_request(flask.request.root_url),
-        collection_id,
-        feature_id
-    )
+    return catalog.get_collection_item(ctx.for_request(flask.request.root_url),
+                                       collection_id,
+                                       feature_id)
+
+
+@api.route('/file_formats')
+def get_file_formats():
+    return catalog.FILE_FORMATS
 
 
 @api.route('/catalog/search')
@@ -116,5 +122,6 @@ def serve(
     if verbose or debug:
         ctx.logger.setLevel(logging.DEBUG)
 
+    app.register_blueprint(well_known)
     app.register_blueprint(api)
     app.run(host=address, port=port, debug=debug)

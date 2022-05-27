@@ -19,21 +19,16 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from pathlib import Path
-from typing import Dict, Any, Union
-
-import yaml
-
-from ..defaults import default_config
-
-Config = Dict[str, Any]
+import abc
+from .vectorcube import VectorCube
 
 
-def load_config(config_path: Union[str, Path]) -> Config:
-    with open(config_path, 'r') as fp:
-        config = yaml.safe_load(fp)
-        for key in default_config.keys():
-            if key not in config:
-                config[key] = default_config[key]
+class DataSource(abc.ABC):
 
-        return config
+    @abc.abstractmethod
+    def get_collection_keys(self):
+        pass
+
+    @abc.abstractmethod
+    def get_vector_cube(self, collection_id) -> VectorCube:
+        pass
