@@ -30,19 +30,6 @@ import multiprocessing
 import pkgutil
 
 import yaml
-import time
-import os
-
-import socket
-from contextlib import closing
-
-
-# taken from https://stackoverflow.com/a/45690594
-def find_free_port():
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(('localhost', 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
 
 
 class BaseTest(unittest.TestCase):
@@ -52,33 +39,23 @@ class BaseTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        wait_for_server_startup = os.environ.get('WAIT_FOR_STARTUP',
-                                                 '0') == '1'
-
         data = pkgutil.get_data('tests', 'test_config.yml')
         config = yaml.safe_load(data)
-        flask_port = find_free_port()
+        cls.servers = {'flask': f'http://127.0.0.1:{cli.DEFAULT_PORT + 1}'}
         cls.flask = multiprocessing.Process(
             target=flask_server.serve,
-            args=(config, 'localhost', flask_port, False, False)
+            args=(config, '127.0.0.1', cli.DEFAULT_PORT + 1, False, False)
         )
         cls.flask.start()
-        cls.servers = {'flask': f'http://localhost:{flask_port}'}
-        if wait_for_server_startup:
-            time.sleep(10)
 
-        tornado_port = find_free_port()
+        cls.servers['tornado'] = f'http://127.0.0.1:{cli.DEFAULT_PORT + 2}'
         cls.tornado = multiprocessing.Process(
             target=tornado_server.serve,
-            args=(config, 'localhost', tornado_port, False, False)
+            args=(config, '127.0.0.1', cli.DEFAULT_PORT + 2, False, False)
         )
         cls.tornado.start()
-        cls.servers['tornado'] = f'http://localhost:{tornado_port}'
 
         cls.http = urllib3.PoolManager()
-
-        if wait_for_server_startup:
-            time.sleep(10)
 
     @classmethod
     def tearDownClass(cls) -> None:
