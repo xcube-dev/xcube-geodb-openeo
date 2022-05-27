@@ -31,6 +31,7 @@ from ..context import AppContext
 from ...backend import catalog
 from ...backend import capabilities
 
+
 app = flask.Flask(
     __name__,
     instance_path=os.path.join(
