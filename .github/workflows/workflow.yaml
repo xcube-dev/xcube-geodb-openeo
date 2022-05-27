@@ -11,6 +11,7 @@ env:
   ORG_NAME: bcdev
 
   SKIP_UNITTESTS: "0"
+  WAIT_FOR_STARTUP: "1"
 
 
 jobs:
@@ -44,9 +45,9 @@ jobs:
       - name: unittest-xcube-geodb-openeo
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         run: |
-          pytest --cov=./ --cov-report=xml
+          pytest --cov=./ --cov-report=xml --tb=native
       - uses: codecov/codecov-action@v2
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         with:
           fail_ci_if_error: true
-          verbose: true
+          verbose: false
