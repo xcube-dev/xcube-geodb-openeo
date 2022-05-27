@@ -24,7 +24,7 @@ from typing import Dict, Any, Union
 
 import yaml
 
-from defaults import API_VERSION, STAC_VERSION, SERVER_URL, SERVER_ID, \
+from xcube_geodb_openeo.defaults import API_VERSION, STAC_VERSION, SERVER_URL, SERVER_ID, \
     SERVER_TITLE, SERVER_DESCRIPTION
 
 Config = Dict[str, Any]
