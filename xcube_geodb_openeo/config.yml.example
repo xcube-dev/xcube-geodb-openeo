@@ -1,8 +1,9 @@
 # adapt to your needs and save as config.yml
-datastore_class: xcube_geodb_openeo.core.geodb_datastore.GeoDBDataStore
+geodb_openeo:
+  datastore_class: xcube_geodb_openeo.core.geodb_datastore.GeoDBDataStore
 
-postgrest_url:  <geoDB-PostGREST server url>
-postgrest_port: <geoDB-PostGREST server port>
-client_id:      <your client id>
-client_secret:  <your client secret>
-auth_domain:    <your auth domain>
+  postgrest_url:  <geoDB-PostGREST server url>
+  postgrest_port: <geoDB-PostGREST server port>
+  client_id:      <your client id>
+  client_secret:  <your client secret>
+  auth_domain:    <your auth domain>

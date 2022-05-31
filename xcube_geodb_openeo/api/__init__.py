@@ -19,16 +19,4 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-
-from typing import Dict
-from typing import Optional
-from typing import Tuple
-
-from ..api.context import GeoDbContext
-
-
-
-
-
-class Catalog:
-    pass
+from .routes import api

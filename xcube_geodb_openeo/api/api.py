@@ -19,16 +19,18 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from xcube.server.api import Api
+from xcube.server.context import Context
 
-from typing import Dict
-from typing import Optional
-from typing import Tuple
-
-from ..api.context import GeoDbContext
-
-
+from .context import GeoDbContext
+from ..server.config import OPENEO_CONFIG_SCHEMA
+from ..version import __version__
 
 
+def create_ctx(root_ctx: Context) -> GeoDbContext:
+    return GeoDbContext(root_ctx)
 
-class Catalog:
-    pass
+
+api = Api('geodb-openeo', version=__version__,
+          config_schema=OPENEO_CONFIG_SCHEMA,
+          create_ctx=create_ctx)

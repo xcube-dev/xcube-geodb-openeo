@@ -24,18 +24,21 @@ import abc
 import importlib
 import logging
 from functools import cached_property
-from typing import Sequence, Tuple, Optional
+from typing import Any
+from typing import Mapping
+from typing import Optional
+from typing import Sequence
+from typing import Tuple
 
 from ..core.vectorcube import VectorCube
 from ..core.datastore import DataStore
-from ..server.config import Config
 
 
 class Context(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def config(self) -> Config:
+    def config(self) -> Mapping[str, Any]:
         pass
 
     @property
@@ -65,12 +68,12 @@ class AppContext(Context):
         self._logger = logger
 
     @property
-    def config(self) -> Config:
+    def config(self) -> Mapping[str, Any]:
         assert self._config is not None
         return self._config
 
     @config.setter
-    def config(self, config: Config):
+    def config(self, config: Mapping[str, Any]):
         assert isinstance(config, dict)
         self._config = dict(config)
 
@@ -115,7 +118,7 @@ class RequestContext(Context):
         return f'{self._root_url}/{path}'
 
     @property
-    def config(self) -> Config:
+    def config(self) -> Mapping[str, Any]:
         return self._ctx.config
 
     @property

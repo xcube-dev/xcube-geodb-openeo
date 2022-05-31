@@ -22,29 +22,31 @@
 import json
 import numpy as np
 from functools import cached_property
-from typing import Tuple, Optional
+from typing import Tuple
+from typing import Optional
+from typing import Mapping
+from typing import Any
 
 from .datastore import DataStore
 from xcube_geodb.core.geodb import GeoDBClient
 
 from .vectorcube import VectorCube
-from ..server.config import Config
 
 
 class GeoDBDataStore(DataStore):
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Mapping[str, Any]):
         self.config = config
 
     @cached_property
     def geodb(self):
         assert self.config
 
-        server_url = self.config['postgrest_url']
-        server_port = self.config['postgrest_port']
-        client_id = self.config['client_id']
-        client_secret = self.config['client_secret']
-        auth_domain = self.config['auth_domain']
+        server_url = self.config['geodb_openeo']['postgrest_url']
+        server_port = self.config['geodb_openeo']['postgrest_port']
+        client_id = self.config['geodb_openeo']['client_id']
+        client_secret = self.config['geodb_openeo']['client_secret']
+        auth_domain = self.config['geodb_openeo']['auth_domain']
 
         return GeoDBClient(
             server_url=server_url,

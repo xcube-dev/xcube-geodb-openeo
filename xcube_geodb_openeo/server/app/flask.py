@@ -26,7 +26,6 @@ import os.path
 import flask
 
 from ..api import API_URL_PREFIX
-from ..config import Config
 from ..context import AppContext
 from ...backend import catalog
 from ...backend import capabilities
@@ -125,7 +124,7 @@ def post_catalog_search():
 
 
 def serve(
-        config: Config,
+        config: None,
         address: str,
         port: int,
         debug: bool = False,

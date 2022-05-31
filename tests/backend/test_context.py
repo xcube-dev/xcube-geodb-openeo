@@ -21,14 +21,13 @@
 
 import unittest
 
-import xcube_geodb_openeo.backend.catalog as catalog
+import xcube_geodb_openeo.api.context as context
 
 
-class CatalogTest(unittest.TestCase):
-
+class ContextTest(unittest.TestCase):
 
     def test_get_collections_links(self):
-        links = catalog.get_collections_links(
+        links = context.get_collections_links(
             2, 6, 'http://server.hh/collections', 10)
         self.assertEqual([
             {'href': 'http://server.hh/collections?limit=2&offset=8',
@@ -44,7 +43,7 @@ class CatalogTest(unittest.TestCase):
              'rel': 'last',
              'title': 'last'}], links)
 
-        links = catalog.get_collections_links(
+        links = context.get_collections_links(
             3, 0, 'http://server.hh/collections', 5)
         self.assertEqual([
             {'href': 'http://server.hh/collections?limit=3&offset=3',
@@ -54,7 +53,7 @@ class CatalogTest(unittest.TestCase):
              'rel': 'last',
              'title': 'last'}], links)
 
-        links = catalog.get_collections_links(
+        links = context.get_collections_links(
             2, 8, 'http://server.hh/collections', 10)
         self.assertEqual([
             {'href': 'http://server.hh/collections?limit=2&offset=6',
@@ -64,6 +63,6 @@ class CatalogTest(unittest.TestCase):
              'rel': 'first',
              'title': 'first'}], links)
 
-        links = catalog.get_collections_links(
+        links = context.get_collections_links(
             10, 0, 'http://server.hh/collections', 7)
         self.assertEqual([], links)

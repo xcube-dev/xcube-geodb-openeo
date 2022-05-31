@@ -19,30 +19,20 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from pathlib import Path
-from typing import Dict, Any, Union
+from xcube.util.jsonschema import JsonObjectSchema
+from xcube.util.jsonschema import JsonStringSchema
 
-import yaml
+API_VERSION = '1.1.0'
+STAC_VERSION = '0.9.0'
 
-from xcube_geodb_openeo.defaults import API_VERSION, STAC_VERSION, SERVER_URL, SERVER_ID, \
-    SERVER_TITLE, SERVER_DESCRIPTION
-
-Config = Dict[str, Any]
-
-
-def load_config(config_path: Union[str, Path]) -> Config:
-    with open(config_path, 'r') as fp:
-        config = yaml.safe_load(fp)
-        if 'API_VERSION' not in config:
-            config['API_VERSION'] = API_VERSION
-        if 'STAC_VERSION' not in config:
-            config['STAC_VERSION'] = STAC_VERSION
-        if 'SERVER_URL' not in config:
-            config['SERVER_URL'] = SERVER_URL
-        if 'SERVER_ID' not in config:
-            config['SERVER_ID'] = SERVER_ID
-        if 'SERVER_TITLE' not in config:
-            config['SERVER_TITLE'] = SERVER_TITLE
-        if 'SERVER_DESCRIPTION' not in config:
-            config['SERVER_DESCRIPTION'] = SERVER_DESCRIPTION
-        return config
+OPENEO_CONFIG_SCHEMA = JsonObjectSchema(
+    properties=dict(
+        geodb_openeo=JsonObjectSchema(properties=dict(
+            postgrest_url=JsonStringSchema(),
+            postgrest_port=JsonStringSchema(),
+            client_id=JsonStringSchema(),
+            client_secret=JsonStringSchema(),
+            auth_domain=JsonStringSchema())
+        )),
+    additional_properties=False
+)

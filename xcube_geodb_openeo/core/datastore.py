@@ -20,21 +20,14 @@
 # DEALINGS IN THE SOFTWARE.
 
 import abc
-from typing import Union, Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional
+
+import shapely.geometry
+import shapely.wkt
+from geopandas import GeoDataFrame
 
 from .vectorcube import VectorCube
-from ..defaults import STAC_VERSION
-
-from geopandas import GeoDataFrame
-import shapely.wkt
-import shapely.geometry
-
-
-def get_coords(feature: Dict) -> Dict:
-    geometry = feature['geometry']
-    feature_wkt = shapely.wkt.loads(geometry.wkt)
-    coords = shapely.geometry.mapping(feature_wkt)
-    return coords
+from ..server.config import STAC_VERSION
 
 
 class DataStore(abc.ABC):
@@ -51,13 +44,20 @@ class DataStore(abc.ABC):
         pass
 
     @staticmethod
+    def _get_coords(feature: Dict) -> Dict:
+        geometry = feature['geometry']
+        feature_wkt = shapely.wkt.loads(geometry.wkt)
+        coords = shapely.geometry.mapping(feature_wkt)
+        return coords
+
+    @staticmethod
     def add_items_to_vector_cube(
             collection: GeoDataFrame, vector_cube: VectorCube):
         bounds = collection.bounds
         for i, row in enumerate(collection.iterrows()):
             bbox = bounds.iloc[i]
             feature = row[1]
-            coords = get_coords(feature)
+            coords = DataStore._get_coords(feature)
             properties = {}
             for k, key in enumerate(feature.keys()):
                 if not key == 'id' and not \

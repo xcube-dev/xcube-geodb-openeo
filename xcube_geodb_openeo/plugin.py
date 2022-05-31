@@ -19,16 +19,15 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-
-from typing import Dict
-from typing import Optional
-from typing import Tuple
-
-from ..api.context import GeoDbContext
+from xcube.util import extension
+from xcube.constants import EXTENSION_POINT_SERVER_APIS
 
 
-
-
-
-class Catalog:
-    pass
+def init_plugin(ext_registry: extension.ExtensionRegistry):
+    ext_registry.add_extension(
+        loader=extension.import_component(
+            'xcube_geodb_openeo.api:api'
+        ),
+        point=EXTENSION_POINT_SERVER_APIS,
+        name='geodb-openeo'
+    )

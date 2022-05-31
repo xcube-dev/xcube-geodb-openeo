@@ -20,21 +20,24 @@
 # DEALINGS IN THE SOFTWARE.
 
 import json
-from typing import Sequence, Tuple, Optional
+from typing import Any
+from typing import Mapping
+from typing import Optional
+from typing import Sequence
+from typing import Tuple
 
 import geopandas
 from shapely.geometry import Polygon
 
 from xcube_geodb_openeo.core.datastore import DataStore
 from xcube_geodb_openeo.core.vectorcube import VectorCube
-from xcube_geodb_openeo.server.config import Config
 import importlib.resources as resources
 
 
 class MockDataStore(DataStore):
 
     # noinspection PyUnusedLocal
-    def __init__(self, config: Config):
+    def __init__(self, config: Mapping[str, Any]):
         with resources.open_text('tests', 'mock_collections.json') as text:
             mock_collections = json.load(text)['_MOCK_COLLECTIONS_LIST']
         self._MOCK_COLLECTIONS = {v["id"]: v for v in mock_collections}

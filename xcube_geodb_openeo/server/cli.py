@@ -57,9 +57,8 @@ def main(config_path: Optional[str],
     A server that represents the openEO backend for the xcube geoDB.
     """
     import importlib
-    from xcube_geodb_openeo.server.config import load_config
 
-    config = load_config(config_path) if config_path else {}
+    config = {}
 
     module = importlib.import_module(
         f'xcube_geodb_openeo.server.app.{framework}'

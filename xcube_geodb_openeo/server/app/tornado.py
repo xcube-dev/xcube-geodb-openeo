@@ -29,7 +29,6 @@ import tornado.ioloop
 import tornado.web
 
 from ..api import API_URL_PREFIX
-from ..config import Config
 from ..context import AppContext
 from ..context import RequestContext
 from ...backend import capabilities
@@ -265,7 +264,7 @@ MultiResDatasets = Dict[str,
 
 
 def serve(
-        config: Config,
+        config: None,
         address: str,
         port: int,
         debug: bool = False,

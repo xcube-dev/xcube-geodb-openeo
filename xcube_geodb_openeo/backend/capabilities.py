@@ -18,8 +18,10 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
+from typing import Any
+from typing import Mapping
 
-from ..server.config import Config
+from ..server.config import API_VERSION
 from ..server.context import RequestContext
 from ..version import __version__
 
@@ -29,7 +31,7 @@ https://openeo.org/documentation/1.0/developers/api/reference.html#tag/Capabilit
 '''
 
 
-def get_root(config: Config, ctx: RequestContext):
+def get_root(config: Mapping[str, Any], ctx: RequestContext):
     return {
         'api_version': config['API_VERSION'],
         'backend_version': __version__,
@@ -85,12 +87,12 @@ def get_root(config: Config, ctx: RequestContext):
     }
 
 
-def get_well_known(config: Config):
+def get_well_known(config: Mapping[str, Any]):
     return {
         'versions': [
             {
-                'url': config['SERVER_URL'],
-                'api_version': config['API_VERSION']
+                'url': config['geodb_openeo']['SERVER_URL'],
+                'api_version': API_VERSION
             }
         ]
     }
