@@ -20,7 +20,6 @@
 # DEALINGS IN THE SOFTWARE.
 
 import unittest
-
 import xcube_geodb_openeo.api.context as context
 
 

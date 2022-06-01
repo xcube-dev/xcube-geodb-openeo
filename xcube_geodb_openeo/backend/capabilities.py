@@ -22,7 +22,7 @@ from typing import Any
 from typing import Mapping
 
 from ..server.config import API_VERSION
-from ..server.context import RequestContext
+from ..api.context import GeoDbContext
 from ..version import __version__
 
 '''
@@ -31,7 +31,7 @@ https://openeo.org/documentation/1.0/developers/api/reference.html#tag/Capabilit
 '''
 
 
-def get_root(config: Mapping[str, Any], ctx: RequestContext):
+def get_root(config: Mapping[str, Any], ctx: GeoDbContext):
     return {
         'api_version': config['API_VERSION'],
         'backend_version': __version__,

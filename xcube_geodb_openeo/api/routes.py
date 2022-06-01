@@ -45,6 +45,13 @@ def get_bbox(request):
         return None
 
 
+def get_base_url(request):
+    # noinspection PyProtectedMember
+    base_url = f'{request._request.protocol}://' \
+               f'{request._request.host}'
+    return base_url
+
+
 @api.route('/.well-known/openeo')
 class WellKnownHandler(ApiHandler):
     """
@@ -78,11 +85,10 @@ class CollectionsHandler(ApiHandler):
         """
         limit = get_limit(self.request)
         offset = get_offset(self.request)
-        base_url = f'{self.request._request.protocol}://' \
-                   f'{self.request._request.host}'
+        base_url = get_base_url(self.request)
         self.ctx.request = self.request
         if not self.ctx.collections:
-            self.ctx.fetch_collections(self.ctx, base_url, limit, offset)
+            self.ctx.fetch_collections(base_url, limit, offset)
         self.response.finish(self.ctx.collections)
 
 
@@ -100,34 +106,30 @@ class ConformanceHandler(ApiHandler):
         self.response.finish(capabilities.get_conformance())
 
 
-@api.route('/collections/<string:collection_id>')
+@api.route('/collections/{collection_id}')
 class CollectionHandler(ApiHandler):
     """
     Lists all information about a specific collection specified by the
     identifier collection_id.
     """
 
-    def get(self):
+    def get(self, collection_id: str):
         """
         Lists the collection information.
         """
-        # todo - collection_id is not a query argument, but a path argument.
-        # Change as soon as Server NG allows
-        collection_id = self.request.get_query_arg('collection_id')
-        base_url = f'{self.request._request.protocol}://' \
-                   f'{self.request._request.host}'
-        collection = self.ctx.get_collection(self.ctx, base_url, collection_id)
+        base_url = get_base_url(self.request)
+        collection = self.ctx.get_collection(base_url, collection_id)
         self.response.finish(collection)
 
 
-@api.route('/collections/<string:collection_id>/items')
+@api.route('/collections/{collection_id}/items')
 class CollectionItemsHandler(ApiHandler):
     """
     Get features of the feature collection with id collectionId.
     """
 
     # noinspection PyIncorrectDocstring
-    def get(self):
+    def get(self, collection_id: str):
         """
         Returns the features.
 
@@ -141,34 +143,22 @@ class CollectionItemsHandler(ApiHandler):
         limit = get_limit(self.request)
         offset = get_offset(self.request)
         bbox = get_bbox(self.request)
-
-        # todo - collection_id is not a query argument, but a path argument.
-        # Change as soon as Server NG allows
-        collection_id = self.request.get_query_arg('collection_id')
-
-        base_url = f'{self.request._request.protocol}://' \
-                   f'{self.request._request.host}'
-        items = self.ctx.get_collection_items(self.ctx, base_url, collection_id,
-                                             limit, offset, bbox)
+        base_url = get_base_url(self.request)
+        items = self.ctx.get_collection_items(base_url, collection_id,
+                                              limit, offset, bbox)
         self.response.finish(items)
 
 
-@api.route('/collections/<string:collection_id>/'
-           'items/<string:feature_id>')
+@api.route('/collections/{collection_id}/items/{feature_id}')
 class FeatureHandler(ApiHandler):
     """
     Fetch a single feature.
     """
-    def get(self):
+    def get(self, collection_id: str, feature_id: str):
         """
         Returns the feature.
         """
-
-        # todo - collection_id is not a query argument, but a path argument.
-        # Change as soon as Server NG allows
-        collection_id = self.request.get_query_arg('collection_id')
-        feature_id = self.request.get_query_arg('feature_id')
-
-        feature = self.ctx.get_collection_item(self.ctx, collection_id,
+        base_url = get_base_url(self.request)
+        feature = self.ctx.get_collection_item(base_url, collection_id,
                                                feature_id)
         self.response.finish(feature)

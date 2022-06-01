@@ -86,6 +86,7 @@ class GeoDbContext(ApiContext):
         for key in default_config.keys():
             if key not in self.config:
                 self.config['geodb_openeo'][key] = default_config[key]
+        self._collections = {}
 
     def update(self, prev_ctx: Optional["Context"]):
         pass
@@ -97,8 +98,6 @@ class GeoDbContext(ApiContext):
         return self.data_store.get_vector_cube(collection_id, with_items,
                                                bbox, limit, offset)
 
-    def __init__(self):
-        self._collections = {}
 
     @property
     def collections(self) -> Dict:
@@ -110,8 +109,7 @@ class GeoDbContext(ApiContext):
         assert isinstance(collections, Dict)
         self._collections = collections
 
-    def fetch_collections(self, base_url: str, limit: int,
-                          offset: int):
+    def fetch_collections(self, base_url: str, limit: int, offset: int):
         url = f'{base_url}/collections'
         links = get_collections_links(limit, offset, url,
                                       len(self.collection_ids))
@@ -155,7 +153,7 @@ class GeoDbContext(ApiContext):
             "numberReturned": len(stac_features),
         }
 
-    def get_collection_item(self,
+    def get_collection_item(self, base_url: str,
                             collection_id: str,
                             feature_id: str):
         # nah. use different geodb-function, don't get full vector cube
@@ -163,11 +161,10 @@ class GeoDbContext(ApiContext):
                                            bbox=None, limit=None, offset=0)
         for feature in vector_cube.get("features", []):
             if str(feature.get("id")) == feature_id:
-                return _get_vector_cube_item(vector_cube, feature)
+                return _get_vector_cube_item(base_url, vector_cube, feature)
         raise ItemNotFoundException(
             f'feature {feature_id!r} not found in collection {collection_id!r}'
         )
-
 
 
 def get_collections_links(limit: int, offset: int, url: str,

@@ -21,9 +21,6 @@
 
 import unittest
 
-import xcube_geodb_openeo.server.app.flask as flask_server
-import xcube_geodb_openeo.server.app.tornado as tornado_server
-
 import urllib3
 import multiprocessing
 import pkgutil
@@ -34,8 +31,13 @@ import os
 import socket
 from contextlib import closing
 
+import xcube.cli.main as xcube
+
 
 # taken from https://stackoverflow.com/a/45690594
+from xcube.server.impl.framework.tornado import TornadoFramework
+
+
 def find_free_port():
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
         s.bind(('localhost', 0))
@@ -44,41 +46,32 @@ def find_free_port():
 
 
 class BaseTest(unittest.TestCase):
-    servers = None
-    flask = None
-    tornado = None
 
     @classmethod
     def setUpClass(cls) -> None:
-        wait_for_server_startup = os.environ.get('WAIT_FOR_STARTUP',
-                                                 '0') == '1'
-
+        cls.port = find_free_port()
+        from xcube.server.server import Server
         data = pkgutil.get_data('tests', 'test_config.yml')
         config = yaml.safe_load(data)
-        flask_port = find_free_port()
-        cls.flask = multiprocessing.Process(
-            target=flask_server.serve,
-            args=(config, 'localhost', flask_port, False, False)
-        )
-        cls.flask.start()
-        cls.servers = {'flask': f'http://localhost:{flask_port}'}
-        if wait_for_server_startup:
-            time.sleep(10)
+        config['port'] = cls.port
+        config['address'] = 'localhost'
+        server = Server(framework=TornadoFramework(), config=config)
+        server.start()
+        import threading
+        cls.s = threading.Thread(target=server.start)
+        cls.s.daemon = True
+        cls.s.start()
+        # cls.server.start()
 
-        tornado_port = find_free_port()
-        cls.tornado = multiprocessing.Process(
-            target=tornado_server.serve,
-            args=(config, 'localhost', tornado_port, False, False)
-        )
-        cls.tornado.start()
-        cls.servers['tornado'] = f'http://localhost:{tornado_port}'
+        # xcube.main(args=['serve2', '-c', '../test_config.yml'])
+
+        # data = pkgutil.get_data('tests', 'test_config.yml')
+        # config = yaml.safe_load(data)
 
         cls.http = urllib3.PoolManager()
+        print(cls.port, flush=True)
 
-        if wait_for_server_startup:
-            time.sleep(10)
 
     @classmethod
     def tearDownClass(cls) -> None:
-        cls.flask.terminate()
-        cls.tornado.terminate()
+        cls.s.stop()
