@@ -19,25 +19,26 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import unittest
-
-import urllib3
-import multiprocessing
+import asyncio
 import pkgutil
-import yaml
-import time
-import os
-
+import unittest
+import urllib3
 import socket
+import threading
+import yaml
+
 from contextlib import closing
 
-import xcube.cli.main as xcube
+from xcube.server.server import Server
+from xcube.constants import EXTENSION_POINT_SERVER_APIS
+from xcube.util import extension
+from xcube.util.extension import ExtensionRegistry
 
-
-# taken from https://stackoverflow.com/a/45690594
+from tornado.platform.asyncio import AnyThreadEventLoopPolicy
 from xcube.server.impl.framework.tornado import TornadoFramework
 
 
+# taken from https://stackoverflow.com/a/45690594
 def find_free_port():
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
         s.bind(('localhost', 0))
@@ -46,32 +47,24 @@ def find_free_port():
 
 
 class BaseTest(unittest.TestCase):
+    port = None
 
     @classmethod
     def setUpClass(cls) -> None:
         cls.port = find_free_port()
-        from xcube.server.server import Server
         data = pkgutil.get_data('tests', 'test_config.yml')
         config = yaml.safe_load(data)
         config['port'] = cls.port
         config['address'] = 'localhost'
-        server = Server(framework=TornadoFramework(), config=config)
-        server.start()
-        import threading
-        cls.s = threading.Thread(target=server.start)
-        cls.s.daemon = True
-        cls.s.start()
-        # cls.server.start()
-
-        # xcube.main(args=['serve2', '-c', '../test_config.yml'])
-
-        # data = pkgutil.get_data('tests', 'test_config.yml')
-        # config = yaml.safe_load(data)
+        asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
+        er = ExtensionRegistry()
+        er.add_extension(loader=extension.import_component(
+            'xcube_geodb_openeo.api:api'
+        ), point=EXTENSION_POINT_SERVER_APIS, name='geodb-openeo')
+        server = Server(framework=TornadoFramework(), config=config,
+                        extension_registry=er)
+        tornado = threading.Thread(target=server.start)
+        tornado.daemon = True
+        tornado.start()
 
         cls.http = urllib3.PoolManager()
-        print(cls.port, flush=True)
-
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        cls.s.stop()

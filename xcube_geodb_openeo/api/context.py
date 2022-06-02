@@ -29,8 +29,7 @@ from typing import Sequence
 from typing import Tuple
 
 from xcube.server.api import ApiContext
-from xcube.server.context import Context
-from xcube.server.impl.framework.tornado import TornadoApiRequest
+from xcube.server.api import Context
 
 from ..core.datastore import DataStore
 from ..core.vectorcube import VectorCube
@@ -75,13 +74,9 @@ class GeoDbContext(ApiContext):
         assert self._request is not None
         return self._request
 
-    @config.setter
-    def request(self, request: TornadoApiRequest):
-        assert isinstance(request, TornadoApiRequest)
-        self._request = request
-
     def __init__(self, root: Context):
         super().__init__(root)
+        self._request = None
         self.config = root.config
         for key in default_config.keys():
             if key not in self.config:

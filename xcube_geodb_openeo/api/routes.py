@@ -52,6 +52,22 @@ def get_base_url(request):
     return base_url
 
 
+@api.route('/')
+class RootHandler(ApiHandler):
+    """
+    Lists general information about the back-end, including which version and
+    endpoints of the openEO API are supported. May also include billing
+    information.
+    """
+
+    def get(self):
+        """
+        Information about the API version and supported endpoints / features.
+        """
+        base_url = get_base_url(self.request)
+        self.response.finish(capabilities.get_root(self.ctx.config, base_url))
+
+
 @api.route('/.well-known/openeo')
 class WellKnownHandler(ApiHandler):
     """
@@ -64,7 +80,7 @@ class WellKnownHandler(ApiHandler):
         """
         Returns the well-known information.
         """
-        self.response.finish(capabilities.get_well_known(self.config))
+        self.response.finish(capabilities.get_well_known(self.ctx.config))
 
 
 @api.route('/collections')
@@ -73,7 +89,8 @@ class CollectionsHandler(ApiHandler):
     Lists available collections with at least the required information.
     """
 
-    @api.operation(operationId='getCollections', summary='Gets metadata of ')
+    @api.operation(operationId='getCollections',
+                   summary='Gets metadata of all available collections')
     def get(self):
         """
         Lists the available collections.
@@ -86,7 +103,6 @@ class CollectionsHandler(ApiHandler):
         limit = get_limit(self.request)
         offset = get_offset(self.request)
         base_url = get_base_url(self.request)
-        self.ctx.request = self.request
         if not self.ctx.collections:
             self.ctx.fetch_collections(base_url, limit, offset)
         self.response.finish(self.ctx.collections)

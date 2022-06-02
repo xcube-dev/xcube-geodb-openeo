@@ -22,7 +22,7 @@ from typing import Any
 from typing import Mapping
 
 from ..server.config import API_VERSION
-from ..api.context import GeoDbContext
+from ..server.config import STAC_VERSION
 from ..version import __version__
 
 '''
@@ -31,15 +31,15 @@ https://openeo.org/documentation/1.0/developers/api/reference.html#tag/Capabilit
 '''
 
 
-def get_root(config: Mapping[str, Any], ctx: GeoDbContext):
+def get_root(config: Mapping[str, Any], base_url: str):
     return {
-        'api_version': config['API_VERSION'],
+        'api_version': API_VERSION,
         'backend_version': __version__,
-        'stac_version': config['STAC_VERSION'],
+        'stac_version': STAC_VERSION,
         'type': 'catalog',
-        "id": config['SERVER_ID'],
-        "title": config['SERVER_TITLE'],
-        "description": config['SERVER_DESCRIPTION'],
+        "id": config['geodb_openeo']['SERVER_ID'],
+        "title": config['geodb_openeo']['SERVER_TITLE'],
+        "description": config['geodb_openeo']['SERVER_DESCRIPTION'],
         'endpoints': [
             {'path': '/collections', 'methods': ['GET']},
             # TODO - only list endpoints, which are implemented and are
@@ -48,38 +48,38 @@ def get_root(config: Mapping[str, Any], ctx: GeoDbContext):
         "links": [  # todo - links are incorrect
             {
                 "rel": "self",
-                "href": ctx.get_url('/'),
+                "href": f"{base_url}/",
                 "type": "application/json",
                 "title": "this document"
             },
             {
                 "rel": "service-desc",
-                "href": ctx.get_url('/api'),
+                "href": f"{base_url}/api",
                 "type": "application/vnd.oai.openapi+json;version=3.0",
                 "title": "the API definition"
             },
             {
                 "rel": "service-doc",
-                "href": ctx.get_url('/api.html'),
+                "href": f"{base_url}/api.html",
                 "type": "text/html",
                 "title": "the API documentation"
             },
             {
                 "rel": "conformance",
-                "href": ctx.get_url('/conformance'),
+                "href": f"{base_url}/conformance",
                 "type": "application/json",
                 "title": "OGC API conformance classes"
                          " implemented by this server"
             },
             {
                 "rel": "data",
-                "href": ctx.get_url('/collections'),
+                "href": f"{base_url}/collections",
                 "type": "application/json",
                 "title": "Information about the feature collections"
             },
             {
                 "rel": "search",
-                "href": ctx.get_url('/search'),
+                "href": f"{base_url}/search",
                 "type": "application/json",
                 "title": "Search across feature collections"
             }
