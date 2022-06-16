@@ -19,6 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 from ..backend import capabilities
+from ..backend import processes
 from .api import api
 from xcube.server.api import ApiHandler
 from .context import STAC_DEFAULT_COLLECTIONS_LIMIT
@@ -82,6 +83,19 @@ class WellKnownHandler(ApiHandler):
         """
         self.response.finish(capabilities.get_well_known(self.ctx.config))
 
+@api.route('/processes')
+class ProcessesHandler(ApiHandler):
+    """
+    Lists all predefined processes and returns detailed process descriptions,
+    including parameters and return values.
+    """
+
+    @api.operation(operationId='processes', summary='Listing of processes')
+    def get(self):
+        """
+        Returns the processes information.
+        """
+        self.response.finish(processes.get_processors())
 
 @api.route('/collections')
 class CollectionsHandler(ApiHandler):
