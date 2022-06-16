@@ -8,6 +8,7 @@ dependencies:
   # Required
   - click >=8.0
   - deprecated >=1.2
+  - geopandas
   - pyjwt >=1.7
   - pyproj >=3.0,<3.3  # tests fail with 3.3.0, missing database on Windows
   - pyyaml >=5.4

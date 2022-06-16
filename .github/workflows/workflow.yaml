@@ -24,6 +24,12 @@ jobs:
       - run: |
           echo "SKIP_UNITTESTS: ${{ env.SKIP_UNITTESTS }}"
       - uses: actions/checkout@v2
+#      - name: Checkout xcube-geodb repo
+#        uses: actions/checkout@v3
+#        with:
+#          repository: dcs4cop/xcube
+#          path: xcube
+#          ref: forman-676-server_redesign
       - uses: conda-incubator/setup-miniconda@v2
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         with:

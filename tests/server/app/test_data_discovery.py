@@ -1,9 +1,23 @@
 import json
+import pkgutil
+from typing import Dict
 
-from .base_test import BaseTest
+import yaml
+from xcube.constants import EXTENSION_POINT_SERVER_APIS
+from xcube.server.testing import ServerTest
+from xcube.util import extension
+from xcube.util.extension import ExtensionRegistry
 
 
-class DataDiscoveryTest(BaseTest):
+class DataDiscoveryTest(ServerTest):
+
+    def add_extension(self, er: ExtensionRegistry) -> None:
+        er.add_extension(loader=extension.import_component('xcube_geodb_openeo.api:api'),
+                         point=EXTENSION_POINT_SERVER_APIS, name='geodb-openeo')
+
+    def add_config(self, config: Dict):
+        data = pkgutil.get_data('tests', 'test_config.yml')
+        config.update(yaml.safe_load(data))
 
     def test_collections(self):
         url = f'http://localhost:{self.port}/collections'
