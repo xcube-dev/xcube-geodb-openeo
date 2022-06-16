@@ -18,10 +18,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
+import json
+
 from ..backend import capabilities
 from ..backend import processes
 from .api import api
 from xcube.server.api import ApiHandler
+from xcube.server.api import ApiError
 from .context import STAC_DEFAULT_COLLECTIONS_LIMIT
 
 
@@ -83,6 +86,7 @@ class WellKnownHandler(ApiHandler):
         """
         self.response.finish(capabilities.get_well_known(self.ctx.config))
 
+
 @api.route('/processes')
 class ProcessesHandler(ApiHandler):
     """
@@ -95,7 +99,48 @@ class ProcessesHandler(ApiHandler):
         """
         Returns the processes information.
         """
-        self.response.finish(processes.get_processors())
+        registry = processes.get_processes_registry()
+        self.response.finish({
+            'processes': registry.get_processes(),
+            'links': registry.get_links()}
+        )
+
+
+@api.route('/file_formats')
+class FormatsHandler(ApiHandler):
+    """
+    Lists supported input and output file formats. Input file formats specify which file a back-end can read from.
+    Output file formats specify which file a back-end can write to.
+    """
+
+    @api.operation(operationId='file_formats', summary='Listing of supported file formats')
+    def get(self):
+        """
+        Returns the supported file formats.
+        """
+        self.response.finish(processes.get_processes_registry().get_file_formats())
+
+
+@api.route('/result')
+class ResultHandler(ApiHandler):
+    """
+    Executes a user-defined process directly (synchronously) and the result will be downloaded.
+    """
+
+    @api.operation(operationId='result', summary='Execute process synchronously.')
+    def post(self):
+        """
+        Processes requested processing task and returns result.
+        """
+        if not self.request.body:
+            raise(ApiError(400, 'Request body must contain key \'process\'.'))
+
+        processing_request = json.loads(self.request.body)['process']
+        process_id = processing_request['id']
+        process_parameters = processing_request['parameters']
+        process = processes.get_processes_registry().get_process(process_id)
+        self.response.finish('process')
+
 
 @api.route('/collections')
 class CollectionsHandler(ApiHandler):

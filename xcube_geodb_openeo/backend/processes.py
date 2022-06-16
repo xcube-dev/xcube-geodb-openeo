@@ -18,10 +18,40 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
+from typing import Dict, List
 
-def get_processors():
-    return {
-        'processes': [
+
+class ProcessesRegistry:
+
+    def __init__(self):
+        self.processes = []
+        self.links = []
+        self._add_default_processes()
+        self._add_default_links()
+
+    def add_process(self, process: Dict) -> None:
+        self.processes.append(process)
+
+    def add_link(self, link: Dict) -> None:
+        self.links.append(link)
+
+    def get_processes(self) -> List:
+        return self.processes.copy()
+
+    def get_links(self) -> List:
+        return self.links.copy()
+
+    def get_file_formats(self) -> Dict:
+        return {'input': {}, 'output': {}}
+
+    def get_process(self, process_id):
+        for process in self.processes:
+            if process['id'] == process_id:
+                return process
+        raise ValueError(f'Unknown process_id: {process_id}')
+
+    def _add_default_processes(self):
+        self.add_process(
             {
                 'id': 'load_collection',
                 'summary': 'Load a collection.',
@@ -128,7 +158,14 @@ def get_processors():
                                         "default": "null"
                                     },
                                     "crs": {
-                                        "description": "Coordinate reference system of the extent, specified as as [EPSG code](http://www.epsg-registry.org/), [WKT2 (ISO 19162) string](http://docs.opengeospatial.org/is/18-010r7/18-010r7.html) or [PROJ definition (deprecated)](https://proj.org/usage/quickstart.html). Defaults to `4326` (EPSG code 4326) unless the client explicitly requests a different coordinate reference system.",
+                                        "description": "Coordinate reference system of the extent, specified as as "
+                                                       "[EPSG code](http://www.epsg-registry.org/), [WKT2 (ISO 19162) "
+                                                       "string]"
+                                                       "(http://docs.opengeospatial.org/is/18-010r7/18-010r7.html) or"
+                                                       " [PROJ definition (deprecated)]"
+                                                       "(https://proj.org/usage/quickstart.html). Defaults to `4326`"
+                                                       " (EPSG code 4326) unless the client explicitly requests a"
+                                                       " different coordinate reference system.",
                                         "anyOf": [
                                             {
                                                 "title": "EPSG Code",
@@ -184,6 +221,15 @@ def get_processors():
                     }
                 }
             }
-        ],
-        'links': []
-    }
+        )
+
+    def _add_default_links(self):
+        self.add_link({})
+
+
+_PROCESSES_REGISTRY_SINGLETON = ProcessesRegistry()
+
+
+def get_processes_registry() -> ProcessesRegistry:
+    """Return the processes registry singleton."""
+    return _PROCESSES_REGISTRY_SINGLETON

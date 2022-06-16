@@ -24,9 +24,12 @@ from typing import Dict
 
 import yaml
 from xcube.constants import EXTENSION_POINT_SERVER_APIS
+from xcube.server.api import ApiError
 from xcube.server.testing import ServerTest
 from xcube.util import extension
 from xcube.util.extension import ExtensionRegistry
+
+from xcube_geodb_openeo.backend import processes
 
 
 class ProcessingTest(ServerTest):
@@ -112,3 +115,28 @@ class ProcessingTest(ServerTest):
         self.assertEqual(dict, type(return_schema))
         self.assertEqual('object', return_schema['type'])
         self.assertEqual('vector-cube', return_schema['subtype'])
+
+    def test_get_file_formats(self):
+        response = self.http.request('GET', f'http://localhost:{self.port}/file_formats')
+        self.assertEqual(200, response.status)
+        self.assertTrue(
+            'application/json' in response.headers['content-type']
+        )
+        formats = json.loads(response.data)
+        self.assertTrue('input' in formats)
+        self.assertTrue('output' in formats)
+
+    def test_result(self):
+        body = json.dumps({'process': {'id': 'load_collection', 'parameters': []}})
+        response = self.http.request('POST', f'http://localhost:{self.port}/result', body=body, headers={'content-type': 'application/json'})
+        self.assertEqual(200, response.status)
+
+    def test_result_no_query_param(self):
+        response = self.http.request('POST', f'http://localhost:{self.port}/result')
+        self.assertEqual(400, response.status)
+        message = json.loads(response.data)
+        self.assertTrue('Request body must contain key \'process\'.' in message['error']['message'])
+
+    def test_invalid_process_id(self):
+        with self.assertRaises(ValueError):
+            processes.get_processes_registry().get_process('miau!')
