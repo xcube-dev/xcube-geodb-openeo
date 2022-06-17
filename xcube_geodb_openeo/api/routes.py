@@ -139,7 +139,19 @@ class ResultHandler(ApiHandler):
         process_id = processing_request['id']
         process_parameters = processing_request['parameters']
         process = processes.get_processes_registry().get_process(process_id)
+
+        expected_parameters = process['parameters']
+        self.ensure_parameters(expected_parameters, process_parameters)
+
         self.response.finish('process')
+
+    def ensure_parameters(self, expected_parameters, process_parameters):
+        for ep in expected_parameters:
+            is_optional_param = 'optional' in ep and ep['optional']
+            if not is_optional_param:
+                if ep['name'] not in process_parameters:
+                    raise (ApiError(400, f'Request body must contain parameter'
+                                         f' \'{ep["name"]}\'.'))
 
 
 @api.route('/collections')

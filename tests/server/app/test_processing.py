@@ -129,15 +129,22 @@ class ProcessingTest(ServerTest):
         self.assertTrue('input' in formats)
         self.assertTrue('output' in formats)
 
-    def test_result(self):
-        body = json.dumps({'process': {'id': 'load_collection', 'parameters': []}})
+    def test_result_missing_parameters(self):
+        body = json.dumps({'process': {
+            'id': 'load_collection',
+            'parameters': []
+        }})
         response = self.http.request('POST',
                                      f'http://localhost:{self.port}/result',
                                      body=body,
                                      headers={
                                          'content-type': 'application/json'
                                      })
-        self.assertEqual(200, response.status)
+        self.assertEqual(400, response.status)
+        message = json.loads(response.data)
+        self.assertTrue('Request body must contain parameter \'id\'.' in
+                        message['error']['message'])
+
 
     def test_result_no_query_param(self):
         response = self.http.request('POST',
