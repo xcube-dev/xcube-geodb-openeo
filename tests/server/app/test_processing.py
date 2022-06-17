@@ -24,7 +24,6 @@ from typing import Dict
 
 import yaml
 from xcube.constants import EXTENSION_POINT_SERVER_APIS
-from xcube.server.api import ApiError
 from xcube.server.testing import ServerTest
 from xcube.util import extension
 from xcube.util.extension import ExtensionRegistry
@@ -35,15 +34,18 @@ from xcube_geodb_openeo.backend import processes
 class ProcessingTest(ServerTest):
 
     def add_extension(self, er: ExtensionRegistry) -> None:
-        er.add_extension(loader=extension.import_component('xcube_geodb_openeo.api:api'),
-                         point=EXTENSION_POINT_SERVER_APIS, name='geodb-openeo')
+        er.add_extension(
+            loader=extension.import_component('xcube_geodb_openeo.api:api'),
+            point=EXTENSION_POINT_SERVER_APIS, name='geodb-openeo'
+        )
 
     def add_config(self, config: Dict):
         data = pkgutil.get_data('tests', 'test_config.yml')
         config.update(yaml.safe_load(data))
 
     def test_get_predefined_processes(self):
-        response = self.http.request('GET', f'http://localhost:{self.port}/processes')
+        response = self.http.request('GET',
+                                     f'http://localhost:{self.port}/processes')
         self.assertEqual(200, response.status)
         self.assertTrue(
             'application/json' in response.headers['content-type']
@@ -52,10 +54,10 @@ class ProcessingTest(ServerTest):
         self.assertTrue('processes' in processes_resp)
         self.assertTrue('links' in processes_resp)
 
-        processes = processes_resp['processes']
-        self.assertTrue(len(processes) > 0)
+        processes_md = processes_resp['processes']
+        self.assertTrue(len(processes_md) > 0)
         load_collection = None
-        for p in processes:
+        for p in processes_md:
             self.assertTrue('id' in p)
             self.assertTrue('description' in p)
             self.assertTrue('parameters' in p)
@@ -117,7 +119,8 @@ class ProcessingTest(ServerTest):
         self.assertEqual('vector-cube', return_schema['subtype'])
 
     def test_get_file_formats(self):
-        response = self.http.request('GET', f'http://localhost:{self.port}/file_formats')
+        response = self.http.request('GET', f'http://localhost:{self.port}'
+                                            f'/file_formats')
         self.assertEqual(200, response.status)
         self.assertTrue(
             'application/json' in response.headers['content-type']
@@ -128,14 +131,21 @@ class ProcessingTest(ServerTest):
 
     def test_result(self):
         body = json.dumps({'process': {'id': 'load_collection', 'parameters': []}})
-        response = self.http.request('POST', f'http://localhost:{self.port}/result', body=body, headers={'content-type': 'application/json'})
+        response = self.http.request('POST',
+                                     f'http://localhost:{self.port}/result',
+                                     body=body,
+                                     headers={
+                                         'content-type': 'application/json'
+                                     })
         self.assertEqual(200, response.status)
 
     def test_result_no_query_param(self):
-        response = self.http.request('POST', f'http://localhost:{self.port}/result')
+        response = self.http.request('POST',
+                                     f'http://localhost:{self.port}/result')
         self.assertEqual(400, response.status)
         message = json.loads(response.data)
-        self.assertTrue('Request body must contain key \'process\'.' in message['error']['message'])
+        self.assertTrue('Request body must contain key \'process\'.' in
+                        message['error']['message'])
 
     def test_invalid_process_id(self):
         with self.assertRaises(ValueError):
