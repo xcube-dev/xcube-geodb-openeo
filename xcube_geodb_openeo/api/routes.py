@@ -26,6 +26,7 @@ from .api import api
 from xcube.server.api import ApiHandler
 from xcube.server.api import ApiError
 from .context import STAC_DEFAULT_COLLECTIONS_LIMIT
+from ..core.vectorcube import VectorCube
 
 
 def get_limit(request):
@@ -99,9 +100,9 @@ class ProcessesHandler(ApiHandler):
         """
         Returns the processes information.
         """
-        registry = processes.get_processes_registry()
+        registry = processes.get_processes_registry(self.ctx)
         self.response.finish({
-            'processes': registry.get_processes(),
+            'processes': [p.metadata for p in registry.processes],
             'links': registry.get_links()}
         )
 
@@ -138,12 +139,15 @@ class ResultHandler(ApiHandler):
         processing_request = json.loads(self.request.body)['process']
         process_id = processing_request['id']
         process_parameters = processing_request['parameters']
-        process = processes.get_processes_registry().get_process(process_id)
+        registry = processes.get_processes_registry(self.ctx)
+        process = registry.get_process(process_id)
 
-        expected_parameters = process['parameters']
+        expected_parameters = process.metadata['parameters']
         self.ensure_parameters(expected_parameters, process_parameters)
+        process.parameters = process_parameters
 
-        self.response.finish('process')
+        result = processes.submit_process_sync(process, self.ctx)
+        self.response.finish(result)
 
     def ensure_parameters(self, expected_parameters, process_parameters):
         for ep in expected_parameters:

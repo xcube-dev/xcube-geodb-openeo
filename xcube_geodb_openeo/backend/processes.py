@@ -18,25 +18,80 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
+import importlib
+import importlib.resources as resources
+import json
+from abc import abstractmethod
 from typing import Dict, List
 
+from geopandas import GeoDataFrame
+from xcube.server.api import ServerContextT
 
-class ProcessesRegistry:
+from xcube_geodb_openeo.core.vectorcube import VectorCube
+
+
+class Process:
+    """
+    This class represents a process. It contains the metadata, and the method
+    "Execute".
+    Instances can be passed as parameter to Processing.
+    """
+
+    def __init__(self, metadata: Dict):
+        if not metadata:
+            raise ValueError('Empty processor metadata provided.')
+        self._metadata = metadata
+        self._parameters = {}
+
+    @property
+    def metadata(self) -> Dict:
+        return self._metadata
+
+    @property
+    def parameters(self) -> Dict:
+        return self._parameters
+
+    @parameters.setter
+    def parameters(self, p: dict) -> None:
+        self._parameters = p
+
+    @abstractmethod
+    def execute(self, parameters: dict, ctx: ServerContextT) -> GeoDataFrame:
+        pass
+
+
+def read_default_processes() -> List[Process]:
+    processes_specs = [j for j in resources.contents(f'{__package__}.res')
+                       if j.lower().endswith('json')]
+    processes = []
+    for spec in processes_specs:
+        with resources.open_binary(f'{__package__}.res', spec) as f:
+            metadata = json.loads(f.read())
+            module = importlib.import_module(metadata['module'])
+            class_name = metadata['class_name']
+            cls = getattr(module, class_name)
+            processes.append(cls(metadata))
+
+    return processes
+
+
+class ProcessRegistry:
+
+    @property
+    def processes(self) -> List[Process]:
+        return self._processes
 
     def __init__(self):
-        self.processes = []
+        self._processes = []
         self.links = []
         self._add_default_processes()
         self._add_default_links()
 
-    def add_process(self, process: Dict) -> None:
+    def add_process(self, process: Process) -> None:
         self.processes.append(process)
 
     def add_link(self, link: Dict) -> None:
         self.links.append(link)
-
-    def get_processes(self) -> List:
-        return self.processes.copy()
 
     def get_links(self) -> List:
         return self.links.copy()
@@ -44,192 +99,47 @@ class ProcessesRegistry:
     def get_file_formats(self) -> Dict:
         return {'input': {}, 'output': {}}
 
-    def get_process(self, process_id):
+    def get_process(self, process_id: str) -> Process:
         for process in self.processes:
-            if process['id'] == process_id:
+            if process.metadata['id'] == process_id:
                 return process
         raise ValueError(f'Unknown process_id: {process_id}')
 
     def _add_default_processes(self):
-        self.add_process(
-            {
-                'id': 'load_collection',
-                'summary': 'Load a collection.',
-                'categories': ['import'],
-                'description': 'Loads a collection from the current back-end '
-                               'by its id and returns it as a vector cube.'
-                               'The data that is added to the data cube can be'
-                               ' restricted with the parameters'
-                               '"spatial_extent" and "properties".',
-                'parameters': [
-                    {
-                        'name': 'id',
-                        'description': 'The collection\'s name',
-                        'schema': {
-                            'type': 'string'
-                        }
-                    },
-                    {
-                        'name': 'database',
-                        'description': 'The database of the collection',
-                        'schema': {
-                            'type': 'string'
-                        },
-                        'optional': True
-                    },
-                    {
-                        "name": "spatial_extent",
-                        "description":
-                            "Limits the data to load from the collection to"
-                            " the specified bounding box or polygons.\n\nThe "
-                            "process puts a pixel into the data cube if the "
-                            "point at the pixel center intersects with the "
-                            "bounding box or any of the polygons (as defined "
-                            "in the Simple Features standard by the OGC).\n\n"
-                            "The GeoJSON can be one of the following feature "
-                            "types:\n\n* A `Polygon` or `MultiPolygon` "
-                            "geometry,\n* a `Feature` with a `Polygon` or "
-                            "`MultiPolygon` geometry,\n* a "
-                            "`FeatureCollection` containing at least one "
-                            "`Feature` with `Polygon` or `MultiPolygon` "
-                            "geometries, or\n* a `GeometryCollection` "
-                            "containing `Polygon` or `MultiPolygon` "
-                            "geometries. To maximize interoperability, "
-                            "`GeometryCollection` should be avoided in favour "
-                            "of one of the alternatives above.\n\nSet this "
-                            "parameter to `null` to set no limit for the "
-                            "spatial extent. Be careful with this when "
-                            "loading large datasets! It is recommended to use "
-                            "this parameter instead of using "
-                            "``filter_bbox()`` or ``filter_spatial()`` "
-                            "directly after loading unbounded data.",
-                        "schema": [
-                            {
-                                "title": "Bounding Box",
-                                "type": "object",
-                                "subtype": "bounding-box",
-                                "required": [
-                                    "west",
-                                    "south",
-                                    "east",
-                                    "north"
-                                ],
-                                "properties": {
-                                    "west": {
-                                        "description":
-                                            "West (lower left corner, "
-                                            "coordinate axis 1).",
-                                        "type": "number"
-                                    },
-                                    "south": {
-                                        "description":
-                                            "South (lower left corner, "
-                                            "coordinate axis 2).",
-                                        "type": "number"
-                                    },
-                                    "east": {
-                                        "description":
-                                            "East (upper right corner, "
-                                            "coordinate axis 1).",
-                                        "type": "number"
-                                    },
-                                    "north": {
-                                        "description":
-                                            "North (upper right corner, "
-                                            "coordinate axis 2).",
-                                        "type": "number"
-                                    },
-                                    "base": {
-                                        "description":
-                                            "Base (optional, lower left "
-                                            "corner, coordinate axis 3).",
-                                        "type": [
-                                            "number",
-                                            "null"
-                                        ],
-                                        "default": "null"
-                                    },
-                                    "height": {
-                                        "description": "Height (optional, upper right corner, coordinate axis 3).",
-                                        "type": [
-                                            "number",
-                                            "null"
-                                        ],
-                                        "default": "null"
-                                    },
-                                    "crs": {
-                                        "description": "Coordinate reference system of the extent, specified as as "
-                                                       "[EPSG code](http://www.epsg-registry.org/), [WKT2 (ISO 19162) "
-                                                       "string]"
-                                                       "(http://docs.opengeospatial.org/is/18-010r7/18-010r7.html) or"
-                                                       " [PROJ definition (deprecated)]"
-                                                       "(https://proj.org/usage/quickstart.html). Defaults to `4326`"
-                                                       " (EPSG code 4326) unless the client explicitly requests a"
-                                                       " different coordinate reference system.",
-                                        "anyOf": [
-                                            {
-                                                "title": "EPSG Code",
-                                                "type": "integer",
-                                                "subtype": "epsg-code",
-                                                "minimum": 1000,
-                                                "examples": [
-                                                    3857
-                                                ]
-                                            },
-                                            {
-                                                "title": "WKT2",
-                                                "type": "string",
-                                                "subtype": "wkt2-definition"
-                                            },
-                                            {
-                                                "title": "PROJ definition",
-                                                "type": "string",
-                                                "subtype": "proj-definition",
-                                                "deprecated": True
-                                            }
-                                        ],
-                                        "default": 4326
-                                    }
-                                }
-                            },
-                            {
-                                "title": "GeoJSON",
-                                "description":
-                                    "Limits the data cube to the bounding box "
-                                    "of the given geometry. All pixels inside "
-                                    "the bounding box that do not intersect "
-                                    "with any of the polygons will be set to "
-                                    "no data (`null`).",
-                                "type": "object",
-                                "subtype": "geojson"
-                            },
-                            {
-                                "title": "No filter",
-                                "description":
-                                    "Don't filter spatially. All data is "
-                                    "included in the data cube.",
-                                "type": "null"
-                            }
-                        ]
-                    }
-                ],
-                'returns': {
-                    'description': 'A vector cube for further processing.',
-                    'schema': {
-                        "type": "object",
-                        "subtype": "vector-cube"
-                    }
-                }
-            }
-        )
+        for dp in read_default_processes():
+            self.add_process(dp)
 
     def _add_default_links(self):
         self.add_link({})
 
 
-_PROCESSES_REGISTRY_SINGLETON = ProcessesRegistry()
+_PROCESS_REGISTRY_SINGLETON = None
 
 
-def get_processes_registry() -> ProcessesRegistry:
-    """Return the processes registry singleton."""
-    return _PROCESSES_REGISTRY_SINGLETON
+def get_processes_registry(ctx: ServerContextT) -> ProcessRegistry:
+    """Return the process registry singleton."""
+    global _PROCESS_REGISTRY_SINGLETON
+    if not _PROCESS_REGISTRY_SINGLETON:
+        _PROCESS_REGISTRY_SINGLETON = ProcessRegistry()
+    return _PROCESS_REGISTRY_SINGLETON
+
+
+def submit_process_sync(p: Process, ctx: ServerContextT) -> GeoDataFrame:
+    """
+    Submits a process synchronously, and returns the result.
+    :param p: The process to execute.
+    :param ctx: The Server context.
+    :return: processing result as geopandas object
+    """
+    parameters = p.parameters
+    print(parameters)
+    parameters['with_items'] = True
+    # parameter_translator (introduce interface, we need to translate params from query params to backend params)
+    return p.execute(parameters, ctx)
+
+
+class LoadCollection(Process):
+
+    def execute(self, parameters: dict, ctx: ServerContextT) -> GeoDataFrame:
+        result = VectorCube()
+        return result
