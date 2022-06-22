@@ -162,7 +162,7 @@ class ProcessingTest(ServerTest):
             "parameters": {
                 "id": "collection_1",
                 "spatial_extent": {
-                    "bbox": (33, -10, 71, 43),
+                    "bbox": "(33, -10, 71, 43)",
                     "crs": 4326
                 }
             }

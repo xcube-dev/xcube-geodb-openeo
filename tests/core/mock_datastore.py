@@ -74,3 +74,8 @@ class MockDataStore(DataStore):
         if with_items:
             self.add_items_to_vector_cube(collection, vector_cube)
         return vector_cube
+
+    def transform_bbox(self, collection_id: str,
+                       bbox: Tuple[float, float, float, float],
+                       crs: int) -> Tuple[float, float, float, float]:
+        return bbox
