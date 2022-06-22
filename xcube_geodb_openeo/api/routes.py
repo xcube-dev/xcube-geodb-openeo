@@ -26,7 +26,6 @@ from .api import api
 from xcube.server.api import ApiHandler
 from xcube.server.api import ApiError
 from .context import STAC_DEFAULT_COLLECTIONS_LIMIT
-from ..core.vectorcube import VectorCube
 
 
 def get_limit(request):
@@ -100,7 +99,7 @@ class ProcessesHandler(ApiHandler):
         """
         Returns the processes information.
         """
-        registry = processes.get_processes_registry(self.ctx)
+        registry = processes.get_processes_registry()
         self.response.finish({
             'processes': [p.metadata for p in registry.processes],
             'links': registry.get_links()}
@@ -128,18 +127,19 @@ class ResultHandler(ApiHandler):
     Executes a user-defined process directly (synchronously) and the result will be downloaded.
     """
 
-    @api.operation(operationId='result', summary='Execute process synchronously.')
+    @api.operation(operationId='result', summary='Execute process'
+                                                 'synchronously.')
     def post(self):
         """
         Processes requested processing task and returns result.
         """
         if not self.request.body:
-            raise(ApiError(400, 'Request body must contain key \'process\'.'))
+            raise (ApiError(400, 'Request body must contain key \'process\'.'))
 
         processing_request = json.loads(self.request.body)['process']
         process_id = processing_request['id']
         process_parameters = processing_request['parameters']
-        registry = processes.get_processes_registry(self.ctx)
+        registry = processes.get_processes_registry()
         process = registry.get_process(process_id)
 
         expected_parameters = process.metadata['parameters']
@@ -245,6 +245,7 @@ class FeatureHandler(ApiHandler):
     """
     Fetch a single feature.
     """
+
     def get(self, collection_id: str, feature_id: str):
         """
         Returns the feature.

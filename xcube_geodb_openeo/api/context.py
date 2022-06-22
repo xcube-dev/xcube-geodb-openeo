@@ -161,6 +161,11 @@ class GeoDbContext(ApiContext):
             f'feature {feature_id!r} not found in collection {collection_id!r}'
         )
 
+    def transform_bbox(self, collection_id: str,
+                       bbox: Tuple[float, float, float, float],
+                       crs: int) -> Tuple[float, float, float, float]:
+        return self.data_store.transform_bbox(collection_id, bbox, crs)
+
 
 def get_collections_links(limit: int, offset: int, url: str,
                           collection_count: int):

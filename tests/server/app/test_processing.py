@@ -28,8 +28,9 @@ from xcube.server.testing import ServerTest
 from xcube.util import extension
 from xcube.util.extension import ExtensionRegistry
 
+from . import test_utils
 from xcube_geodb_openeo.backend import processes
-from xcube_geodb_openeo.core.vectorcube import VectorCube
+from xcube_geodb_openeo.backend.processes import LoadCollection
 
 
 class ProcessingTest(ServerTest):
@@ -119,7 +120,6 @@ class ProcessingTest(ServerTest):
         self.assertEqual('object', return_schema['type'])
         self.assertEqual('vector-cube', return_schema['subtype'])
 
-
     def test_get_file_formats(self):
         response = self.http.request('GET', f'http://localhost:{self.port}'
                                             f'/file_formats')
@@ -132,11 +132,11 @@ class ProcessingTest(ServerTest):
         self.assertTrue('output' in formats)
 
     def test_result(self):
-        body = json.dumps({'process': {
-            'id': 'load_collection',
-            'parameters': {
-                'id': 'collection_1',
-                'spatial_extent': None
+        body = json.dumps({"process": {
+            "id": "load_collection",
+            "parameters": {
+                "id": "collection_1",
+                "spatial_extent": None
             }
         }})
         response = self.http.request('POST',
@@ -147,8 +147,42 @@ class ProcessingTest(ServerTest):
                                      })
 
         self.assertEqual(200, response.status)
-        result = json.loads(response.data)
-        self.assertEqual(dict, type(result))
+        items_data = json.loads(response.data)
+        self.assertEqual(dict, type(items_data))
+        self.assertIsNotNone(items_data)
+        self.assertIsNotNone(items_data['features'])
+        self.assertEqual(2, len(items_data['features']))
+
+        test_utils.assert_hamburg(self, items_data['features'][0])
+        test_utils.assert_paderborn(self, items_data['features'][1])
+
+    def test_result_bbox(self):
+        body = json.dumps({"process": {
+            "id": "load_collection",
+            "parameters": {
+                "id": "collection_1",
+                "spatial_extent": {
+                    "bbox": (33, -10, 71, 43),
+                    "crs": 4326
+                }
+            }
+        }})
+        response = self.http.request('POST',
+                                     f'http://localhost:{self.port}/result',
+                                     body=body,
+                                     headers={
+                                         'content-type': 'application/json'
+                                     })
+
+        self.assertEqual(200, response.status)
+        items_data = json.loads(response.data)
+        self.assertEqual(dict, type(items_data))
+        self.assertIsNotNone(items_data)
+        self.assertIsNotNone(items_data['features'])
+        self.assertEqual(1, len(items_data['features']))
+
+        test_utils.assert_hamburg(self, items_data['features'][0])
+        # test_utils.assert_paderborn(self, items_data['features'][0])
 
     def test_result_missing_parameters(self):
         body = json.dumps({'process': {
@@ -177,3 +211,34 @@ class ProcessingTest(ServerTest):
     def test_invalid_process_id(self):
         with self.assertRaises(ValueError):
             processes.get_processes_registry().get_process('miau!')
+
+    def test_translate_parameters(self):
+        lc = LoadCollection({
+            "id": "load_collection",
+            "summary": "Load a collection"
+        })
+        query_params = {
+            'id': 'collection_1',
+            'spatial_extent': None
+        }
+        backend_params = lc.translate_parameters(query_params)
+        self.assertEqual(backend_params['collection_id'], 'collection_1')
+        self.assertIsNone(backend_params['bbox'])
+        self.assertIsNone(backend_params['crs'])
+
+    def test_translate_parameters_with_bbox(self):
+        lc = LoadCollection({
+            "id": "load_collection",
+            "summary": "Load a collection"
+        })
+        query_params = {
+            'id': 'collection_1',
+            'spatial_extent': {
+                'bbox': (33, -10, 71, 43),
+                'crs': 4326
+            }
+        }
+        backend_params = lc.translate_parameters(query_params)
+        self.assertEqual(backend_params['collection_id'], 'collection_1')
+        self.assertEqual((33, -10, 71, 43), backend_params['bbox'])
+        self.assertEqual(4326, backend_params['crs'])

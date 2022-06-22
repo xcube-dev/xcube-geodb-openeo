@@ -93,16 +93,13 @@ class GeoDBDataStore(DataStore):
                                                   offset=offset)
             self.add_items_to_vector_cube(items, vector_cube)
 
-        res = self.geodb.get_collection_bbox(collection_id)
+        collection_bbox = self.geodb.get_collection_bbox(collection_id)
         srid = self.geodb.get_collection_srid(collection_id)
-        collection_bbox = list(json.loads(res)[0].values())[0][4:-1]
-        collection_bbox = np.fromstring(collection_bbox.replace(',', ' '),
-                                        dtype=float, sep=' ')
         if srid is not None and srid != '4326':
             collection_bbox = self.geodb.transform_bbox_crs(
                 collection_bbox,
                 srid, '4326',
-                wsg84_order='lon_lat')
+            )
 
         properties = self.geodb.get_properties(collection_id)
         summaries = {
@@ -124,3 +121,11 @@ class GeoDBDataStore(DataStore):
             'summaries': summaries
         }
         return vector_cube
+
+    def transform_bbox(self, collection_id: str,
+                       bbox: Tuple[float, float, float, float],
+                       crs: int) -> Tuple[float, float, float, float]:
+        srid = self.geodb.get_collection_srid(collection_id)
+        if srid == crs:
+            return bbox
+        return self.geodb.transform_bbox_crs(bbox, crs, srid)

@@ -41,6 +41,9 @@ class Process:
         if not metadata:
             raise ValueError('Empty processor metadata provided.')
         self._metadata = metadata
+        if 'module' in self._metadata:
+            del self.metadata['module']
+            del self.metadata['class_name']
         self._parameters = {}
 
     @property
@@ -56,7 +59,16 @@ class Process:
         self._parameters = p
 
     @abstractmethod
-    def execute(self, parameters: dict, ctx: ServerContextT) -> GeoDataFrame:
+    def execute(self, parameters: dict, ctx: ServerContextT) -> str:
+        pass
+
+    @abstractmethod
+    def translate_parameters(self, parameters: dict) -> dict:
+        """
+        Translate params from query params to backend params
+        :param parameters: query params
+        :return: backend params
+        """
         pass
 
 
@@ -116,7 +128,7 @@ class ProcessRegistry:
 _PROCESS_REGISTRY_SINGLETON = None
 
 
-def get_processes_registry(ctx: ServerContextT) -> ProcessRegistry:
+def get_processes_registry() -> ProcessRegistry:
     """Return the process registry singleton."""
     global _PROCESS_REGISTRY_SINGLETON
     if not _PROCESS_REGISTRY_SINGLETON:
@@ -124,22 +136,43 @@ def get_processes_registry(ctx: ServerContextT) -> ProcessRegistry:
     return _PROCESS_REGISTRY_SINGLETON
 
 
-def submit_process_sync(p: Process, ctx: ServerContextT) -> GeoDataFrame:
+def submit_process_sync(p: Process, ctx: ServerContextT) -> str:
     """
     Submits a process synchronously, and returns the result.
     :param p: The process to execute.
     :param ctx: The Server context.
     :return: processing result as geopandas object
     """
-    parameters = p.parameters
-    print(parameters)
-    parameters['with_items'] = True
-    # parameter_translator (introduce interface, we need to translate params from query params to backend params)
-    return p.execute(parameters, ctx)
+    return p.execute(p.parameters, ctx)
 
 
 class LoadCollection(Process):
 
-    def execute(self, parameters: dict, ctx: ServerContextT) -> GeoDataFrame:
-        result = VectorCube()
-        return result
+    def execute(self, query_params: dict, ctx: ServerContextT) -> str:
+        backend_params = self.translate_parameters(query_params)
+        collection_id = backend_params['collection_id']
+        bbox_transformed = None
+        if backend_params['bbox']:
+            bbox = tuple(backend_params['bbox'].replace('(', '')
+                         .replace(')', '').replace(' ', '').split(','))
+            crs = backend_params['crs'] if backend_params['crs'] else None
+            bbox_transformed = ctx.transform_bbox(collection_id, bbox, crs)
+
+        vector_cube = ctx.data_store.get_vector_cube(
+            collection_id=collection_id,
+            with_items=True,
+            bbox=bbox_transformed
+        )
+        return json.dumps(vector_cube)
+
+    def translate_parameters(self, query_params: dict) -> dict:
+        bbox_qp = query_params['spatial_extent']['bbox']\
+            if query_params['spatial_extent'] else None
+        crs_qp = query_params['spatial_extent']['crs']\
+            if query_params['spatial_extent'] else None
+        backend_params = {
+            'collection_id': query_params['id'],
+            'bbox': bbox_qp,
+            'crs': crs_qp
+        }
+        return backend_params

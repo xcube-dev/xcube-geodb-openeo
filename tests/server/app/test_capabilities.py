@@ -60,6 +60,3 @@ class CapabilitiesTest(ServerTest):
         self.assertEqual(200, response.status)
         conformance_data = json.loads(response.data)
         self.assertIsNotNone(conformance_data['conformsTo'])
-
-    def test_bluh(self):
-        print(__file__)
