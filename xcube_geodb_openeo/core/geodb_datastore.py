@@ -94,12 +94,13 @@ class GeoDBDataStore(DataStore):
             self.add_items_to_vector_cube(items, vector_cube)
 
         collection_bbox = self.geodb.get_collection_bbox(collection_id)
-        srid = self.geodb.get_collection_srid(collection_id)
-        if srid is not None and srid != '4326':
-            collection_bbox = self.geodb.transform_bbox_crs(
-                collection_bbox,
-                srid, '4326',
-            )
+        if collection_bbox:
+            srid = self.geodb.get_collection_srid(collection_id)
+            if srid is not None and srid != '4326':
+                collection_bbox = self.geodb.transform_bbox_crs(
+                    collection_bbox,
+                    srid, '4326',
+                )
 
         properties = self.geodb.get_properties(collection_id)
         summaries = {
