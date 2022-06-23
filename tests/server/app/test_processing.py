@@ -182,7 +182,32 @@ class ProcessingTest(ServerTest):
         self.assertEqual(1, len(items_data['features']))
 
         test_utils.assert_hamburg(self, items_data['features'][0])
-        # test_utils.assert_paderborn(self, items_data['features'][0])
+
+    def test_result_bbox_default_crs(self):
+        body = json.dumps({"process": {
+            "id": "load_collection",
+            "parameters": {
+                "id": "collection_1",
+                "spatial_extent": {
+                    "bbox": "(33, -10, 71, 43)"
+                }
+            }
+        }})
+        response = self.http.request('POST',
+                                     f'http://localhost:{self.port}/result',
+                                     body=body,
+                                     headers={
+                                         'content-type': 'application/json'
+                                     })
+
+        self.assertEqual(200, response.status)
+        items_data = json.loads(response.data)
+        self.assertEqual(dict, type(items_data))
+        self.assertIsNotNone(items_data)
+        self.assertIsNotNone(items_data['features'])
+        self.assertEqual(1, len(items_data['features']))
+
+        test_utils.assert_hamburg(self, items_data['features'][0])
 
     def test_result_missing_parameters(self):
         body = json.dumps({'process': {
