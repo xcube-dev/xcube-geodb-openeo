@@ -36,6 +36,13 @@
         "title": "I am collection #3"
       },
       "features": []
+    },
+    {
+      "id": "empty_collection",
+      "metadata": {
+        "title": "I don't have any features"
+      },
+      "features": []
     }
   ]
 }

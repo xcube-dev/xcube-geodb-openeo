@@ -71,10 +71,11 @@ class MockDataStore(DataStore):
         vector_cube['id'] = collection_id
         vector_cube['features'] = []
         vector_cube['total_feature_count'] = len(collection)
-        if with_items:
+        if with_items and collection_id != 'empty_collection':
             self.add_items_to_vector_cube(collection, vector_cube)
         return vector_cube
 
+    # noinspection PyUnusedLocal
     def transform_bbox(self, collection_id: str,
                        bbox: Tuple[float, float, float, float],
                        crs: int) -> Tuple[float, float, float, float]:

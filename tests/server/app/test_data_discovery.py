@@ -48,6 +48,16 @@ class DataDiscoveryTest(ServerTest):
         test_utils.assert_hamburg(self, items_data['features'][0])
         test_utils.assert_paderborn(self, items_data['features'][1])
 
+    def test_get_items_no_results(self):
+        url = f'http://localhost:{self.port}/collections/empty_collection/items'
+        response = self.http.request('GET', url)
+        self.assertEqual(200, response.status)
+        items_data = json.loads(response.data)
+        self.assertIsNotNone(items_data)
+        self.assertEqual('FeatureCollection', items_data['type'])
+        self.assertIsNotNone(items_data['features'])
+        self.assertEqual(0, len(items_data['features']))
+
     def test_get_item(self):
         url = f'http://localhost:{self.port}/collections/collection_1/items/1'
         response = self.http.request('GET', url)
