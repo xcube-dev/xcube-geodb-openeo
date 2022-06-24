@@ -144,7 +144,6 @@ def submit_process_sync(p: Process, ctx: ServerContextT) -> str:
 
 
 class LoadCollection(Process):
-
     DEFAULT_CRS = 4326
 
     def execute(self, query_params: dict, ctx: ServerContextT) -> str:
@@ -167,9 +166,13 @@ class LoadCollection(Process):
     def translate_parameters(self, query_params: dict) -> dict:
         bbox_qp = query_params['spatial_extent']['bbox'] \
             if query_params['spatial_extent'] else None
-        crs_qp = query_params['spatial_extent']['crs'] \
-            if query_params['spatial_extent'] and \
-               'crs' in query_params['spatial_extent'] else self.DEFAULT_CRS
+        if not bbox_qp:
+            crs_qp = None
+        else:
+            crs_qp = query_params['spatial_extent']['crs'] \
+                if query_params['spatial_extent'] and \
+                   'crs' in query_params['spatial_extent'] \
+                else self.DEFAULT_CRS
         backend_params = {
             'collection_id': query_params['id'],
             'bbox': bbox_qp,
