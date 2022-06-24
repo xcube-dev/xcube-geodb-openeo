@@ -23,13 +23,14 @@ jobs:
     steps:
       - run: |
           echo "SKIP_UNITTESTS: ${{ env.SKIP_UNITTESTS }}"
-      - uses: actions/checkout@v2
-#      - name: Checkout xcube-geodb repo
-#        uses: actions/checkout@v3
-#        with:
-#          repository: dcs4cop/xcube
-#          path: xcube
-#          ref: forman-676-server_redesign
+      - uses: actions/checkout@v3
+        name: Checkout xcube-geodb-openeo repo
+      - name: Checkout xcube repo
+        uses: actions/checkout@v3
+        with:
+          repository: dcs4cop/xcube
+          path: "xcube"
+          ref: forman-676-server_redesign
       - uses: conda-incubator/setup-miniconda@v2
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         with:
@@ -45,13 +46,17 @@ jobs:
           conda config --show
           printenv | sort
       - name: setup-xcube-geodb-openeo
-        if: ${{ env.SKIP_UNITTESTS == '0' }}
         run: |
-          python setup.py develop
+          pip install -e .
+      - name: setup-xcube
+        run: |
+          cd xcube
+          pip install -e .
+          cd ..
       - name: unittest-xcube-geodb-openeo
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         run: |
-          pytest --cov=./ --cov-report=xml --tb=native
+          pytest --cov=./ --cov-report=xml --tb=native tests
       - uses: codecov/codecov-action@v2
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         with:
