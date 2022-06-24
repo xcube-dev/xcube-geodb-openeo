@@ -48,6 +48,7 @@ jobs:
       - name: setup-xcube
         run: |
           cd xcube
+          conda env update -n xcube-geodb-openeo -f environment.yml
           pip install -e .
           cd ..
       - name: setup-xcube-geodb-openeo
