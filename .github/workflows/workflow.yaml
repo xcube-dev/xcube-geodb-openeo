@@ -56,9 +56,7 @@ jobs:
       - name: unittest-xcube-geodb-openeo
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         run: |
-          pwd
-          ls -l
-          pytest --cov=./ --cov-report=xml --tb=native xcube-geodb-openeo
+          pytest --cov=./ --cov-report=xml --tb=native tests
       - uses: codecov/codecov-action@v2
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         with:
