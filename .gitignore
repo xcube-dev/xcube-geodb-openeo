@@ -135,3 +135,4 @@ dmypy.json
 .pyre/
 
 xcube_geodb_openeo.iml
+/notebooks/credentials.py

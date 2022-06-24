@@ -153,7 +153,7 @@ class LoadCollection(Process):
         if backend_params['bbox']:
             bbox = tuple(backend_params['bbox'].replace('(', '')
                          .replace(')', '').replace(' ', '').split(','))
-            crs = backend_params['crs'] if backend_params['crs'] else None
+            crs = backend_params['crs']
             bbox_transformed = ctx.transform_bbox(collection_id, bbox, crs)
 
         vector_cube = ctx.data_store.get_vector_cube(
