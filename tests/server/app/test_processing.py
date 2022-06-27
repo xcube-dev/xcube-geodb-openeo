@@ -147,14 +147,13 @@ class ProcessingTest(ServerTest):
                                      })
 
         self.assertEqual(200, response.status)
-        items_data = json.loads(response.data)
-        self.assertEqual(dict, type(items_data))
-        self.assertIsNotNone(items_data)
-        self.assertIsNotNone(items_data['features'])
-        self.assertEqual(2, len(items_data['features']))
+        vector_cube = json.loads(response.data)
+        self.assertEqual(list, type(vector_cube))
+        self.assertIsNotNone(vector_cube)
+        self.assertEqual(2, len(vector_cube))
 
-        test_utils.assert_hamburg(self, items_data['features'][0])
-        test_utils.assert_paderborn(self, items_data['features'][1])
+        test_utils.assert_hamburg_data(self, vector_cube[0])
+        test_utils.assert_paderborn_data(self, vector_cube[1])
 
     def test_result_bbox(self):
         body = json.dumps({"process": {
@@ -175,13 +174,12 @@ class ProcessingTest(ServerTest):
                                      })
 
         self.assertEqual(200, response.status)
-        items_data = json.loads(response.data)
-        self.assertEqual(dict, type(items_data))
-        self.assertIsNotNone(items_data)
-        self.assertIsNotNone(items_data['features'])
-        self.assertEqual(1, len(items_data['features']))
+        vector_cube = json.loads(response.data)
+        self.assertEqual(list, type(vector_cube))
+        self.assertIsNotNone(vector_cube)
+        self.assertEqual(1, len(vector_cube))
 
-        test_utils.assert_hamburg(self, items_data['features'][0])
+        test_utils.assert_hamburg(self, vector_cube[0])
 
     def test_result_bbox_default_crs(self):
         body = json.dumps({"process": {
@@ -201,13 +199,11 @@ class ProcessingTest(ServerTest):
                                      })
 
         self.assertEqual(200, response.status)
-        items_data = json.loads(response.data)
-        self.assertEqual(dict, type(items_data))
-        self.assertIsNotNone(items_data)
-        self.assertIsNotNone(items_data['features'])
-        self.assertEqual(1, len(items_data['features']))
-
-        test_utils.assert_hamburg(self, items_data['features'][0])
+        vector_cube = json.loads(response.data)
+        self.assertEqual(list, type(vector_cube))
+        self.assertIsNotNone(vector_cube)
+        self.assertEqual(1, len(vector_cube))
+        test_utils.assert_hamburg(self, vector_cube[0])
 
     def test_result_missing_parameters(self):
         body = json.dumps({'process': {

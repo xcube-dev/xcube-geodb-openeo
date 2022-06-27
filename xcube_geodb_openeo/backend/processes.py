@@ -161,7 +161,17 @@ class LoadCollection(Process):
             with_items=True,
             bbox=bbox_transformed
         )
-        return json.dumps(vector_cube)
+        result = []
+        features = vector_cube['features']
+        for feature in features:
+            result.append({
+                'id': feature['id'],
+                'bbox': feature['bbox'],
+                'geometry': feature['geometry'],
+                'properties': feature['properties']
+            })
+
+        return json.dumps(result)
 
     def translate_parameters(self, query_params: dict) -> dict:
         bbox_qp = query_params['spatial_extent']['bbox'] \
