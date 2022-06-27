@@ -179,7 +179,7 @@ class ProcessingTest(ServerTest):
         self.assertIsNotNone(vector_cube)
         self.assertEqual(1, len(vector_cube))
 
-        test_utils.assert_hamburg(self, vector_cube[0])
+        test_utils.assert_hamburg_data(self, vector_cube[0])
 
     def test_result_bbox_default_crs(self):
         body = json.dumps({"process": {
@@ -203,7 +203,7 @@ class ProcessingTest(ServerTest):
         self.assertEqual(list, type(vector_cube))
         self.assertIsNotNone(vector_cube)
         self.assertEqual(1, len(vector_cube))
-        test_utils.assert_hamburg(self, vector_cube[0])
+        test_utils.assert_hamburg_data(self, vector_cube[0])
 
     def test_result_missing_parameters(self):
         body = json.dumps({'process': {
