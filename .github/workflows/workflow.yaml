@@ -49,12 +49,14 @@ jobs:
           conda config --show
           printenv | sort
       - name: setup-xcube
+        if: ${{ env.SKIP_UNITTESTS == '0' }}
         run: |
           cd xcube
           conda env update -n xcube-geodb-openeo -f environment.yml
           pip install -e .
           cd ..
       - name: setup-xcube-geodb-openeo
+        if: ${{ env.SKIP_UNITTESTS == '0' }}
         run: |
           pip install -e .
       - name: unittest-xcube-geodb-openeo
