@@ -13,6 +13,9 @@ env:
   SKIP_UNITTESTS: "0"
   WAIT_FOR_STARTUP: "1"
 
+  # If set to 1, docker build is performed
+  FORCE_DOCKER_BUILD: "1"
+
 
 jobs:
   unittest:
@@ -99,7 +102,7 @@ jobs:
       # Build docker image
       - uses: mr-smithers-excellent/docker-build-push@v5.5
         name: build-and-push-docker-image
-        if: ${{ steps.deployment-phase.outputs.phase != 'ignore' }}
+        if: ${{ steps.deployment-phase.outputs.phase != 'ignore' || env.FORCE_DOCKER_BUILD == '1'}}
         with:
           image: ${{ env.ORG_NAME }}/${{ env.APP_NAME }}-server
           directory: xcube_geodb_openeo
