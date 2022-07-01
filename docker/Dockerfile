@@ -9,14 +9,17 @@ RUN conda install -n base -c conda-forge mamba pip
 
 WORKDIR /tmp
 ADD environment.yml /tmp/environment.yml
+ADD . /tmp/
 RUN mamba env update -n base
-RUN mamba install -n base -y -c conda-forge
-RUN source activate base
+RUN . activate base
 
-RUN echo "postgrest_url=${postgrest_url}" >> config.yml
-RUN echo "postgrest_port=${postgrest_port}" >> config.yml
-RUN echo "client_id=${client_id}" >> config.yml
-RUN echo "client_secret=${client_secret}" >> config.yml
-RUN echo "auth_domain=${auth_domain}" >> config.yml
+RUN git clone https://github.com/dcs4cop/xcube.git
+WORKDIR /tmp/xcube
+RUN git checkout forman-676-server_redesign
+RUN mamba env update -n base
+RUN pip install -e .
 
-RUN xcube.cli.main --loglevel=DETAIL --traceback serve2 -vvv -c config.yml
+WORKDIR /tmp
+RUN pip install -e .
+
+CMD ["python", "-m", "xcube.cli.main", "--loglevel=DETAIL", "--traceback", "serve2", "-vvv", "-c", "config/config.yml"]
