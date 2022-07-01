@@ -101,8 +101,6 @@ jobs:
           echo "DEPLOYMENT_PHASE: ${{ steps.deployment-phase.outputs.phase }}"
           echo "REAL_VERSION: ${{ steps.real-version.outputs.version }}"
           echo "EVENT: ${{ github.event_name }}"
-          pwd
-          ls
       # Build docker image
       - uses: mr-smithers-excellent/docker-build-push@v5.5
         name: build-and-push-docker-image
@@ -113,7 +111,7 @@ jobs:
           dockerfile: docker/Dockerfile
           addLatest: true
           registry: quay.io
-          buildArgs: GEODB_OPENEO_VERSION=${{ steps.real-version.outputs.tag }}
+          buildArgs: GEODB_OPENEO_VERSION=${{ steps.real-version.outputs.version }}
           username: ${{ secrets.QUAY_REG_USERNAME }}
           password: ${{ secrets.QUAY_REG_PASSWORD }}
   #update-version-deployment:
