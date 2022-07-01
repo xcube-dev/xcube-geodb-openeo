@@ -19,7 +19,7 @@ RUN git checkout forman-676-server_redesign
 RUN mamba env update -n base
 RUN pip install -e .
 
-WORKDIR /tmp/xcube_geodb_openeo
+WORKDIR /tmp/
 RUN pip install -e .
 
 CMD ["python", "-m", "xcube.cli.main", "--loglevel=DETAIL", "--traceback", "serve2", "-vvv", "-c", "config/config.yml"]
