@@ -10,7 +10,7 @@ env:
   APP_NAME: xcube-geodb-openeo
   ORG_NAME: bcdev
 
-  SKIP_UNITTESTS: "0"
+  SKIP_UNITTESTS: "1"
   WAIT_FOR_STARTUP: "1"
 
   # If set to 1, docker build is performed
@@ -69,7 +69,7 @@ jobs:
 
   build-docker-image:
     runs-on: ubuntu-latest
-    needs: [unittest]
+#    needs: [unittest]
     name: build-docker-image
     steps:
       # Checkout xcube-geodb-openeo (this project)
@@ -99,6 +99,8 @@ jobs:
           echo "DEPLOYMENT_PHASE: ${{ steps.deployment-phase.outputs.phase }}"
           echo "REAL_VERSION: ${{ steps.real-version.outputs.version }}"
           echo "EVENT: ${{ github.event_name }}"
+          pwd
+          ls
       # Build docker image
       - uses: mr-smithers-excellent/docker-build-push@v5.5
         name: build-and-push-docker-image
