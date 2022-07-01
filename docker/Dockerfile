@@ -7,9 +7,9 @@ ARG GEODB_OPENEO_VERSION=0.0.1.dev0
 
 RUN conda install -n base -c conda-forge mamba pip
 
-WORKDIR /tmp
-ADD environment.yml /tmp/environment.yml
+#ADD environment.yml /tmp/environment.yml
 ADD . /tmp/
+WORKDIR /tmp
 RUN mamba env update -n base
 RUN . activate base
 
@@ -19,7 +19,7 @@ RUN git checkout forman-676-server_redesign
 RUN mamba env update -n base
 RUN pip install -e .
 
-WORKDIR /tmp
+WORKDIR /tmp/xcube_geodb_openeo
 RUN pip install -e .
 
 CMD ["python", "-m", "xcube.cli.main", "--loglevel=DETAIL", "--traceback", "serve2", "-vvv", "-c", "config/config.yml"]

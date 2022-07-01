@@ -107,7 +107,7 @@ jobs:
         if: ${{ steps.deployment-phase.outputs.phase != 'ignore' || env.FORCE_DOCKER_BUILD == '1'}}
         with:
           image: ${{ env.ORG_NAME }}/${{ env.APP_NAME }}-server
-          directory: xcube_geodb_openeo
+          directory: .
           dockerfile: docker/Dockerfile
           addLatest: true
           registry: quay.io
