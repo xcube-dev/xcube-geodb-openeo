@@ -73,18 +73,20 @@ jobs:
     runs-on: ubuntu-latest
 #    needs: [unittest]
     name: build-docker-image
-    if: ${{ steps.deployment-phase.outputs.phase != 'ignore' || env.FORCE_DOCKER_BUILD == '1'}}
     steps:
       # Checkout xcube-geodb-openeo (this project)
       - name: git-checkout
         uses: actions/checkout@v2
+        if: ${{ steps.deployment-phase.outputs.phase != 'ignore' || env.FORCE_DOCKER_BUILD == '1'}}
       # Get the base release tag used in docker images
       - name: get-release-tag
         id: release
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+        if: ${{ steps.deployment-phase.outputs.phase != 'ignore' || env.FORCE_DOCKER_BUILD == '1'}}
       # The docker image always needs the version as in version.py
       - name: get-xcube-geodb-openeo-version
         id: real-version
+        if: ${{ steps.deployment-phase.outputs.phase != 'ignore' || env.FORCE_DOCKER_BUILD == '1'}}
         run: |
           VERSION=$(echo "`cat xcube_geodb_openeo/version.py | grep version | cut -d "'" -f2`")
           echo ::set-output name=version::${VERSION}
@@ -92,6 +94,7 @@ jobs:
       - name: deployment-phase
         id: deployment-phase
         uses: bc-org/gha-determine-phase@v0.1
+        if: ${{ steps.deployment-phase.outputs.phase != 'ignore' || env.FORCE_DOCKER_BUILD == '1'}}
         with:
           event_name: ${{ github.event_name }}
           tag: ${{ steps.release.outputs.tag }}
@@ -104,6 +107,7 @@ jobs:
           echo "EVENT: ${{ github.event_name }}"
       # Build docker image
       - uses: mr-smithers-excellent/docker-build-push@v5.5
+        if: ${{ steps.deployment-phase.outputs.phase != 'ignore' || env.FORCE_DOCKER_BUILD == '1'}}
         name: build-and-push-docker-image
         with:
           image: ${{ env.ORG_NAME }}/${{ env.APP_NAME }}-server
