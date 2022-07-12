@@ -10,7 +10,7 @@ env:
   APP_NAME: xcube-geodb-openeo
   ORG_NAME: bcdev
 
-  SKIP_UNITTESTS: "1"
+  SKIP_UNITTESTS: "0"
   WAIT_FOR_STARTUP: "1"
 
   # If set to 1, docker build is performed
