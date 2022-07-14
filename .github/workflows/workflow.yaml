@@ -14,7 +14,7 @@ env:
   WAIT_FOR_STARTUP: "1"
 
   # If set to 1, docker build is performed
-  FORCE_DOCKER_BUILD: "1"
+  FORCE_DOCKER_BUILD: "0"
 
 
 jobs:
@@ -71,7 +71,7 @@ jobs:
 
   build-docker-image:
     runs-on: ubuntu-latest
-#    needs: [unittest]
+    needs: [unittest]
     name: build-docker-image
     steps:
       # Checkout xcube-geodb-openeo (this project)
