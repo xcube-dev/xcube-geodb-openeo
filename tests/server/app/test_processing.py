@@ -19,7 +19,9 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 import json
+import os
 import pkgutil
+import time
 from typing import Dict
 
 import yaml
@@ -34,6 +36,13 @@ from xcube_geodb_openeo.backend.processes import LoadCollection
 
 
 class ProcessingTest(ServerTest):
+
+    def setUp(self) -> None:
+        super().setUp()
+        wait_for_server_startup = os.environ.get('WAIT_FOR_STARTUP',
+                                                 '0') == '1'
+        if wait_for_server_startup:
+            time.sleep(10)
 
     def add_extension(self, er: ExtensionRegistry) -> None:
         er.add_extension(

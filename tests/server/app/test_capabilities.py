@@ -1,5 +1,7 @@
 import json
+import os
 import pkgutil
+import time
 from typing import Dict
 
 import yaml
@@ -11,9 +13,17 @@ from xcube.util.extension import ExtensionRegistry
 
 class CapabilitiesTest(ServerTest):
 
+    def setUp(self) -> None:
+        super().setUp()
+        wait_for_server_startup = os.environ.get('WAIT_FOR_STARTUP',
+                                                 '0') == '1'
+        if wait_for_server_startup:
+            time.sleep(10)
+
     def add_extension(self, er: ExtensionRegistry) -> None:
-        er.add_extension(loader=extension.import_component('xcube_geodb_openeo.api:api'),
-                         point=EXTENSION_POINT_SERVER_APIS, name='geodb-openeo')
+        er.add_extension(
+            loader=extension.import_component('xcube_geodb_openeo.api:api'),
+            point=EXTENSION_POINT_SERVER_APIS, name='geodb-openeo')
 
     def add_config(self, config: Dict):
         data = pkgutil.get_data('tests', 'test_config.yml')
