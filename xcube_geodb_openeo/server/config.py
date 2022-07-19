@@ -35,5 +35,5 @@ OPENEO_CONFIG_SCHEMA = JsonObjectSchema(
             client_secret=JsonStringSchema(),
             auth_domain=JsonStringSchema())
         )),
-    additional_properties=False
+    additional_properties=True
 )
