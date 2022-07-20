@@ -42,15 +42,16 @@ class GeoDBDataStore(DataStore):
     def geodb(self):
         assert self.config
 
-        server_url = self.config['geodb_openeo']['postgrest_url']
-        server_port = self.config['geodb_openeo']['postgrest_port']
-        client_id = self.config['geodb_openeo']['client_id'] \
-            if 'client_id' in self.config['geodb_openeo'] \
+        api_config = self.config['geodb_openeo']
+        server_url = api_config['postgrest_url']
+        server_port = api_config['postgrest_port']
+        client_id = api_config['client_id'] \
+            if 'client_id' in api_config \
             else os.getenv('XC_GEODB_OPENEO_CLIENT_ID')
-        client_secret = self.config['geodb_openeo']['client_secret'] \
-            if 'client_secret' in self.config['geodb_openeo'] \
+        client_secret = api_config['client_secret'] \
+            if 'client_secret' in api_config \
             else os.getenv('XC_GEODB_OPENEO_CLIENT_SECRET')
-        auth_domain = self.config['geodb_openeo']['auth_domain']
+        auth_domain = api_config['auth_domain']
 
         return GeoDBClient(
             server_url=server_url,
