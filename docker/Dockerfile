@@ -3,8 +3,6 @@ FROM continuumio/miniconda3:4.12.0
 LABEL maintainer="xcube-team@brockmann-consult.de"
 LABEL name=xcube_geodb_openeo
 
-ARG GEODB_OPENEO_VERSION=0.0.1.dev0
-
 RUN conda install -n base -c conda-forge mamba pip
 
 #ADD environment.yml /tmp/environment.yml
