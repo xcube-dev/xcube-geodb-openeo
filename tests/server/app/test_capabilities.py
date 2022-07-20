@@ -1,24 +1,16 @@
 import json
-import os
 import pkgutil
-import time
 from typing import Dict
 
 import yaml
-from xcube.server.testing import ServerTest
 from xcube.util import extension
 from xcube.constants import EXTENSION_POINT_SERVER_APIS
 from xcube.util.extension import ExtensionRegistry
 
+from tests.server.app.base_test import BaseTest
 
-class CapabilitiesTest(ServerTest):
 
-    def setUp(self) -> None:
-        super().setUp()
-        wait_for_server_startup = os.environ.get('WAIT_FOR_STARTUP',
-                                                 '0') == '1'
-        if wait_for_server_startup:
-            time.sleep(10)
+class CapabilitiesTest(BaseTest):
 
     def add_extension(self, er: ExtensionRegistry) -> None:
         er.add_extension(
