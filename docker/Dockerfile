@@ -22,4 +22,4 @@ RUN pip install -e .
 WORKDIR /tmp/
 RUN pip install -e .
 
-CMD ["python", "-m", "xcube.cli.main", "--loglevel=DETAIL", "--traceback", "serve2", "-vvv", "-c", "/etc/config/config.yml"]
+CMD ["xcube", "--loglevel=DETAIL", "--traceback", "serve2", "-vvv", "-c", "/etc/config/config.yml"]
