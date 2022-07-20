@@ -43,7 +43,7 @@ The Dockerfile is based on miniconda. It
 2) clones the xcube-GitHub repository
 3) checks out the branch that contains the server
 4) and installs it into the base environment
-5) then installs the current repository, i.e. xcube-geodb-openeo, into the base
+5) then installs the current Python package `xcube-geodb-openeo` from sources, into the base
    environment
 
 In its `CMD` call, it passes the file `/etc/config/config.yml` to the starting
