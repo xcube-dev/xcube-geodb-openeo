@@ -20,16 +20,16 @@
 # DEALINGS IN THE SOFTWARE.
 
 import os
-
 from functools import cached_property
-from typing import Tuple
-from typing import Optional
-from typing import Mapping
 from typing import Any
+from typing import Mapping
+from typing import Optional
+from typing import Tuple
 
-from .datastore import DataStore
+from pandas import DataFrame
 from xcube_geodb.core.geodb import GeoDBClient
 
+from .datastore import DataStore
 from .vectorcube import VectorCube
 
 
@@ -108,6 +108,14 @@ class GeoDBDataStore(DataStore):
                 )
 
         properties = self.geodb.get_properties(collection_id)
+
+        self.add_metadata(collection_bbox, collection_id, properties,
+                          vector_cube)
+        return vector_cube
+
+    @staticmethod
+    def add_metadata(collection_bbox: Tuple, collection_id: str,
+                     properties: DataFrame, vector_cube: VectorCube):
         summaries = {
             'properties': []
         }
@@ -121,12 +129,14 @@ class GeoDBDataStore(DataStore):
                     'crs': 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
                 },
                 'temporal': {
-                    'interval': [['null']]
+                    'interval': [['null', 'null']]
+                    # todo - maybe define a list of possible property names to
+                    #  scan for the temporal interval, such as start_date,
+                    #  end_date,
                 }
             },
             'summaries': summaries
         }
-        return vector_cube
 
     def transform_bbox(self, collection_id: str,
                        bbox: Tuple[float, float, float, float],
