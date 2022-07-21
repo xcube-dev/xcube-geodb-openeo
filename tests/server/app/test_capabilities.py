@@ -39,9 +39,19 @@ class CapabilitiesTest(BaseTest):
         self.assertEqual(
             'Catalog of geoDB collections.', metainfo['description'])
         self.assertEqual(
-            '/collections', metainfo['endpoints'][0]['path'])
+            '/.well-known/openeo', metainfo['endpoints'][0]['path'])
         self.assertEqual(
             'GET', metainfo['endpoints'][0]['methods'][0])
+
+        self.assertEqual(
+            '/result', metainfo['endpoints'][2]['path'])
+        self.assertEqual(
+            'POST', metainfo['endpoints'][2]['methods'][0])
+
+        self.assertEqual(
+            '/collections/{collection_id}/items', metainfo['endpoints'][6]['path'])
+        self.assertEqual(
+            'GET', metainfo['endpoints'][6]['methods'][0])
         self.assertIsNotNone(metainfo['links'])
 
     def test_well_known_info(self):

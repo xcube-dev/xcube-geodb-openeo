@@ -43,7 +43,7 @@ def get_root(config: Mapping[str, Any], base_url: str):
         'endpoints': [
             {'path': '/.well-known/openeo', 'methods': ['GET']},
             {'path': '/file_formats', 'methods': ['GET']},
-            {'path': '/result', 'methods': ['GET']},
+            {'path': '/result', 'methods': ['POST']},
             {'path': '/conformance', 'methods': ['GET']},
             {'path': '/collections', 'methods': ['GET']},
             {'path': '/collections/{collection_id}', 'methods': ['GET']},
