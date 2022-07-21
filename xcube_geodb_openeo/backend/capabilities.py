@@ -41,9 +41,14 @@ def get_root(config: Mapping[str, Any], base_url: str):
         "title": config['geodb_openeo']['SERVER_TITLE'],
         "description": config['geodb_openeo']['SERVER_DESCRIPTION'],
         'endpoints': [
+            {'path': '/.well-known/openeo', 'methods': ['GET']},
+            {'path': '/file_formats', 'methods': ['GET']},
+            {'path': '/result', 'methods': ['GET']},
+            {'path': '/conformance', 'methods': ['GET']},
             {'path': '/collections', 'methods': ['GET']},
-            # TODO - only list endpoints, which are implemented and are
-            #  fully compatible to the API specification.
+            {'path': '/collections/{collection_id}', 'methods': ['GET']},
+            {'path': '/collections/{collection_id}/items', 'methods': ['GET']},
+            {'path': '/collections/{collection_id}/items/{feature_id}', 'methods': ['GET']},
         ],
         "links": [  # todo - links are incorrect
             {

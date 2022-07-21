@@ -158,6 +158,20 @@ class ResultHandler(ApiHandler):
                                          f' \'{ep["name"]}\'.'))
 
 
+@api.route('/conformance')
+class ConformanceHandler(ApiHandler):
+    """
+    Lists all conformance classes specified in OGC standards that the server
+    conforms to.
+    """
+
+    def get(self):
+        """
+        Lists the conformance classes.
+        """
+        self.response.finish(capabilities.get_conformance())
+
+
 @api.route('/collections')
 class CollectionsHandler(ApiHandler):
     """
@@ -181,20 +195,6 @@ class CollectionsHandler(ApiHandler):
         if not self.ctx.collections:
             self.ctx.fetch_collections(base_url, limit, offset)
         self.response.finish(self.ctx.collections)
-
-
-@api.route('/conformance')
-class ConformanceHandler(ApiHandler):
-    """
-    Lists all conformance classes specified in OGC standards that the server
-    conforms to.
-    """
-
-    def get(self):
-        """
-        Lists the conformance classes.
-        """
-        self.response.finish(capabilities.get_conformance())
 
 
 @api.route('/collections/{collection_id}')
