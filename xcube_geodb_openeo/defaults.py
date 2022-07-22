@@ -20,7 +20,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 default_config = {
-    'SERVER_URL': 'http://www.brockmann-consult.de/xcube-geoDB-openEO',
+    'SERVER_URL': 'https://www.brockmann-consult.de/xcube-geoDB-openEO',
     'SERVER_ID': 'xcube-geodb-openeo',
     'SERVER_TITLE': 'xcube geoDB Server, openEO API',
     'SERVER_DESCRIPTION': 'Catalog of geoDB collections.'

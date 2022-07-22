@@ -108,9 +108,8 @@ def get_conformance():
     return {
         "conformsTo": [
             # TODO: fix this list so it becomes true
-            "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
-            "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30",
-            "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/html",
-            "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson"
+            "http://www.opengis.net/doc/IS/ogcapi-features-1/1.0",
+            "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30",
+            "https://datatracker.ietf.org/doc/html/rfc7946"
         ]
     }
