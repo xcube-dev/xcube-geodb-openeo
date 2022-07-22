@@ -60,7 +60,7 @@ class CapabilitiesTest(BaseTest):
         )
         self.assertEqual(200, response.status)
         well_known_data = json.loads(response.data)
-        self.assertEqual('http://www.brockmann-consult.de/xcube-geoDB-openEO',
+        self.assertEqual('https://www.brockmann-consult.de/xcube-geoDB-openEO',
                          well_known_data['versions'][0]['url'])
         self.assertEqual('1.1.0',
                          well_known_data['versions'][0]['api_version'])
