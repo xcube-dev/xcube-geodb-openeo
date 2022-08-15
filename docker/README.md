@@ -7,7 +7,7 @@ in the step `build-docker-image`.
 It can be run locally using docker like so:
 
 ```bash
-docker run -p 8080:8080 -env-file env.list quay.io/bcdev/xcube-geoserv 
+docker run -p 8080:8080 -env-file env.list quay.io/bcdev/xcube-geodb-backend
 ```
 
 where `env.list` contains the following values:
