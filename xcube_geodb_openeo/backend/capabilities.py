@@ -46,9 +46,11 @@ def get_root(config: Mapping[str, Any], base_url: str):
             {'path': '/result', 'methods': ['POST']},
             {'path': '/conformance', 'methods': ['GET']},
             {'path': '/collections', 'methods': ['GET']},
+            {'path': '/processes', 'methods': ['GET']},
             {'path': '/collections/{collection_id}', 'methods': ['GET']},
             {'path': '/collections/{collection_id}/items', 'methods': ['GET']},
-            {'path': '/collections/{collection_id}/items/{feature_id}', 'methods': ['GET']},
+            {'path': '/collections/{collection_id}/items/{feature_id}',
+             'methods': ['GET']},
         ],
         "links": [  # todo - links are incorrect
             {
