@@ -20,7 +20,6 @@ RUN pip install -e .
 WORKDIR /tmp/
 RUN git clone https://github.com/dcs4cop/xcube-geodb.git
 WORKDIR /tmp/xcube-geodb
-RUN git checkout thomas_xxx_fix_expected_bbox
 RUN pip install -e .
 
 WORKDIR /tmp/
