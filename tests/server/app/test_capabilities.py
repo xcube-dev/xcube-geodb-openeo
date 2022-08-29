@@ -49,9 +49,9 @@ class CapabilitiesTest(BaseTest):
             'POST', metainfo['endpoints'][2]['methods'][0])
 
         self.assertEqual(
-            '/collections/{collection_id}/items', metainfo['endpoints'][6]['path'])
+            '/collections/{collection_id}/items', metainfo['endpoints'][7]['path'])
         self.assertEqual(
-            'GET', metainfo['endpoints'][6]['methods'][0])
+            'GET', metainfo['endpoints'][7]['methods'][0])
         self.assertIsNotNone(metainfo['links'])
 
     def test_well_known_info(self):
