@@ -39,7 +39,7 @@ class DataDiscoveryTest(BaseTest):
         self.assertIsNotNone(collection_data)
         self.assertIsNotNone(collection_data['extent'])
         self.assertEqual(2, len(collection_data['extent']))
-        expected_spatial_extent = {'bbox': [8, 51, 12, 52],
+        expected_spatial_extent = {'bbox': [[8, 51, 12, 52]],
                                    'crs': 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'}
         expected_temporal_extent = {'interval' : [['null', 'null']]}
         self.assertEqual(expected_spatial_extent,

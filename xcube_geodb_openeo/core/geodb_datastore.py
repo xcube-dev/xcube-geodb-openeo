@@ -125,7 +125,7 @@ class GeoDBDataStore(DataStore):
             'title': collection_id,
             'extent': {
                 'spatial': {
-                    'bbox': collection_bbox,
+                    'bbox': [collection_bbox],
                     'crs': 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
                 },
                 'temporal': {
