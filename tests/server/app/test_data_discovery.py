@@ -31,21 +31,49 @@ class DataDiscoveryTest(BaseTest):
         self.assertIsNotNone(collections_data['collections'])
         self.assertIsNotNone(collections_data['links'])
 
+        first_collection = collections_data['collections'][0]
+        self.assertEqual("1.0.0", first_collection['stac_version'])
+        self.assertEqual(
+            ['datacube',
+             'https://stac-extensions.github.io/version/v1.0.0/schema.json'],
+            first_collection['stac_extensions'])
+        response_type = first_collection['type']
+        self.assertEqual(response_type, "Collection")
+        self.assertIsNotNone(first_collection['id'])
+        self.assertIsNotNone(first_collection['description'])
+        self.assertEqual("0.3.1", first_collection['version'])
+        self.assertIsNotNone(first_collection['license'])
+        self.assertIsNotNone(first_collection['extent'])
+        self.assertIsNotNone(first_collection['links'])
+
     def test_collection(self):
         url = f'http://localhost:{self.port}/collections/collection_1'
         response = self.http.request('GET', url)
         self.assertEqual(200, response.status)
         collection_data = json.loads(response.data)
-        self.assertIsNotNone(collection_data)
-        self.assertIsNotNone(collection_data['extent'])
+        self.assertEqual("1.0.0", collection_data['stac_version'])
+        self.assertEqual(
+            ['datacube',
+             'https://stac-extensions.github.io/version/v1.0.0/schema.json'],
+            collection_data['stac_extensions'])
+        response_type = collection_data['type']
+        self.assertEqual(response_type, "Collection")
+        self.assertIsNotNone(collection_data['id'])
+        self.assertIsNotNone(collection_data['description'])
+        self.assertEqual("0.3.1", collection_data['version'])
+        self.assertIsNotNone(collection_data['license'])
         self.assertEqual(2, len(collection_data['extent']))
-        expected_spatial_extent = {'bbox': [[8, 51, 12, 52]],
-                                   'crs': 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'}
-        expected_temporal_extent = {'interval' : [['null', 'null']]}
+        expected_spatial_extent = \
+            {'bbox': [[8, 51, 12, 52]],
+             'crs': 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'}
+        expected_temporal_extent = {'interval': [['null', 'null']]}
         self.assertEqual(expected_spatial_extent,
                          collection_data['extent']['spatial'])
         self.assertEqual(expected_temporal_extent,
                          collection_data['extent']['temporal'])
+        self.assertEqual({'vector_dim': {'type': 'other'}},
+                         collection_data['cube:dimensions'])
+        self.assertIsNotNone(collection_data['summaries'])
 
     def test_get_items(self):
         url = f'http://localhost:{self.port}/collections/collection_1/items'

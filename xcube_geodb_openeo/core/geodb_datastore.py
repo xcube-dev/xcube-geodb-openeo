@@ -110,12 +110,13 @@ class GeoDBDataStore(DataStore):
         properties = self.geodb.get_properties(collection_id)
 
         self.add_metadata(collection_bbox, collection_id, properties,
-                          vector_cube)
+                          None, vector_cube)
         return vector_cube
 
     @staticmethod
     def add_metadata(collection_bbox: Tuple, collection_id: str,
-                     properties: DataFrame, vector_cube: VectorCube):
+                     properties: DataFrame, version: Optional[str],
+                     vector_cube: VectorCube):
         summaries = {
             'properties': []
         }
@@ -137,6 +138,8 @@ class GeoDBDataStore(DataStore):
             },
             'summaries': summaries
         }
+        if version:
+            vector_cube['metadata']['version'] = version
 
     def transform_bbox(self, collection_id: str,
                        bbox: Tuple[float, float, float, float],

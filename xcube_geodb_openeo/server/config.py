@@ -24,7 +24,7 @@ from xcube.util.jsonschema import JsonStringSchema
 
 API_VERSION = '1.1.0'
 API_URL_PREFIX = f'/api/v{API_VERSION}'
-STAC_VERSION = '0.9.0'
+STAC_VERSION = '1.0.0'
 
 OPENEO_CONFIG_SCHEMA = JsonObjectSchema(
     properties=dict(

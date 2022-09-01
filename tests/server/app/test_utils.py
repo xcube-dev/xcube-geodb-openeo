@@ -1,7 +1,10 @@
 def assert_paderborn(cls, vector_cube):
     cls.assertIsNotNone(vector_cube)
-    cls.assertEqual('0.9.0', vector_cube['stac_version'])
-    cls.assertEqual(['xcube-geodb'], vector_cube['stac_extensions'])
+    cls.assertEqual('1.0.0', vector_cube['stac_version'])
+    cls.assertEqual(
+        ['datacube',
+         'https://stac-extensions.github.io/version/v1.0.0/schema.json'],
+        vector_cube['stac_extensions'])
     cls.assertEqual('Feature', vector_cube['type'])
     cls.assertEqual('1', vector_cube['id'])
     assert_paderborn_data(cls, vector_cube)
@@ -22,8 +25,11 @@ def assert_paderborn_data(cls, vector_cube):
 
 
 def assert_hamburg(cls, vector_cube):
-    cls.assertEqual('0.9.0', vector_cube['stac_version'])
-    cls.assertEqual(['xcube-geodb'], vector_cube['stac_extensions'])
+    cls.assertEqual('1.0.0', vector_cube['stac_version'])
+    cls.assertEqual(
+        ['datacube',
+         'https://stac-extensions.github.io/version/v1.0.0/schema.json'],
+        vector_cube['stac_extensions'])
     cls.assertEqual('Feature', vector_cube['type'])
     cls.assertEqual('0', vector_cube['id'])
     assert_hamburg_data(cls, vector_cube)

@@ -30,7 +30,7 @@ class CapabilitiesTest(BaseTest):
         metainfo = json.loads(response.data)
         self.assertEqual('1.1.0', metainfo['api_version'])
         self.assertEqual('0.0.1.dev0', metainfo['backend_version'])
-        self.assertEqual('0.9.0', metainfo['stac_version'])
+        self.assertEqual('1.0.0', metainfo['stac_version'])
         self.assertEqual('catalog', metainfo['type'])
         self.assertEqual('xcube-geodb-openeo', metainfo['id'])
         self.assertEqual(
