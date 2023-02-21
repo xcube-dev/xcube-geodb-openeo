@@ -37,6 +37,8 @@ from ..core.vectorcube import Feature
 from ..defaults import default_config
 from ..server.config import STAC_VERSION
 
+from xcube.constants import LOG
+
 STAC_DEFAULT_COLLECTIONS_LIMIT = 10
 STAC_DEFAULT_ITEMS_LIMIT = 10
 STAC_MAX_ITEMS_LIMIT = 10000
@@ -77,10 +79,14 @@ class GeoDbContext(ApiContext):
     def __init__(self, root: Context):
         super().__init__(root)
         self._request = None
-        self.config = root.config
+        # necessary because root.config and its sub-configs are not writable
+        # so copy their config in a new dict
+        self.config = dict(root.config)
         for key in default_config.keys():
             if key not in self.config['geodb_openeo']:
-                self.config['geodb_openeo'][key] = default_config[key]
+                unfrozen_dict = dict(self.config['geodb_openeo'])
+                self.config['geodb_openeo'] = unfrozen_dict
+                unfrozen_dict[key] = default_config[key]
         self._collections = {}
 
     def update(self, prev_ctx: Optional["Context"]):
@@ -110,9 +116,11 @@ class GeoDbContext(ApiContext):
                                       len(self.collection_ids))
         collection_list = []
         for collection_id in self.collection_ids[offset:offset + limit]:
+            LOG.info(f'Building vector cube for collection {collection_id}...')
             vector_cube = self.get_vector_cube(collection_id, with_items=False,
                                                bbox=None, limit=limit,
                                                offset=offset)
+            LOG.info("...done")
             collection = _get_vector_cube_collection(base_url, vector_cube)
             collection_list.append(collection)
 
@@ -204,33 +212,33 @@ def search():
 
 def _get_vector_cube_collection(base_url: str,
                                 vector_cube: VectorCube):
-    vector_cube_id = vector_cube["id"]
-    metadata = vector_cube.get("metadata", {})
+    vector_cube_id = vector_cube['id']
+    metadata = vector_cube.get('metadata', {})
     return {
-        "stac_version": STAC_VERSION,
-        "stac_extensions": ["xcube-geodb"],
-        "id": vector_cube_id,
-        "title": metadata.get("title", ""),
-        "description": metadata.get("description", "No description "
-                                                   "available."),
-        "license": metadata.get("license", "proprietary"),
-        "keywords": metadata.get("keywords", []),
-        "providers": metadata.get("providers", []),
-        "extent": metadata.get("extent", {}),
-        "summaries": metadata.get("summaries", {}),
-        "links": [
+        'stac_version': STAC_VERSION,
+        'stac_extensions': ['xcube-geodb'],
+        'id': vector_cube_id,
+        'title': metadata.get('title', ''),
+        'description': metadata.get('description', 'No description '
+                                                   'available.'),
+        'license': metadata.get('license', 'proprietary'),
+        'keywords': metadata.get('keywords', []),
+        'providers': metadata.get('providers', []),
+        'extent': metadata.get('extent', {}),
+        'summaries': metadata.get('summaries', {}),
+        'links': [
             {
-                "rel": "self",
-                "href": f"{base_url}/collections/{vector_cube_id}"
+                'rel': 'self',
+                'href': f'{base_url}/collections/{vector_cube_id}'
             },
             {
-                "rel": "root",
-                "href": f"{base_url}/collections/"
+                'rel': 'root',
+                'href': f'{base_url}/collections/'
             },
             # {
-            #     "rel": "license",
-            #     "href": ctx.get_url("TODO"),
-            #     "title": "TODO"
+            #     'rel': 'license',
+            #     'href': ctx.get_url('TODO'),
+            #     'title': 'TODO'
             # }
         ]
     }
@@ -238,36 +246,36 @@ def _get_vector_cube_collection(base_url: str,
 
 def _get_vector_cube_item(base_url: str, vector_cube: VectorCube,
                           feature: Feature):
-    collection_id = vector_cube["id"]
-    feature_id = feature["id"]
-    feature_bbox = feature.get("bbox")
-    feature_geometry = feature.get("geometry")
-    feature_properties = feature.get("properties", {})
+    collection_id = vector_cube['id']
+    feature_id = feature['id']
+    feature_bbox = feature.get('bbox')
+    feature_geometry = feature.get('geometry')
+    feature_properties = feature.get('properties', {})
 
     return {
-        "stac_version": STAC_VERSION,
-        "stac_extensions": ["xcube-geodb"],
-        "type": "Feature",
-        "id": feature_id,
-        "bbox": feature_bbox,
-        "geometry": feature_geometry,
-        "properties": feature_properties,
-        "collection": collection_id,
-        "links": [
+        'stac_version': STAC_VERSION,
+        'stac_extensions': ['xcube-geodb'],
+        'type': 'Feature',
+        'id': feature_id,
+        'bbox': feature_bbox,
+        'geometry': feature_geometry,
+        'properties': feature_properties,
+        'collection': collection_id,
+        'links': [
             {
-                "rel": "self",
-                "href": f"{base_url}/collections/"
-                        f"{collection_id}/items/{feature_id}"
+                'rel': 'self',
+                'href': f'{base_url}/collections/'
+                        f'{collection_id}/items/{feature_id}'
             }
         ],
-        "assets": {
-            "analytic": {
+        'assets': {
+            'analytic': {
                 # TODO
             },
-            "visual": {
+            'visual': {
                 # TODO
             },
-            "thumbnail": {
+            'thumbnail': {
                 # TODO
             }
         }

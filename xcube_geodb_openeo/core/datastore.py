@@ -20,6 +20,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import abc
+import math
 from typing import Dict, Tuple, Optional
 
 import shapely.geometry
@@ -62,7 +63,11 @@ class DataStore(abc.ABC):
             for k, key in enumerate(feature.keys()):
                 if not key == 'id' and not \
                         collection.dtypes.values[k].name == 'geometry':
-                    properties[key] = feature[key]
+                    if isinstance(feature[key], float) \
+                            and math.isnan(float(feature[key])):
+                        properties[key] = 'NaN'
+                    else:
+                        properties[key] = feature[key]
 
             vector_cube['features'].append({
                 'stac_version': STAC_VERSION,

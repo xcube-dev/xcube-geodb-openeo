@@ -21,13 +21,15 @@
 
 import os
 from functools import cached_property
-from typing import Any
+from typing import Any, List
 from typing import Mapping
 from typing import Optional
 from typing import Tuple
 
+import pandas
 from pandas import DataFrame
 from xcube_geodb.core.geodb import GeoDBClient
+from xcube.constants import LOG
 
 from .datastore import DataStore
 from .vectorcube import VectorCube
@@ -61,12 +63,12 @@ class GeoDBDataStore(DataStore):
             auth_aud=auth_domain
         )
 
-    def get_collection_keys(self):
+    def get_collection_keys(self) -> List[str]:
         database_names = self.geodb.get_my_databases().get('name').array
         collections = None
         for n in database_names:
-            if collections:
-                collections.concat(self.geodb.get_my_collections(n))
+            if collections is not None:
+                pandas.concat([collections, self.geodb.get_my_collections(n)])
             else:
                 collections = self.geodb.get_my_collections(n)
         return collections.get('collection')
@@ -79,14 +81,6 @@ class GeoDBDataStore(DataStore):
         vector_cube = self.geodb.get_collection_info(collection_id)
         vector_cube['id'] = collection_id
         vector_cube['features'] = []
-        if bbox:
-            vector_cube['total_feature_count'] = \
-                int(self.geodb.count_collection_by_bbox(
-                    collection_id, bbox)['ct'][0])
-        else:
-            vector_cube['total_feature_count'] = \
-                int(self.geodb.count_collection_by_bbox(
-                    collection_id, (-180, 90, 180, -90))['ct'][0])
 
         if with_items:
             if bbox:
@@ -96,6 +90,8 @@ class GeoDBDataStore(DataStore):
             else:
                 items = self.geodb.get_collection(collection_id, limit=limit,
                                                   offset=offset)
+
+            vector_cube['total_feature_count'] = len(items)
             self.add_items_to_vector_cube(items, vector_cube)
 
         collection_bbox = self.geodb.get_collection_bbox(collection_id)
