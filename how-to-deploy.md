@@ -31,9 +31,9 @@ This workflow:
         - `secrets.QUAY_REG_USERNAME`
         - `secrets.QUAY_REG_PASSWORD`
 - can be configured with the following variables:
-    - `SKIP_UNITTESTS:` "0" or "1"; if set to "1", unit tests are skipped
-    - `FORCE_DOCKER_BUILD`: "1"; if set to "1", a docker image will be built and
-      uploaded to quay.io, regardless of the tag or release
+  - `SKIP_UNITTESTS:` "0" or "1"; if set to "1", unit tests are skipped
+  - `FORCE_DOCKER_BUILD`: "1"; if set to "1", a docker image will be built and 
+    uploaded to quay.io, regardless of the tag or release
 - The GH action does no change on the helm chart. This may be added later.
 
 ### Dockerfile
@@ -54,7 +54,7 @@ server.
 The helm chart for the xcube-geodb-openeo-server is located in [k8s-configs](https://github.com/bc-org/k8s-configs/tree/main/xcube-geodb-openeo/helm).
 It consists of:
 1) templates for
-    - config-map (`api-config-map.yaml`), where the config is specified, and
+    - config-map (`api-config-map.yaml`), where the config is specified, and 
       configured to reside in a file `config.yml`
     - deployment (`api-deployment.yaml`), where the container is defined
       (i.e. the docker image), credentials are put into the environment, and
