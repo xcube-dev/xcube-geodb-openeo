@@ -44,7 +44,6 @@ def get_root(config: Mapping[str, Any], base_url: str):
             {'path': '/.well-known/openeo', 'methods': ['GET']},
             {'path': '/file_formats', 'methods': ['GET']},
             {'path': '/result', 'methods': ['POST']},
-            {'path': '/conformance', 'methods': ['GET']},
             {'path': '/collections', 'methods': ['GET']},
             {'path': '/processes', 'methods': ['GET']},
             {'path': '/collections/{collection_id}', 'methods': ['GET']},
@@ -52,7 +51,7 @@ def get_root(config: Mapping[str, Any], base_url: str):
             {'path': '/collections/{collection_id}/items/{feature_id}',
              'methods': ['GET']},
         ],
-        "links": [  # todo - links are incorrect
+        "links": [
             {
                 "rel": "self",
                 "href": f"{base_url}/",
@@ -72,23 +71,10 @@ def get_root(config: Mapping[str, Any], base_url: str):
                 "title": "the API documentation"
             },
             {
-                "rel": "conformance",
-                "href": f"{base_url}/conformance",
-                "type": "application/json",
-                "title": "OGC API conformance classes"
-                         " implemented by this server"
-            },
-            {
                 "rel": "data",
                 "href": f"{base_url}/collections",
                 "type": "application/json",
                 "title": "Information about the feature collections"
-            },
-            {
-                "rel": "search",
-                "href": f"{base_url}/search",
-                "type": "application/json",
-                "title": "Search across feature collections"
             }
         ]
     }
@@ -101,17 +87,5 @@ def get_well_known(config: Mapping[str, Any]):
                 'url': config['geodb_openeo']['SERVER_URL'],
                 'api_version': API_VERSION
             }
-        ]
-    }
-
-
-# noinspection PyUnusedLocal
-def get_conformance():
-    return {
-        "conformsTo": [
-            # TODO: fix this list so it becomes true
-            "http://www.opengis.net/doc/IS/ogcapi-features-1/1.0",
-            "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30",
-            "https://datatracker.ietf.org/doc/html/rfc7946"
         ]
     }

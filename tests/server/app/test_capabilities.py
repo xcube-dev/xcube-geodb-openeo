@@ -50,7 +50,7 @@ class CapabilitiesTest(BaseTest):
         )
         metainfo = json.loads(response.data)
         self.assertEqual('1.1.0', metainfo['api_version'])
-        self.assertEqual('0.0.1.dev0', metainfo['backend_version'])
+        self.assertEqual('0.0.2.dev0', metainfo['backend_version'])
         self.assertEqual('1.0.0', metainfo['stac_version'])
         self.assertEqual('catalog', metainfo['type'])
         self.assertEqual('xcube-geodb-openeo', metainfo['id'])
@@ -70,7 +70,7 @@ class CapabilitiesTest(BaseTest):
             'POST', metainfo['endpoints'][2]['methods'][0])
 
         self.assertEqual(
-            '/collections/{collection_id}/items', metainfo['endpoints'][7]['path'])
+            '/collections/{collection_id}/items', metainfo['endpoints'][6]['path'])
         self.assertEqual(
             'GET', metainfo['endpoints'][7]['methods'][0])
         self.assertIsNotNone(metainfo['links'])
@@ -90,6 +90,4 @@ class CapabilitiesTest(BaseTest):
         response = self.http.request(
             'GET', f'http://localhost:{self.port}/conformance'
         )
-        self.assertEqual(200, response.status)
-        conformance_data = json.loads(response.data)
-        self.assertIsNotNone(conformance_data['conformsTo'])
+        self.assertEqual(404, response.status)

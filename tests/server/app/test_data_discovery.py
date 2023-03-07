@@ -58,14 +58,14 @@ class DataDiscoveryTest(BaseTest):
             ['datacube',
              'https://stac-extensions.github.io/version/v1.0.0/schema.json'],
             first_collection['stac_extensions'])
-        response_type = first_collection['type']
-        self.assertEqual(response_type, "Collection")
-        self.assertIsNotNone(first_collection['id'])
+        self.assertEqual(first_collection['type'], 'Collection')
+        self.assertEqual('collection_1', first_collection['id'])
         self.assertIsNotNone(first_collection['description'])
         self.assertEqual("0.3.1", first_collection['version'])
         self.assertIsNotNone(first_collection['license'])
         self.assertIsNotNone(first_collection['extent'])
         self.assertIsNotNone(first_collection['links'])
+        self.assertEqual(2, len(first_collection['links']))
 
     def test_collection(self):
         url = f'http://localhost:{self.port}/collections/collection_1'
@@ -110,7 +110,8 @@ class DataDiscoveryTest(BaseTest):
         test_utils.assert_paderborn(self, items_data['features'][1])
 
     def test_get_items_no_results(self):
-        url = f'http://localhost:{self.port}/collections/empty_collection/items'
+        url = f'http://localhost:{self.port}/collections/' \
+              f'empty_collection/items'
         response = self.http.request('GET', url)
         self.assertEqual(200, response.status)
         items_data = json.loads(response.data)

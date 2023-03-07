@@ -200,11 +200,6 @@ def get_collections_links(limit: int, offset: int, url: str,
     return links
 
 
-def search():
-    # TODO: implement me
-    return {}
-
-
 def _get_vector_cube_collection(base_url: str,
                                 vector_cube: VectorCube):
     vector_cube_id = vector_cube['id']
@@ -231,12 +226,7 @@ def _get_vector_cube_collection(base_url: str,
             {
                 'rel': 'root',
                 'href': f'{base_url}/collections/'
-            },
-            # {
-            #     'rel': 'license',
-            #     'href': ctx.get_url('TODO'),
-            #     'title': 'TODO'
-            # }
+            }
         ]
     }
     if 'version' in metadata:
@@ -268,17 +258,7 @@ def _get_vector_cube_item(base_url: str, vector_cube: VectorCube,
                         f'{collection_id}/items/{feature_id}'
             }
         ],
-        'assets': {
-            'analytic': {
-                # TODO
-            },
-            'visual': {
-                # TODO
-            },
-            'thumbnail': {
-                # TODO
-            }
-        }
+        'assets': {}
     }
 
 

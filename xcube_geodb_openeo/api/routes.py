@@ -149,27 +149,14 @@ class ResultHandler(ApiHandler):
         result = processes.submit_process_sync(process, self.ctx)
         self.response.finish(result)
 
-    def ensure_parameters(self, expected_parameters, process_parameters):
+    @staticmethod
+    def ensure_parameters(expected_parameters, process_parameters):
         for ep in expected_parameters:
             is_optional_param = 'optional' in ep and ep['optional']
             if not is_optional_param:
                 if ep['name'] not in process_parameters:
                     raise (ApiError(400, f'Request body must contain parameter'
                                          f' \'{ep["name"]}\'.'))
-
-
-@api.route('/conformance')
-class ConformanceHandler(ApiHandler):
-    """
-    Lists all conformance classes specified in OGC standards that the server
-    conforms to.
-    """
-
-    def get(self):
-        """
-        Lists the conformance classes.
-        """
-        self.response.finish(capabilities.get_conformance())
 
 
 @api.route('/collections')

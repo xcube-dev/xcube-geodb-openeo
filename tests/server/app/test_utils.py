@@ -28,6 +28,7 @@ def assert_paderborn(cls, vector_cube):
     cls.assertEqual(STAC_EXTENSIONS, vector_cube['stac_extensions'])
     cls.assertEqual('Feature', vector_cube['type'])
     cls.assertEqual('1', vector_cube['id'])
+    cls.assertDictEqual({}, vector_cube['assets'])
     assert_paderborn_data(cls, vector_cube)
 
 
@@ -50,6 +51,7 @@ def assert_hamburg(cls, vector_cube):
     cls.assertEqual(STAC_EXTENSIONS, vector_cube['stac_extensions'])
     cls.assertEqual('Feature', vector_cube['type'])
     cls.assertEqual('0', vector_cube['id'])
+    cls.assertDictEqual({}, vector_cube['assets'])
     assert_hamburg_data(cls, vector_cube)
 
 
