@@ -31,11 +31,11 @@ from typing import Tuple
 from xcube.server.api import ApiContext
 from xcube.server.api import Context
 
-from ..core.datastore import DataStore
+from ..core.datasource import DataSource
 from ..core.vectorcube import VectorCube
 from ..core.vectorcube import Feature
 from ..defaults import default_config
-from ..server.config import STAC_VERSION
+from ..defaults import STAC_VERSION
 
 from xcube.constants import LOG
 
@@ -48,7 +48,7 @@ class GeoDbContext(ApiContext):
 
     @cached_property
     def collection_ids(self) -> Sequence[str]:
-        return tuple(self.data_store.get_collection_keys())
+        return tuple(self.data_source.get_collection_keys())
 
     @property
     def config(self) -> Mapping[str, Any]:
@@ -61,13 +61,13 @@ class GeoDbContext(ApiContext):
         self._config = dict(config)
 
     @cached_property
-    def data_store(self) -> DataStore:
+    def data_source(self) -> DataSource:
         if not self.config:
             raise RuntimeError('config not set')
-        data_store_class = self.config['geodb_openeo']['datastore_class']
-        data_store_module = data_store_class[:data_store_class.rindex('.')]
-        class_name = data_store_class[data_store_class.rindex('.') + 1:]
-        module = importlib.import_module(data_store_module)
+        data_source_class = self.config['geodb_openeo']['datasource_class']
+        data_source_module = data_source_class[:data_source_class.rindex('.')]
+        class_name = data_source_class[data_source_class.rindex('.') + 1:]
+        module = importlib.import_module(data_source_module)
         cls = getattr(module, class_name)
         return cls(self.config)
 
@@ -96,8 +96,8 @@ class GeoDbContext(ApiContext):
                         bbox: Optional[Tuple[float, float, float, float]],
                         limit: Optional[int], offset: Optional[int]) \
             -> VectorCube:
-        return self.data_store.get_vector_cube(collection_id, with_items,
-                                               bbox, limit, offset)
+        return self.data_source.get_vector_cube(collection_id, with_items,
+                                                bbox, limit, offset)
 
 
     @property
@@ -172,7 +172,7 @@ class GeoDbContext(ApiContext):
     def transform_bbox(self, collection_id: str,
                        bbox: Tuple[float, float, float, float],
                        crs: int) -> Tuple[float, float, float, float]:
-        return self.data_store.transform_bbox(collection_id, bbox, crs)
+        return self.data_source.transform_bbox(collection_id, bbox, crs)
 
 
 def get_collections_links(limit: int, offset: int, url: str,

@@ -28,10 +28,10 @@ import shapely.wkt
 from geopandas import GeoDataFrame
 
 from .vectorcube import VectorCube
-from ..server.config import STAC_VERSION
+from ..defaults import STAC_VERSION
 
 
-class DataStore(abc.ABC):
+class DataSource(abc.ABC):
 
     @abc.abstractmethod
     def get_collection_keys(self):
@@ -58,7 +58,7 @@ class DataStore(abc.ABC):
         for i, row in enumerate(collection.iterrows()):
             bbox = bounds.iloc[i]
             feature = row[1]
-            coords = DataStore._get_coords(feature)
+            coords = DataSource._get_coords(feature)
             properties = {}
             for k, key in enumerate(feature.keys()):
                 if not key == 'id' and not \

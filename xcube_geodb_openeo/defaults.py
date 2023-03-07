@@ -25,3 +25,5 @@ default_config = {
     'SERVER_TITLE': 'xcube geoDB Server, openEO API',
     'SERVER_DESCRIPTION': 'Catalog of geoDB collections.'
 }
+API_VERSION = '1.1.0'  # todo - check which API is meant and if value's correct
+STAC_VERSION = '1.0.0'

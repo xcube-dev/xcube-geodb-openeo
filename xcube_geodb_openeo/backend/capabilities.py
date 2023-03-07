@@ -21,8 +21,8 @@
 from typing import Any
 from typing import Mapping
 
-from ..server.config import API_VERSION
-from ..server.config import STAC_VERSION
+from ..defaults import API_VERSION
+from ..defaults import STAC_VERSION
 from ..version import __version__
 
 '''

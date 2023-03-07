@@ -1,5 +1,5 @@
 # Files that may contain private data
-config.yml
+xcube_geodb_openeo/config.yml
 
 # IDEs
 .idea/
@@ -136,3 +136,4 @@ dmypy.json
 
 xcube_geodb_openeo.iml
 /notebooks/credentials.py
+/xcube-geodb-openeo.iml

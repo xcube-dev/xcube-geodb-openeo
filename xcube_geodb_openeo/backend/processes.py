@@ -156,7 +156,7 @@ class LoadCollection(Process):
             crs = backend_params['crs']
             bbox_transformed = ctx.transform_bbox(collection_id, bbox, crs)
 
-        vector_cube = ctx.data_store.get_vector_cube(
+        vector_cube = ctx.data_source.get_vector_cube(
             collection_id=collection_id,
             with_items=True,
             bbox=bbox_transformed

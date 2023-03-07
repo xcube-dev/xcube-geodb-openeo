@@ -29,13 +29,12 @@ from typing import Tuple
 import pandas
 from pandas import DataFrame
 from xcube_geodb.core.geodb import GeoDBClient
-from xcube.constants import LOG
 
-from .datastore import DataStore
+from .datasource import DataSource
 from .vectorcube import VectorCube
 
 
-class GeoDBDataStore(DataStore):
+class GeoDBDataSource(DataSource):
 
     def __init__(self, config: Mapping[str, Any]):
         self.config = config
