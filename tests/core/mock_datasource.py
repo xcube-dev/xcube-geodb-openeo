@@ -50,7 +50,9 @@ class MockDataSource(DataSource):
     def get_vector_cube(self, collection_id: str, with_items: bool,
                         bbox: Tuple[float, float, float, float] = None,
                         limit: Optional[int] = None, offset: Optional[int] =
-                        0) -> VectorCube:
+                        0) -> Optional[VectorCube]:
+        if collection_id == 'non-existent-collection':
+            return None
         vector_cube = {}
         data = {
             'id': ['0', '1'],

@@ -87,7 +87,7 @@ class DataDiscoveryTest(BaseTest):
         expected_spatial_extent = \
             {'bbox': [[8, 51, 12, 52]],
              'crs': 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'}
-        expected_temporal_extent = {'interval': [['null', 'null']]}
+        expected_temporal_extent = {'interval': [[None, None]]}
         self.assertEqual(expected_spatial_extent,
                          collection_data['extent']['spatial'])
         self.assertEqual(expected_temporal_extent,
@@ -158,3 +158,9 @@ class DataDiscoveryTest(BaseTest):
         self.assertEqual('FeatureCollection', items_data['type'])
         self.assertIsNotNone(items_data['features'])
         self.assertEqual(1, len(items_data['features']))
+
+    def test_not_existing_collection(self):
+        url = f'http://localhost:{self.port}' \
+              f'/collections/non-existent-collection'
+        response = self.http.request('GET', url)
+        self.assertEqual(404, response.status)

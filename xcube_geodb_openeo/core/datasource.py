@@ -41,7 +41,7 @@ class DataSource(abc.ABC):
     def get_vector_cube(self, collection_id: str, with_items: bool,
                         bbox: Tuple[float, float, float, float],
                         limit: Optional[int] = None,
-                        offset: Optional[int] = 0) -> VectorCube:
+                        offset: Optional[int] = 0) -> Optional[VectorCube]:
         pass
 
     @staticmethod

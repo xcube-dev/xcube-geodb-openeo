@@ -28,7 +28,7 @@ from typing import Tuple
 
 import pandas
 from pandas import DataFrame
-from xcube_geodb.core.geodb import GeoDBClient
+from xcube_geodb.core.geodb import GeoDBClient, GeoDBError
 
 from .datasource import DataSource
 from .vectorcube import VectorCube
@@ -76,8 +76,11 @@ class GeoDBDataSource(DataSource):
                         bbox: Tuple[float, float, float, float] = None,
                         limit: Optional[int] = None, offset: Optional[int] =
                         0) \
-            -> VectorCube:
-        vector_cube = self.geodb.get_collection_info(collection_id)
+            -> Optional[VectorCube]:
+        try:
+            vector_cube = self.geodb.get_collection_info(collection_id)
+        except GeoDBError:
+            return None
         vector_cube['id'] = collection_id
         vector_cube['features'] = []
         if bbox:
@@ -133,7 +136,7 @@ class GeoDBDataSource(DataSource):
                     'crs': 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
                 },
                 'temporal': {
-                    'interval': [['null', 'null']]
+                    'interval': [[None, None]]
                     # todo - maybe define a list of possible property names to
                     #  scan for the temporal interval, such as start_date,
                     #  end_date,

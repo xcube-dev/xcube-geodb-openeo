@@ -71,6 +71,13 @@ def get_root(config: Mapping[str, Any], base_url: str):
                 "title": "the API documentation"
             },
             {
+                "rel": "conformance",
+                "href": f"{base_url}/conformance",
+                "type": "application/json",
+                "title": "OGC API conformance classes"
+                         " implemented by this server"
+            },
+            {
                 "rel": "data",
                 "href": f"{base_url}/collections",
                 "type": "application/json",
@@ -88,4 +95,11 @@ def get_well_known(config: Mapping[str, Any]):
                 'api_version': API_VERSION
             }
         ]
+    }
+
+
+# noinspection PyUnusedLocal
+def get_conformance():
+    return {
+        "conformsTo": []
     }

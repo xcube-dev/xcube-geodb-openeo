@@ -159,6 +159,20 @@ class ResultHandler(ApiHandler):
                                          f' \'{ep["name"]}\'.'))
 
 
+@api.route('/conformance')
+class ConformanceHandler(ApiHandler):
+    """
+    Lists all conformance classes specified in OGC standards that the server
+    conforms to.
+    """
+
+    def get(self):
+        """
+        Lists the conformance classes.
+        """
+        self.response.finish(capabilities.get_conformance())
+
+
 @api.route('/collections')
 class CollectionsHandler(ApiHandler):
     """
@@ -197,7 +211,11 @@ class CollectionHandler(ApiHandler):
         """
         base_url = get_base_url(self.request)
         collection = self.ctx.get_collection(base_url, collection_id)
-        self.response.finish(collection)
+        if collection:
+            self.response.finish(collection)
+        else:
+            self.response.set_status(404, f'Collection {collection_id} does '
+                                          f'not exist')
 
 
 @api.route('/collections/{collection_id}/items')

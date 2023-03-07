@@ -90,4 +90,6 @@ class CapabilitiesTest(BaseTest):
         response = self.http.request(
             'GET', f'http://localhost:{self.port}/conformance'
         )
-        self.assertEqual(404, response.status)
+        self.assertEqual(200, response.status)
+        conformance_data = json.loads(response.data)
+        self.assertIsNotNone(conformance_data['conformsTo'])

@@ -128,7 +128,10 @@ class GeoDbContext(ApiContext):
                        collection_id: str):
         vector_cube = self.get_vector_cube(collection_id, with_items=False,
                                            bbox=None, limit=None, offset=0)
-        return _get_vector_cube_collection(base_url, vector_cube)
+        if vector_cube:
+            return _get_vector_cube_collection(base_url, vector_cube)
+        else:
+            return None
 
     def get_collection_items(self, base_url: str,
                              collection_id: str, limit: int, offset: int,
