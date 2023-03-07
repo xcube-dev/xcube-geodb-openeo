@@ -51,7 +51,7 @@ server.
 
 ### Helm chart
 
-The helm chart for the xcube-geodb-openeo-server is located in [k8s-configs](https://github.com/bc-org/k8s-configs/tree/thomas_xxx_add-geodb-openeo/xcube-geodb-openeo/helm).
+The helm chart for the xcube-geodb-openeo-server is located in [k8s-configs](https://github.com/bc-org/k8s-configs/tree/main/xcube-geodb-openeo/helm).
 It consists of:
 1) templates for
     - config-map (`api-config-map.yaml`), where the config is specified, and
@@ -63,9 +63,8 @@ It consists of:
       is configured
     - service (`api-service.yaml`), where port and protocol are configured
 2) a values file used to fill in the templates. Currently in use:
-   `values-dev.yaml` and `values.yaml`. Currently not used, but kept as
-   reference: `values-stage.yaml`.
-   In these files, the following values are set:
+   `values-dev.yaml`.
+   In this file, the following values are set:
     - the actual Docker image value
     - the ingress encryption method
     - the host name
@@ -95,12 +94,11 @@ namespace, as configured in `values-dev.yaml` in k8s-configs.
 ### ArgoCD-Deployment
 
 The purpose of the argoCD deployment is to take the helm chart and deploy it to
-BCs AWS K8s. It can be found [here](https://argocd.dev.xcube.brockmann-consult.de/applications/geodb-openeo).
+BCs AWS K8s. It can be found [here](https://argocd.management.brockmann-consult.de/applications/geodb-openeo).
 
 The relevant configuration values are:
 - Cluster: `xc-dev-v2`
 - Namespace: `xc-geodb`
 - Using helm chart from
     - `git@github.com:bc-org/k8s-configs.git`
-    - at branch `thomas_xxx_add-geodb-openeo`
     - path `xcube-geodb-openeo/helm`
