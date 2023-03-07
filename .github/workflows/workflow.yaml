@@ -47,11 +47,12 @@ jobs:
           conda config --show-sources
           conda config --show
           printenv | sort
+          conda install mamba
       - name: setup-xcube
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         run: |
           cd xcube
-          conda env update -n xcube-geodb-openeo -f environment.yml
+          mamba env update -n xcube-geodb-openeo -f environment.yml
           pip install -e .
           cd ..
       - name: setup-xcube-geodb-openeo
