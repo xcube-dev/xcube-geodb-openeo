@@ -13,7 +13,6 @@ RUN . activate base
 
 RUN git clone https://github.com/dcs4cop/xcube.git
 WORKDIR /tmp/xcube
-RUN git checkout forman-676-server_redesign
 RUN mamba env update -n base
 RUN pip install -e .
 
@@ -25,4 +24,4 @@ RUN pip install -e .
 WORKDIR /tmp/
 RUN pip install -e .
 
-CMD ["python", "-m", "xcube.cli.main", "--loglevel=DETAIL", "--traceback", "serve2", "-vvv", "-c", "/etc/config/config.yml"]
+CMD ["python", "-m", "xcube.cli.main", "--loglevel=DETAIL", "--traceback", "serve", "-vvv", "-c", "/etc/config/config.yml"]
