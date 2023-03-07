@@ -27,3 +27,8 @@ default_config = {
 }
 API_VERSION = '1.1.0'  # todo - check which API is meant and if value's correct
 STAC_VERSION = '1.0.0'
+STAC_EXTENSIONS = ['datacube',
+                'https://stac-extensions.github.io/version/v1.0.0/schema.json']
+STAC_DEFAULT_COLLECTIONS_LIMIT = 10
+STAC_DEFAULT_ITEMS_LIMIT = 10
+STAC_MAX_ITEMS_LIMIT = 10000

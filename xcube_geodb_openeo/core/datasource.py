@@ -28,7 +28,7 @@ import shapely.wkt
 from geopandas import GeoDataFrame
 
 from .vectorcube import VectorCube
-from ..defaults import STAC_VERSION
+from ..defaults import STAC_VERSION, STAC_EXTENSIONS
 
 
 class DataSource(abc.ABC):
@@ -71,7 +71,7 @@ class DataSource(abc.ABC):
 
             vector_cube['features'].append({
                 'stac_version': STAC_VERSION,
-                'stac_extensions': ['xcube-geodb'],
+                'stac_extensions': STAC_EXTENSIONS,
                 'type': 'Feature',
                 'id': feature['id'],
                 'bbox': [f'{bbox["minx"]:.4f}',

@@ -78,7 +78,7 @@ class MockDataSource(DataSource):
         GeoDBDataSource.add_metadata(
             (8, 51, 12, 52), collection_id,
             DataFrame(columns=["collection", "column_name", "data_type"]),
-            vector_cube)
+            '0.3.1', vector_cube)
         return vector_cube
 
     # noinspection PyUnusedLocal

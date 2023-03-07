@@ -25,7 +25,7 @@ from ..backend import processes
 from .api import api
 from xcube.server.api import ApiHandler
 from xcube.server.api import ApiError
-from .context import STAC_DEFAULT_COLLECTIONS_LIMIT
+from ..defaults import STAC_DEFAULT_COLLECTIONS_LIMIT
 
 
 def get_limit(request):

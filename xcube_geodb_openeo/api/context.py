@@ -30,18 +30,13 @@ from typing import Tuple
 
 from xcube.server.api import ApiContext
 from xcube.server.api import Context
+from xcube.constants import LOG
 
 from ..core.datasource import DataSource
 from ..core.vectorcube import VectorCube
 from ..core.vectorcube import Feature
-from ..defaults import default_config
-from ..defaults import STAC_VERSION
-
-from xcube.constants import LOG
-
-STAC_DEFAULT_COLLECTIONS_LIMIT = 10
-STAC_DEFAULT_ITEMS_LIMIT = 10
-STAC_MAX_ITEMS_LIMIT = 10000
+from ..defaults import default_config, STAC_VERSION, STAC_EXTENSIONS, \
+    STAC_MAX_ITEMS_LIMIT
 
 
 class GeoDbContext(ApiContext):
@@ -145,15 +140,15 @@ class GeoDbContext(ApiContext):
                                            offset=offset)
         stac_features = [
             _get_vector_cube_item(base_url, vector_cube, feature)
-            for feature in vector_cube.get("features", [])
+            for feature in vector_cube.get('features', [])
         ]
 
         return {
-            "type": "FeatureCollection",
-            "features": stac_features,
-            "timeStamp": _utc_now(),
-            "numberMatched": vector_cube['total_feature_count'],
-            "numberReturned": len(stac_features),
+            'type': 'FeatureCollection',
+            'features': stac_features,
+            'timeStamp': _utc_now(),
+            'numberMatched': vector_cube['total_feature_count'],
+            'numberReturned': len(stac_features),
         }
 
     def get_collection_item(self, base_url: str,
@@ -162,8 +157,8 @@ class GeoDbContext(ApiContext):
         # nah. use different geodb-function, don't get full vector cube
         vector_cube = self.get_vector_cube(collection_id, with_items=True,
                                            bbox=None, limit=None, offset=0)
-        for feature in vector_cube.get("features", []):
-            if str(feature.get("id")) == feature_id:
+        for feature in vector_cube.get('features', []):
+            if str(feature.get('id')) == feature_id:
                 return _get_vector_cube_item(base_url, vector_cube, feature)
         raise ItemNotFoundException(
             f'feature {feature_id!r} not found in collection {collection_id!r}'
@@ -214,9 +209,10 @@ def _get_vector_cube_collection(base_url: str,
                                 vector_cube: VectorCube):
     vector_cube_id = vector_cube['id']
     metadata = vector_cube.get('metadata', {})
-    return {
+    vector_cube_collection = {
         'stac_version': STAC_VERSION,
-        'stac_extensions': ['xcube-geodb'],
+        'stac_extensions': STAC_EXTENSIONS,
+        'type': 'Collection',
         'id': vector_cube_id,
         'title': metadata.get('title', ''),
         'description': metadata.get('description', 'No description '
@@ -225,6 +221,7 @@ def _get_vector_cube_collection(base_url: str,
         'keywords': metadata.get('keywords', []),
         'providers': metadata.get('providers', []),
         'extent': metadata.get('extent', {}),
+        'cube:dimensions': {'vector_dim': {'type': 'other'}},
         'summaries': metadata.get('summaries', {}),
         'links': [
             {
@@ -242,6 +239,9 @@ def _get_vector_cube_collection(base_url: str,
             # }
         ]
     }
+    if 'version' in metadata:
+        vector_cube_collection['version'] = metadata['version']
+    return vector_cube_collection
 
 
 def _get_vector_cube_item(base_url: str, vector_cube: VectorCube,
@@ -254,7 +254,7 @@ def _get_vector_cube_item(base_url: str, vector_cube: VectorCube,
 
     return {
         'stac_version': STAC_VERSION,
-        'stac_extensions': ['xcube-geodb'],
+        'stac_extensions': STAC_EXTENSIONS,
         'type': 'Feature',
         'id': feature_id,
         'bbox': feature_bbox,

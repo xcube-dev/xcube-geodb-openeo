@@ -80,6 +80,14 @@ class GeoDBDataSource(DataSource):
         vector_cube = self.geodb.get_collection_info(collection_id)
         vector_cube['id'] = collection_id
         vector_cube['features'] = []
+        if bbox:
+            vector_cube['total_feature_count'] = \
+                int(self.geodb.count_collection_by_bbox(
+                    collection_id, bbox)['ct'][0])
+        else:
+            vector_cube['total_feature_count'] = \
+                int(self.geodb.count_collection_by_bbox(
+                    collection_id, (-180, 90, 180, -90))['ct'][0])
 
         if with_items:
             if bbox:
@@ -105,12 +113,13 @@ class GeoDBDataSource(DataSource):
         properties = self.geodb.get_properties(collection_id)
 
         self.add_metadata(collection_bbox, collection_id, properties,
-                          vector_cube)
+                          None, vector_cube)
         return vector_cube
 
     @staticmethod
     def add_metadata(collection_bbox: Tuple, collection_id: str,
-                     properties: DataFrame, vector_cube: VectorCube):
+                     properties: DataFrame, version: Optional[str],
+                     vector_cube: VectorCube):
         summaries = {
             'properties': []
         }
@@ -132,6 +141,8 @@ class GeoDBDataSource(DataSource):
             },
             'summaries': summaries
         }
+        if version:
+            vector_cube['metadata']['version'] = version
 
     def transform_bbox(self, collection_id: str,
                        bbox: Tuple[float, float, float, float],
