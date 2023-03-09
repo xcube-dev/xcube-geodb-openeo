@@ -29,6 +29,7 @@ from typing import Tuple
 import pandas
 from pandas import DataFrame
 from xcube_geodb.core.geodb import GeoDBClient, GeoDBError
+from xcube.constants import LOG
 
 from .datasource import DataSource
 from .vectorcube import VectorCube
@@ -77,21 +78,25 @@ class GeoDBDataSource(DataSource):
                         limit: Optional[int] = None, offset: Optional[int] =
                         0) \
             -> Optional[VectorCube]:
+        LOG.debug(f'Building vector cube for collection {collection_id}...')
         try:
             vector_cube = self.geodb.get_collection_info(collection_id)
         except GeoDBError:
             return None
         vector_cube['id'] = collection_id
         vector_cube['features'] = []
-        if bbox:
-            vector_cube['total_feature_count'] = \
-                int(self.geodb.count_collection_by_bbox(
-                    collection_id, bbox)['ct'][0])
-        else:
-            vector_cube['total_feature_count'] = \
-                int(self.geodb.count_collection_by_bbox(
-                    collection_id, (-180, 90, 180, -90))['ct'][0])
+        if not with_items:
+            LOG.debug(f'    starting to count features, bbox = {bbox}')
+            if bbox:
+                vector_cube['total_feature_count'] = \
+                    int(self.geodb.count_collection_by_bbox(
+                        collection_id, bbox)['ct'][0])
+            else:
+                vector_cube['total_feature_count'] = \
+                    int(self.geodb.count_collection_by_bbox(
+                        collection_id, (-180, 90, 180, -90))['ct'][0])
 
+            LOG.debug(f'    ...done counting features.')
         if with_items:
             if bbox:
                 items = self.geodb.get_collection_by_bbox(collection_id, bbox,
@@ -104,6 +109,7 @@ class GeoDBDataSource(DataSource):
             vector_cube['total_feature_count'] = len(items)
             self.add_items_to_vector_cube(items, vector_cube)
 
+        LOG.debug(f'    starting to get collection bbox...')
         collection_bbox = self.geodb.get_collection_bbox(collection_id)
         if collection_bbox:
             srid = self.geodb.get_collection_srid(collection_id)
@@ -112,11 +118,13 @@ class GeoDBDataSource(DataSource):
                     collection_bbox,
                     srid, '4326',
                 )
+        LOG.debug(f'    ...done getting collection bbox.')
 
         properties = self.geodb.get_properties(collection_id)
 
         self.add_metadata(collection_bbox, collection_id, properties,
                           None, vector_cube)
+        LOG.debug("...done building vector cube.")
         return vector_cube
 
     @staticmethod

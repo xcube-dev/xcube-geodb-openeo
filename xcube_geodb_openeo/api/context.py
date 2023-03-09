@@ -111,11 +111,9 @@ class GeoDbContext(ApiContext):
                                       len(self.collection_ids))
         collection_list = []
         for collection_id in self.collection_ids[offset:offset + limit]:
-            LOG.info(f'Building vector cube for collection {collection_id}...')
             vector_cube = self.get_vector_cube(collection_id, with_items=False,
                                                bbox=None, limit=limit,
                                                offset=offset)
-            LOG.info("...done")
             collection = _get_vector_cube_collection(base_url, vector_cube)
             collection_list.append(collection)
 
