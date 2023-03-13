@@ -78,6 +78,7 @@ class GeoDBDataSource(DataSource):
                         limit: Optional[int] = None, offset: Optional[int] =
                         0) \
             -> Optional[VectorCube]:
+        #  todo - replace by builder pattern, and build correct vector cube
         LOG.debug(f'Building vector cube for collection {collection_id}...')
         try:
             vector_cube = self.geodb.get_collection_info(collection_id)
@@ -93,10 +94,9 @@ class GeoDBDataSource(DataSource):
                         collection_id, bbox)['ct'][0])
             else:
                 vector_cube['total_feature_count'] = \
-                    int(self.geodb.count_collection_by_bbox(
-                        collection_id, (-180, 90, 180, -90))['ct'][0])
-
-            LOG.debug(f'    ...done counting features.')
+                    self.geodb.count_collection_rows(collection_id)
+            LOG.debug(f'    ...done counting features: '
+                      f'{vector_cube["total_feature_count"]}.')
         if with_items:
             if bbox:
                 items = self.geodb.get_collection_by_bbox(collection_id, bbox,
@@ -112,12 +112,15 @@ class GeoDBDataSource(DataSource):
         LOG.debug(f'    starting to get collection bbox...')
         collection_bbox = self.geodb.get_collection_bbox(collection_id)
         if collection_bbox:
-            srid = self.geodb.get_collection_srid(collection_id)
-            if srid is not None and srid != '4326':
-                collection_bbox = self.geodb.transform_bbox_crs(
-                    collection_bbox,
-                    srid, '4326',
-                )
+            collection_bbox = self.transform_bbox_crs(collection_bbox,
+                                                      collection_id)
+        if not collection_bbox:
+            collection_bbox = self.geodb.get_collection_bbox(collection_id,
+                                                             exact=True)
+            if collection_bbox:
+                collection_bbox = self.transform_bbox_crs(collection_bbox,
+                                                          collection_id)
+
         LOG.debug(f'    ...done getting collection bbox.')
 
         properties = self.geodb.get_properties(collection_id)
@@ -126,6 +129,15 @@ class GeoDBDataSource(DataSource):
                           None, vector_cube)
         LOG.debug("...done building vector cube.")
         return vector_cube
+
+    def transform_bbox_crs(self, collection_bbox, collection_id):
+        srid = self.geodb.get_collection_srid(collection_id)
+        if srid is not None and srid != '4326':
+            collection_bbox = self.geodb.transform_bbox_crs(
+                collection_bbox,
+                srid, '4326'
+            )
+        return collection_bbox
 
     @staticmethod
     def add_metadata(collection_bbox: Tuple, collection_id: str,

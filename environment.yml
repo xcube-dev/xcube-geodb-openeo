@@ -10,7 +10,7 @@ dependencies:
   - pandas
   - shapely
   - xcube >= 0.13.0
-  - xcube_geodb >= 1.0.4
+  - xcube_geodb >= 1.0.5
   - yaml
   # Testing
   - pytest >=4.4
