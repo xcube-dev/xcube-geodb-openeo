@@ -70,11 +70,12 @@ class Process:
 
 
 def read_default_processes() -> List[Process]:
-    processes_specs = [j for j in resources.contents(f'{__package__}.res')
+    processes_specs = [j for j in
+                       resources.contents(f'{__package__}.res.processes')
                        if j.lower().endswith('json')]
     processes = []
     for spec in processes_specs:
-        with resources.open_binary(f'{__package__}.res', spec) as f:
+        with resources.open_binary(f'{__package__}.res.processes', spec) as f:
             metadata = json.loads(f.read())
             module = importlib.import_module(metadata['module'])
             class_name = metadata['class_name']

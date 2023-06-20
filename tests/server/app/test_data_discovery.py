@@ -25,14 +25,14 @@ from typing import Dict
 
 import yaml
 from xcube.constants import EXTENSION_POINT_SERVER_APIS
+from xcube.server.testing import ServerTestCase
 from xcube.util import extension
 from xcube.util.extension import ExtensionRegistry
 
 from . import test_utils
-from .base_test import BaseTest
 
 
-class DataDiscoveryTest(BaseTest):
+class DataDiscoveryTest(ServerTestCase):
 
     def add_extension(self, er: ExtensionRegistry) -> None:
         er.add_extension(

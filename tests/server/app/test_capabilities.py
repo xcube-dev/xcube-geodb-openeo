@@ -24,14 +24,13 @@ import pkgutil
 from typing import Dict
 
 import yaml
+from xcube.server.testing import ServerTestCase
 from xcube.util import extension
 from xcube.constants import EXTENSION_POINT_SERVER_APIS
 from xcube.util.extension import ExtensionRegistry
 
-from tests.server.app.base_test import BaseTest
 
-
-class CapabilitiesTest(BaseTest):
+class CapabilitiesTest(ServerTestCase):
 
     def add_extension(self, er: ExtensionRegistry) -> None:
         er.add_extension(
