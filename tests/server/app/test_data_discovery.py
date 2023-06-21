@@ -55,8 +55,9 @@ class DataDiscoveryTest(ServerTestCase):
         first_collection = collections_data['collections'][0]
         self.assertEqual("1.0.0", first_collection['stac_version'])
         self.assertEqual(
-            ['datacube',
-             'https://stac-extensions.github.io/version/v1.0.0/schema.json'],
+            [
+             'https://stac-extensions.github.io/datacube/v2.2.0/schema.json'
+            ],
             first_collection['stac_extensions'])
         self.assertEqual(first_collection['type'], 'Collection')
         self.assertEqual('collection_1', first_collection['id'])
@@ -74,8 +75,9 @@ class DataDiscoveryTest(ServerTestCase):
         collection_data = json.loads(response.data)
         self.assertEqual("1.0.0", collection_data['stac_version'])
         self.assertEqual(
-            ['datacube',
-             'https://stac-extensions.github.io/version/v1.0.0/schema.json'],
+            [
+             'https://stac-extensions.github.io/datacube/v2.2.0/schema.json'
+            ],
             collection_data['stac_extensions'])
         response_type = collection_data['type']
         self.assertEqual(response_type, "Collection")
@@ -92,7 +94,7 @@ class DataDiscoveryTest(ServerTestCase):
                          collection_data['extent']['spatial'])
         self.assertEqual(expected_temporal_extent,
                          collection_data['extent']['temporal'])
-        self.assertEqual({'vector_dim': {'type': 'other'}},
+        self.assertEqual({'vector': {'type': 'geometry', 'axes': ['']}}, # todo
                          collection_data['cube:dimensions'])
         self.assertIsNotNone(collection_data['summaries'])
 

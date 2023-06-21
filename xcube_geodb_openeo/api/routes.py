@@ -109,22 +109,26 @@ class ProcessesHandler(ApiHandler):
 @api.route('/file_formats')
 class FormatsHandler(ApiHandler):
     """
-    Lists supported input and output file formats. Input file formats specify which file a back-end can read from.
+    Lists supported input and output file formats. Input file formats specify
+    which file a back-end can read from.
     Output file formats specify which file a back-end can write to.
     """
 
-    @api.operation(operationId='file_formats', summary='Listing of supported file formats')
+    @api.operation(operationId='file_formats',
+                   summary='Listing of supported file formats')
     def get(self):
         """
         Returns the supported file formats.
         """
-        self.response.finish(processes.get_processes_registry().get_file_formats())
+        self.response.finish(processes.get_processes_registry()
+                             .get_file_formats())
 
 
 @api.route('/result')
 class ResultHandler(ApiHandler):
     """
-    Executes a user-defined process directly (synchronously) and the result will be downloaded.
+    Executes a user-defined process directly (synchronously) and the result
+    will be downloaded.
     """
 
     @api.operation(operationId='result', summary='Execute process'

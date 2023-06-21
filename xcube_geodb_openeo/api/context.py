@@ -94,7 +94,6 @@ class GeoDbContext(ApiContext):
         return self.data_source.get_vector_cube(collection_id, with_items,
                                                 bbox, limit, offset)
 
-
     @property
     def collections(self) -> Dict:
         assert self._collections is not None
