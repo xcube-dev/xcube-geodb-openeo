@@ -19,14 +19,15 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 from typing import Dict
 from typing import List
 from geojson.geometry import Geometry
+import dask.dataframe as dd
 
 
-VectorCube = Dict[str, Any]
-
+# VectorCube = Dict[str, Any]
+#
 Feature = Dict[str, Any]
 
 class VectorCube:
@@ -48,8 +49,17 @@ class VectorCube:
     its value only if all combinations of values of the other dimensions
     change. Wavelength is a good example: for 440nm, there are entries for all
     geometries and datetimes, and for 550nm, there are others.
-    However, detecting this from a table is hard.
+    However, detecting this from a table is hard, therefore we don't do it.
+
+    The actual values within this VectorCube are provided by a dask Dataframe.
     """
+
+    def __init__(self, identifier: str) -> None:
+        self._id = identifier
+
+    @property
+    def id(self) -> str:
+        return self._id
 
     @property
     def vector_dim(self) -> List[Geometry]:
@@ -68,9 +78,10 @@ class VectorCube:
             - go with GeoJSON first
         # shall support lazy loading: read values and dimensions only when asked for, i.e. when this method is called
 
-        :return: list of geojson geometries
+        :return: list of geojson geometries, which all together form the
+        vector dimension
         """
-        pass
+        return self._vector_dim or self._read_vector_dim()
 
     @property
     def vertical_dim(self) -> List[Any]:
@@ -91,11 +102,48 @@ class VectorCube:
         """
         pass
 
+
     @property
-    def additional_dims(self) -> List[Any]:
+    def values(self):
         """
-        Returns all dimensions of the vector cube, which are neither the
-        vector dimension, nor the vertical dimension, nor the time dimension.
-        For example: colors with values R,G,B is a dimension.
+        Returns the plain values array. If not yet loaded, get from geoDB.
+
+        :return:
         """
-        pass
+        self.datasource.load_data()
+
+    def _read_vector_dim(self):
+        self.datasource.load_data()
+
+
+class VectorCubeBuilder:
+
+    def __init__(self, collection_id: str) -> None:
+        self._collection_id = collection_id
+        self._geometries = None
+        self.base_info = {}
+
+    @property
+    def geometries(self) -> List[Geometry]:
+        return self._geometries
+
+    @geometries.setter
+    def geometries(self, geometries: List[Geometry]):
+        self._geometries = geometries
+
+    def build(self) -> VectorCube:
+        return VectorCube(self._collection_id,
+                          self.datasource)
+
+    def get_time_var_name(self) -> Optional[str]:
+        for key in self.base_info['properties'].keys():
+            if key == 'date' or key == 'time' or key == 'timestamp' \
+                    or key == 'datetime':
+                return key
+        return None
+
+    def set_z_dim(self):
+        for key in self.base_info['properties'].keys():
+            if key == 'z' or key == 'vertical':
+                return key
+        return None

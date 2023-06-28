@@ -32,7 +32,7 @@ from xcube_geodb.core.geodb import GeoDBClient, GeoDBError
 from xcube.constants import LOG
 
 from .datasource import DataSource
-from .vectorcube import VectorCube
+from .vectorcube import VectorCube, VectorCubeBuilder
 
 
 class GeoDBDataSource(DataSource):
@@ -78,25 +78,28 @@ class GeoDBDataSource(DataSource):
                         limit: Optional[int] = None, offset: Optional[int] =
                         0) \
             -> Optional[VectorCube]:
-        #  todo - replace by builder pattern, and build correct vector cube
         LOG.debug(f'Building vector cube for collection {collection_id}...')
         try:
-            vector_cube = self.geodb.get_collection_info(collection_id)
+            collection_info = self.geodb.get_collection_info(collection_id)
         except GeoDBError:
             return None
-        vector_cube['id'] = collection_id
-        vector_cube['features'] = []
-        if not with_items:
-            LOG.debug(f'    starting to count features, bbox = {bbox}')
-            if bbox:
-                vector_cube['total_feature_count'] = \
-                    int(self.geodb.count_collection_by_bbox(
-                        collection_id, bbox)['ct'][0])
-            else:
-                vector_cube['total_feature_count'] = \
-                    self.geodb.count_collection_rows(collection_id)
-            LOG.debug(f'    ...done counting features: '
-                      f'{vector_cube["total_feature_count"]}.')
+        builder = VectorCubeBuilder(collection_id)
+        builder.base_info = collection_info
+        time_var_name = builder.get_time_var_name()
+        query = f'select=geometry,{time_var_name}' if time_var_name \
+            else 'select=geometry'
+        gdf = self.geodb.get_collection(collection_id,
+                                        query=query,
+                                        limit=limit,
+                                        offset=offset)
+        if bbox:
+            gdf = gdf.cx[bbox[0]:bbox[1], bbox[2]:bbox[3]]
+        builder.geometries = gdf['geometry']
+        builder.times = gdf[time_var_name]
+        builder.count = gdf.count()
+        builder.set_z_dim()
+        vector_cube = builder.build()
+
         if with_items:
             if bbox:
                 items = self.geodb.get_collection_by_bbox(collection_id, bbox,
