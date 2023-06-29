@@ -19,12 +19,14 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 from typing import Dict
 from typing import List
 from geojson.geometry import Geometry
 import dask.dataframe as dd
+from pandas import DataFrame
 
+from xcube_geodb_openeo.core.geodb_datasource import DataSource
 
 # VectorCube = Dict[str, Any]
 #
@@ -54,8 +56,14 @@ class VectorCube:
     The actual values within this VectorCube are provided by a dask Dataframe.
     """
 
-    def __init__(self, identifier: str) -> None:
+    def __init__(self, identifier: str, datasource: DataSource) -> None:
         self._id = identifier
+        self._datasource = datasource
+        self._metadata = {}
+        self._version = ''
+        self._vector_dim = []
+        self._vertical_dim = []
+        self._time_dim = []
 
     @property
     def id(self) -> str:
@@ -76,12 +84,13 @@ class VectorCube:
         # shall we return GeoJSON? Or CovJSON?
             - use what's best suited for internal use
             - go with GeoJSON first
-        # shall support lazy loading: read values and dimensions only when asked for, i.e. when this method is called
+        # no need for lazy loading: we want to read the geometries at once as
+            they form the cube. So they can be read while building the cube.
 
         :return: list of geojson geometries, which all together form the
         vector dimension
         """
-        return self._vector_dim or self._read_vector_dim()
+        return self._vector_dim
 
     @property
     def vertical_dim(self) -> List[Any]:
@@ -91,7 +100,7 @@ class VectorCube:
         cube does not have a vertical dimension, returns an empty list.
         :return: list of dimension values, typically a list of float values.
         """
-        pass
+        return self._vertical_dim
 
     @property
     def time_dim(self) -> List[datetime]:
@@ -100,50 +109,29 @@ class VectorCube:
         datetime objects. If the vector cube does not have a time dimension,
         an empty list is returned.
         """
-        pass
-
+        return self._time_dim
 
     @property
     def values(self):
         """
-        Returns the plain values array. If not yet loaded, get from geoDB.
+        Returns the plain values array. If not yet loaded, do it now.
 
         :return:
         """
-        self.datasource.load_data()
+        return self._values
 
-    def _read_vector_dim(self):
-        self.datasource.load_data()
+'''
+        if with_items:
+            if bbox:
+                items = self.geodb.get_collection_by_bbox(collection_id, bbox,
+                                                          limit=limit,
+                                                          offset=offset)
+            else:
+                items = self.geodb.get_collection(collection_id, limit=limit,
+                                                  offset=offset)
+
+            vector_cube['total_feature_count'] = len(items)
+            self.add_items_to_vector_cube(items, vector_cube)
 
 
-class VectorCubeBuilder:
-
-    def __init__(self, collection_id: str) -> None:
-        self._collection_id = collection_id
-        self._geometries = None
-        self.base_info = {}
-
-    @property
-    def geometries(self) -> List[Geometry]:
-        return self._geometries
-
-    @geometries.setter
-    def geometries(self, geometries: List[Geometry]):
-        self._geometries = geometries
-
-    def build(self) -> VectorCube:
-        return VectorCube(self._collection_id,
-                          self.datasource)
-
-    def get_time_var_name(self) -> Optional[str]:
-        for key in self.base_info['properties'].keys():
-            if key == 'date' or key == 'time' or key == 'timestamp' \
-                    or key == 'datetime':
-                return key
-        return None
-
-    def set_z_dim(self):
-        for key in self.base_info['properties'].keys():
-            if key == 'z' or key == 'vertical':
-                return key
-        return None
+'''

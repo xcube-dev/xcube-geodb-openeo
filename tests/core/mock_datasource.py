@@ -30,13 +30,13 @@ import geopandas
 from pandas import DataFrame
 from shapely.geometry import Polygon
 
-from xcube_geodb_openeo.core.datasource import DataSource
-from xcube_geodb_openeo.core.geodb_datasource import GeoDBDataSource
+from xcube_geodb_openeo.core.datasource import VectorSource
+from xcube_geodb_openeo.core.geodb_datasource import GeoDBVectorSource
 from xcube_geodb_openeo.core.vectorcube import VectorCube
 import importlib.resources as resources
 
 
-class MockDataSource(DataSource):
+class MockVectorSource(VectorSource):
 
     # noinspection PyUnusedLocal
     def __init__(self, config: Mapping[str, Any]):
@@ -77,7 +77,7 @@ class MockDataSource(DataSource):
         vector_cube['total_feature_count'] = len(collection)
         if with_items and collection_id != 'empty_collection':
             self.add_items_to_vector_cube(collection, vector_cube)
-        GeoDBDataSource.add_metadata(
+        GeoDBVectorSource.add_metadata(
             (8, 51, 12, 52), collection_id,
             DataFrame(columns=["collection", "column_name", "data_type"]),
             '0.3.1', vector_cube)
