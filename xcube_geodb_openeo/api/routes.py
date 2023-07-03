@@ -25,17 +25,17 @@ from ..backend import processes
 from .api import api
 from xcube.server.api import ApiHandler
 from xcube.server.api import ApiError
-from ..defaults import STAC_DEFAULT_COLLECTIONS_LIMIT
+from ..defaults import STAC_DEFAULT_COLLECTIONS_LIMIT, STAC_DEFAULT_ITEMS_LIMIT
 
 
-def get_limit(request):
+def get_limit(request, default: int) -> int:
     limit = int(request.get_query_arg('limit')) if \
         request.get_query_arg('limit') \
-        else STAC_DEFAULT_COLLECTIONS_LIMIT
+        else default
     return limit
 
 
-def get_offset(request):
+def get_offset(request) -> int:
     return int(request.get_query_arg('offset')) if \
         request.get_query_arg('offset') \
         else 0
@@ -194,11 +194,10 @@ class CollectionsHandler(ApiHandler):
                           items that are presented in the response document.
             offset (int): Collections are listed starting at offset.
         """
-        limit = get_limit(self.request)
+        limit = get_limit(self.request, STAC_DEFAULT_COLLECTIONS_LIMIT)
         offset = get_offset(self.request)
         base_url = get_base_url(self.request)
-        if not self.ctx.collections:
-            self.ctx.fetch_collections(base_url, limit, offset)
+        self.ctx.fetch_collections(base_url, limit, offset)
         self.response.finish(self.ctx.collections)
 
 
@@ -214,7 +213,9 @@ class CollectionHandler(ApiHandler):
         Lists the collection information.
         """
         base_url = get_base_url(self.request)
-        collection = self.ctx.get_collection(base_url, collection_id)
+        db = collection_id.split('~')[0]
+        name = collection_id.split('~')[1]
+        collection = self.ctx.get_collection(base_url, (db, name))
         if collection:
             self.response.finish(collection)
         else:
@@ -240,26 +241,31 @@ class CollectionItemsHandler(ApiHandler):
             bbox (array of numbers): Only features that intersect the bounding
                 box are selected. Example: bbox=160.6,-55.95,-170,-25.89
         """
-        limit = get_limit(self.request)
+        limit = get_limit(self.request, STAC_DEFAULT_ITEMS_LIMIT)
         offset = get_offset(self.request)
         bbox = get_bbox(self.request)
         base_url = get_base_url(self.request)
-        items = self.ctx.get_collection_items(base_url, collection_id,
+        db = collection_id.split('~')[0]
+        name = collection_id.split('~')[1]
+        items = self.ctx.get_collection_items(base_url, (db, name),
                                               limit, offset, bbox)
         self.response.finish(items)
 
 
-@api.route('/collections/{collection_id}/items/{feature_id}')
+@api.route('/collections/{collection_id}/items/{item_id}')
 class FeatureHandler(ApiHandler):
     """
-    Fetch a single feature.
+    Fetch a single item.
     """
 
-    def get(self, collection_id: str, feature_id: str):
+    def get(self, collection_id: str, item_id: str):
         """
         Returns the feature.
         """
+        feature_id = item_id
+        db = collection_id.split('~')[0]
+        name = collection_id.split('~')[1]
         base_url = get_base_url(self.request)
-        feature = self.ctx.get_collection_item(base_url, collection_id,
+        feature = self.ctx.get_collection_item(base_url, (db, name),
                                                feature_id)
         self.response.finish(feature)

@@ -21,28 +21,29 @@
 import datetime
 import importlib
 from functools import cached_property
-from typing import Any
+from typing import Any, List
 from typing import Dict
 from typing import Mapping
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 
 from xcube.server.api import ApiContext
 from xcube.server.api import Context
 
-from ..core.vectorcube import VectorCube
+from ..core.tools import Cache
 from ..core.vectorcube import Feature
+from ..core.vectorcube import VectorCube
 from ..core.vectorcube_provider import VectorCubeProvider
 from ..defaults import default_config, STAC_VERSION, STAC_EXTENSIONS, \
-    STAC_MAX_ITEMS_LIMIT
+    STAC_MAX_ITEMS_LIMIT, DEFAULT_VC_CACHE_SIZE, \
+    MAX_NUMBER_OF_GEOMETRIES_DISPLAYED
 
 
 class GeoDbContext(ApiContext):
 
     @cached_property
-    def collection_ids(self) -> Sequence[str]:
-        return tuple(self.cube_provider.get_collection_keys())
+    def collection_ids(self) -> List[Tuple[str, str]]:
+        return self.cube_provider.get_collection_keys()
 
     @property
     def config(self) -> Mapping[str, Any]:
@@ -82,16 +83,20 @@ class GeoDbContext(ApiContext):
                 self.config['geodb_openeo'] = unfrozen_dict
                 unfrozen_dict[key] = default_config[key]
         self._collections = {}
+        self._vector_cube_cache = Cache(DEFAULT_VC_CACHE_SIZE)
 
     def update(self, prev_ctx: Optional["Context"]):
         pass
 
-    def get_vector_cube(self, collection_id: str, with_items: bool,
-                        bbox: Optional[Tuple[float, float, float, float]],
-                        limit: Optional[int], offset: Optional[int]) \
+    def get_vector_cube(self, collection_id: Tuple[str, str],
+                        bbox: Optional[Tuple[float, float, float, float]]) \
             -> VectorCube:
-        return self.cube_provider.get_vector_cube(collection_id, with_items,
-                                                  bbox, limit, offset)
+        vector_cube = self._vector_cube_cache.get((collection_id, bbox))
+        if vector_cube:
+            return vector_cube
+        vector_cube = self.cube_provider.get_vector_cube(collection_id, bbox)
+        self._vector_cube_cache.insert((collection_id, bbox), vector_cube)
+        return vector_cube
 
     @property
     def collections(self) -> Dict:
@@ -109,9 +114,7 @@ class GeoDbContext(ApiContext):
                                       len(self.collection_ids))
         collection_list = []
         for collection_id in self.collection_ids[offset:offset + limit]:
-            vector_cube = self.get_vector_cube(collection_id, with_items=False,
-                                               bbox=None, limit=limit,
-                                               offset=offset)
+            vector_cube = self.get_vector_cube(collection_id, bbox=None)
             collection = _get_vector_cube_collection(base_url, vector_cube)
             collection_list.append(collection)
 
@@ -121,52 +124,42 @@ class GeoDbContext(ApiContext):
         }
 
     def get_collection(self, base_url: str,
-                       collection_id: str):
-        vector_cube = self.get_vector_cube(collection_id, with_items=False,
-                                           bbox=None, limit=None, offset=0)
+                       collection_dn: Tuple[str, str]):
+        vector_cube = self.get_vector_cube(collection_dn, bbox=None)
         if vector_cube:
             return _get_vector_cube_collection(base_url, vector_cube)
         else:
             return None
 
-    def get_collection_items(self, base_url: str,
-                             collection_id: str, limit: int, offset: int,
-                             bbox: Optional[Tuple[float, float, float,
-                                                  float]] = None):
+    def get_collection_items(
+            self, base_url: str, collection_id: Tuple[str, str], limit: int,
+            offset: int, bbox: Optional[Tuple[float, float, float, float]]
+            = None):
         _validate(limit)
-        vector_cube = self.get_vector_cube(collection_id, with_items=True,
-                                           bbox=bbox, limit=limit,
-                                           offset=offset)
+        vector_cube = self.get_vector_cube(collection_id, bbox=bbox)
         stac_features = [
             _get_vector_cube_item(base_url, vector_cube, feature)
-            for feature in vector_cube.get('features', [])
+            for feature in vector_cube.load_features(limit, offset)
         ]
 
         return {
             'type': 'FeatureCollection',
             'features': stac_features,
             'timeStamp': _utc_now(),
-            'numberMatched': vector_cube['total_feature_count'],
+            'numberMatched': vector_cube.metadata['total_feature_count'],
             'numberReturned': len(stac_features),
         }
 
     def get_collection_item(self, base_url: str,
-                            collection_id: str,
+                            collection_id: Tuple[str, str],
                             feature_id: str):
-        # nah. use different geodb-function, don't get full vector cube
-        vector_cube = self.get_vector_cube(collection_id, with_items=True,
-                                           bbox=None, limit=None, offset=0)
-        for feature in vector_cube.get('features', []):
-            if str(feature.get('id')) == feature_id:
-                return _get_vector_cube_item(base_url, vector_cube, feature)
+        vector_cube = self.get_vector_cube(collection_id, bbox=None)
+        feature = vector_cube.get_feature(feature_id)
+        if feature:
+            return _get_vector_cube_item(base_url, vector_cube, feature)
         raise ItemNotFoundException(
             f'feature {feature_id!r} not found in collection {collection_id!r}'
         )
-
-    def transform_bbox(self, collection_id: str,
-                       bbox: Tuple[float, float, float, float],
-                       crs: int) -> Tuple[float, float, float, float]:
-        return self.cube_provider._transform_bbox(collection_id, bbox, crs)
 
 
 def get_collections_links(limit: int, offset: int, url: str,
@@ -201,8 +194,16 @@ def get_collections_links(limit: int, offset: int, url: str,
 
 def _get_vector_cube_collection(base_url: str,
                                 vector_cube: VectorCube):
-    vector_cube_id = vector_cube['id']
-    metadata = vector_cube.get('metadata', {})
+    vector_cube_id = vector_cube.id
+    metadata = vector_cube.metadata
+    v_dim = vector_cube.get_vector_dim()
+    if len(v_dim) > MAX_NUMBER_OF_GEOMETRIES_DISPLAYED:
+        start = ','.join(str(v_dim[0:2]))
+        v_dim = f'{start}...{v_dim[-1]}'
+    z_dim = vector_cube.get_vertical_dim()
+    axes = ['x', 'y', 'z'] if z_dim else ['x', 'y']
+    bbox = vector_cube.get_bbox()
+
     vector_cube_collection = {
         'stac_version': STAC_VERSION,
         'stac_extensions': STAC_EXTENSIONS,
@@ -215,7 +216,14 @@ def _get_vector_cube_collection(base_url: str,
         'keywords': metadata.get('keywords', []),
         'providers': metadata.get('providers', []),
         'extent': metadata.get('extent', {}),
-        'cube:dimensions': {'vector_dim': {'type': 'other'}},
+        'cube:dimensions': {
+            'vector': {
+                'type': 'geometry',
+                'axes': axes,
+                'bbox': str(bbox),
+                "values": v_dim,
+            }
+        },
         'summaries': metadata.get('summaries', {}),
         'links': [
             {
@@ -235,13 +243,14 @@ def _get_vector_cube_collection(base_url: str,
 
 def _get_vector_cube_item(base_url: str, vector_cube: VectorCube,
                           feature: Feature):
-    collection_id = vector_cube['id']
+    collection_id = vector_cube.id
     feature_id = feature['id']
     feature_bbox = feature.get('bbox')
     feature_geometry = feature.get('geometry')
     feature_properties = feature.get('properties', {})
+    feature_datetime = feature.get('datetime') if 'datetime' in feature else None
 
-    return {
+    item = {
         'stac_version': STAC_VERSION,
         'stac_extensions': STAC_EXTENSIONS,
         'type': 'Feature',
@@ -259,6 +268,9 @@ def _get_vector_cube_item(base_url: str, vector_cube: VectorCube,
         ],
         'assets': {}
     }
+    if feature_datetime:
+        item['datetime'] = feature_datetime
+    return item
 
 
 def _utc_now():

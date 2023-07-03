@@ -19,30 +19,213 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 import abc
+from datetime import datetime
 from functools import cached_property
-from typing import Optional, List, Mapping, Any
-from typing import Tuple
+from typing import List, Mapping, Any, Optional, Tuple, Dict
 
+import dateutil.parser
+import shapely
 from geojson.geometry import Geometry
-from xcube_geodb.core.geodb import GeoDBClient
+from pandas import Series
+from xcube.constants import LOG
+from xcube_geodb.core.geodb import GeoDBClient, GeoDBError
 
-from .vectorcube_provider import GeoDBProvider
+from .tools import create_geodb_client
+from ..defaults import STAC_VERSION, STAC_EXTENSIONS, STAC_DEFAULT_ITEMS_LIMIT
+
+Feature = Dict[str, Any]
 
 
 class DataSource(abc.ABC):
 
     @abc.abstractmethod
-    def get_values(self) -> List[Geometry]:
+    def get_geometry(self,
+                     bbox: Optional[Tuple[float, float, float, float]] = None
+                     ) -> List[Geometry]:
+        pass
+
+    @abc.abstractmethod
+    def get_time_dim(
+            self,
+            bbox: Optional[Tuple[float, float, float, float]] = None) \
+            -> List[datetime]:
+        pass
+
+    @abc.abstractmethod
+    def get_vertical_dim(
+            self,
+            bbox: Optional[Tuple[float, float, float, float]] = None) \
+            -> List[Any]:
+        pass
+
+    @abc.abstractmethod
+    def load_features(self, limit: int = STAC_DEFAULT_ITEMS_LIMIT,
+                      offset: int = 0,
+                      feature_id: Optional[str] = None) -> List[Feature]:
         pass
 
 
 class GeoDBVectorSource(DataSource):
 
-    def __init__(self, config: Mapping[str, Any]):
+    def __init__(self, config: Mapping[str, Any],
+                 collection_id: Tuple[str, str]):
         self.config = config
+        self.collection_id = collection_id
 
     @cached_property
     def geodb(self) -> GeoDBClient:
         assert self.config
         api_config = self.config['geodb_openeo']
-        return GeoDBProvider.create_geodb_client(api_config)
+        return create_geodb_client(api_config)
+
+    @cached_property
+    def collection_info(self):
+        (db, name) = self.collection_id
+        try:
+            collection_info = self.geodb.get_collection_info(name, db)
+        except GeoDBError:
+            return None  # todo - raise meaningful error
+        return collection_info
+
+    def load_features(self, limit: int = STAC_DEFAULT_ITEMS_LIMIT,
+                      offset: int = 0,
+                      feature_id: Optional[str] = None) -> List[Feature]:
+        LOG.debug(f'Loading features of collection {self.collection_id} from '
+                  f'geoDB...')
+        (db, name) = self.collection_id
+        select = 'id,geometry'
+        time = self._get_col_name(['date', 'time', 'timestamp', 'datetime'])
+        if time:
+            select = f'{select},{time}'
+        if feature_id:
+            gdf = self.geodb.get_collection_pg(
+                name, select=select, where=f'id = {feature_id}', database=db)
+        else:
+            gdf = self.geodb.get_collection_pg(
+                name, select=select, limit=limit, offset=offset, database=db)
+
+        features = []
+
+        for i, row in enumerate(gdf.iterrows()):
+            bbox = gdf.bounds.iloc[i]
+            coords = self._get_coords(row[1])
+            properties = list(gdf.columns)
+
+            feature = {
+                'stac_version': STAC_VERSION,
+                'stac_extensions': STAC_EXTENSIONS,
+                'type': 'Feature',
+                'id': str(row[1]['id']),
+                'bbox': [f'{bbox["minx"]:.4f}',
+                         f'{bbox["miny"]:.4f}',
+                         f'{bbox["maxx"]:.4f}',
+                         f'{bbox["maxy"]:.4f}'],
+                'geometry': coords,
+                'properties': properties
+            }
+            if time:
+                feature['datetime'] = row[1][time]
+            features.append(feature)
+        LOG.debug('...done.')
+        return features
+
+    def get_geometry(self,
+                     bbox: Optional[Tuple[float, float, float, float]] = None
+                     ) -> List[Geometry]:
+        select = f'geometry'
+        LOG.debug(f'Loading geometry for {self.collection_id} from geoDB...')
+        if bbox:
+            gdf = self._fetch_from_geodb(select, bbox)
+        else:
+            (db, name) = self.collection_id
+            gdf = self.geodb.get_collection_pg(
+                name, select=select, group=select, database=db)
+        LOG.debug('...done.')
+
+        return list(gdf['geometry'])
+
+    def get_time_dim(
+            self, bbox: Optional[Tuple[float, float, float, float]] = None) \
+            -> Optional[List[datetime]]:
+        select = self._get_col_name(['date', 'time', 'timestamp', 'datetime'])
+        if not select:
+            return None
+        if bbox:
+            gdf = self._fetch_from_geodb(select, bbox)
+        else:
+            (db, name) = self.collection_id
+            gdf = self.geodb.get_collection_pg(
+                name, select=select, database=db)
+
+        return [dateutil.parser.parse(d) for d in gdf[select]]
+
+    def get_vertical_dim(
+            self, bbox: Optional[Tuple[float, float, float, float]] = None) \
+            -> List[Any]:
+        pass
+
+    def _get_vector_cube_bbox(self):
+        (db, name) = self.collection_id
+        LOG.debug(f'Loading collection bbox for {self.collection_id} from '
+                  f'geoDB...')
+        vector_cube_bbox = self.geodb.get_vector_cube_bbox(name, database=db)
+        if vector_cube_bbox:
+            vector_cube_bbox = self._transform_bbox_crs(vector_cube_bbox,
+                                                        name, db)
+        if not vector_cube_bbox:
+            vector_cube_bbox = self.geodb.get_vector_cube_bbox(name, db,
+                                                               exact=True)
+            if vector_cube_bbox:
+                vector_cube_bbox = self._transform_bbox_crs(vector_cube_bbox,
+                                                            name, db)
+
+        LOG.debug(f'...done.')
+        return vector_cube_bbox
+
+    def _transform_bbox(self, collection_id: Tuple[str, str],
+                        bbox: Tuple[float, float, float, float],
+                        crs: int) -> Tuple[float, float, float, float]:
+        (db, name) = collection_id
+        srid = self.geodb.get_collection_srid(name, database=db)
+        if srid == crs:
+            return bbox
+        return self.geodb.transform_bbox_crs(bbox, crs, srid)
+
+    def _transform_bbox_crs(self, collection_bbox, name: str, db: str):
+        srid = self.geodb.get_collection_srid(name, database=db)
+        if srid is not None and srid != '4326':
+            collection_bbox = self.geodb.transform_bbox_crs(
+                collection_bbox,
+                srid, '4326'
+            )
+        return collection_bbox
+
+    def _get_col_name(self, possible_names: List[str]) -> Optional[str]:
+        for key in self.collection_info['properties'].keys():
+            if key in possible_names:
+                return key
+        return None
+
+    def _fetch_from_geodb(self, select: str,
+                          bbox: Tuple[float, float, float, float]):
+        (db, name) = self.collection_id
+        srid = self.geodb.get_collection_srid(name, database=db)
+        where = f'ST_Intersects(geometry, ST_GeomFromText(\'POLYGON((' \
+                f'{bbox[0]},{bbox[1]},' \
+                f'{bbox[0]},{bbox[3]},' \
+                f'{bbox[2]},{bbox[3]},' \
+                f'{bbox[2]},{bbox[1]},' \
+                f'{bbox[0]},{bbox[1]},' \
+                f'))\',' \
+                f'{srid}))'
+        return self.geodb.get_collection_pg(name,
+                                            select=select,
+                                            where=where,
+                                            group=select,
+                                            database=db)
+
+    @staticmethod
+    def _get_coords(feature: Series) -> Dict:
+        geometry = feature['geometry']
+        feature_wkt = shapely.wkt.loads(geometry.wkt)
+        return shapely.geometry.mapping(feature_wkt)
