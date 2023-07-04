@@ -19,10 +19,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 from datetime import datetime
+from functools import cached_property
 from typing import Any, Optional, Tuple
 from typing import List
 from geojson.geometry import Geometry
-from xcube.constants import LOG
 
 from xcube_geodb_openeo.core.geodb_datasource import DataSource, Feature
 from xcube_geodb_openeo.core.tools import Cache
@@ -58,15 +58,27 @@ class VectorCube:
         self._datasource = datasource
         self._metadata = {}
         self._feature_cache = Cache(1000)
-        self._geometry_cache = Cache(100)
+        self._vector_dim_cache = Cache(100)
+        self._vertical_dim_cache = Cache(1000)
+        self._time_dim_cache = Cache(1000)
         self._version = ''
+        self._bbox = None
+        self._geometry_types = None
         self._vector_dim = []
         self._vertical_dim = []
         self._time_dim = []
 
-    @property
+    @cached_property
     def id(self) -> str:
         return self._database + '~' + self._id
+
+    @cached_property
+    def srid(self) -> str:
+        return str(self._datasource.get_srid())
+
+    @cached_property
+    def feature_count(self) -> int:
+        return self._datasource.get_feature_count()
 
     def get_vector_dim(
             self, bbox: Optional[Tuple[float, float, float, float]] = None) \
@@ -91,13 +103,13 @@ class VectorCube:
         vector dimension
         """
         global_key = 'GLOBAL'
-        if bbox and bbox in self._geometry_cache.get_keys():
-            return self._geometry_cache.get(bbox)
-        if not bbox and global_key in self._geometry_cache.get_keys():
-            return self._geometry_cache.get(global_key)
-        geometry = self._datasource.get_geometry(bbox)
-        self._geometry_cache.insert(bbox if bbox else global_key, geometry)
-        return geometry
+        if bbox and bbox in self._vector_dim_cache.get_keys():
+            return self._vector_dim_cache.get(bbox)
+        if not bbox and global_key in self._vector_dim_cache.get_keys():
+            return self._vector_dim_cache.get(global_key)
+        vector_dim = self._datasource.get_vector_dim(bbox)
+        self._vector_dim_cache.insert(bbox if bbox else global_key, vector_dim)
+        return vector_dim
 
     def get_vertical_dim(
             self,
@@ -109,7 +121,14 @@ class VectorCube:
         cube does not have a vertical dimension, returns an empty list.
         :return: list of dimension values, typically a list of float values.
         """
-        return self._datasource.get_vertical_dim(bbox)
+        global_key = 'GLOBAL'
+        if bbox and bbox in self._vertical_dim_cache.get_keys():
+            return self._vertical_dim_cache.get(bbox)
+        if not bbox and global_key in self._vertical_dim_cache.get_keys():
+            return self._vertical_dim_cache.get(global_key)
+        v_dim = self._datasource.get_vertical_dim(bbox)
+        self._vertical_dim_cache.insert(bbox if bbox else global_key, v_dim)
+        return v_dim
 
     def get_time_dim(
             self, bbox: Optional[Tuple[float, float, float, float]] = None) \
@@ -119,7 +138,14 @@ class VectorCube:
         datetime objects. If the vector cube does not have a time dimension,
         an empty list is returned.
         """
-        return self._datasource.get_time_dim(bbox)
+        global_key = 'GLOBAL'
+        if bbox and bbox in self._time_dim_cache.get_keys():
+            return self._time_dim_cache.get(bbox)
+        if not bbox and global_key in self._time_dim_cache.get_keys():
+            return self._time_dim_cache.get(global_key)
+        time_dim = self._datasource.get_time_dim(bbox)
+        self._time_dim_cache.insert(bbox if bbox else global_key, time_dim)
+        return time_dim
 
     def get_feature(self, feature_id: str) -> Feature:
         for key in self._feature_cache.get_keys():
@@ -131,23 +157,26 @@ class VectorCube:
         return feature
 
     def load_features(self, limit: int, offset: int) -> List[Feature]:
-        LOG.debug('loading features...')
         key = (limit, offset)
         if key in self._feature_cache.get_keys():
-            LOG.debug('...returning from cache - done!')
             return self._feature_cache.get(key)
         features = self._datasource.load_features(limit, offset)
         self._feature_cache.insert(key, features)
-        LOG.debug('...read from geoDB.')
         return features
 
-    def get_bbox(self):
-        LOG.debug(f'loading bounding box for vector cube {self.id}....')
-        if self.bbox:
-            return self.bbox
-        self.bbox = self._datasource._get_vector_cube_bbox()
-        return self.bbox
+    def get_bbox(self) -> Tuple[float, float, float, float]:
+        if self._bbox:
+            return self._bbox
+        self._bbox = self._datasource.get_vector_cube_bbox()
+        return self._bbox
 
-    @property
-    def metadata(self):
-        return self._metadata
+    def get_geometry_types(self) -> List[str]:
+        if self._geometry_types:
+            return self._geometry_types
+        self._geometry_types = self._datasource.get_geometry_types()
+        return self._geometry_types
+
+    @cached_property
+    def metadata(self) -> {}:
+        bbox = self.get_bbox()
+        return self._datasource.get_metadata(bbox)

@@ -39,9 +39,17 @@ Feature = Dict[str, Any]
 class DataSource(abc.ABC):
 
     @abc.abstractmethod
-    def get_geometry(self,
-                     bbox: Optional[Tuple[float, float, float, float]] = None
-                     ) -> List[Geometry]:
+    def get_vector_dim(self,
+                       bbox: Optional[Tuple[float, float, float, float]] = None
+                       ) -> List[Geometry]:
+        pass
+
+    @abc.abstractmethod
+    def get_srid(self) -> int:
+        pass
+
+    @abc.abstractmethod
+    def get_feature_count(self) -> int:
         pass
 
     @abc.abstractmethod
@@ -62,6 +70,18 @@ class DataSource(abc.ABC):
     def load_features(self, limit: int = STAC_DEFAULT_ITEMS_LIMIT,
                       offset: int = 0,
                       feature_id: Optional[str] = None) -> List[Feature]:
+        pass
+
+    @abc.abstractmethod
+    def get_vector_cube_bbox(self) -> Tuple[float, float, float, float]:
+        pass
+
+    @abc.abstractmethod
+    def get_geometry_types(self) -> List[str]:
+        pass
+
+    @abc.abstractmethod
+    def get_metadata(self, bbox: Tuple[float, float, float, float]) -> Dict:
         pass
 
 
@@ -87,6 +107,25 @@ class GeoDBVectorSource(DataSource):
             return None  # todo - raise meaningful error
         return collection_info
 
+    def get_feature_count(self) -> int:
+        (db, name) = self.collection_id
+        LOG.debug(f'Retrieving count from geoDB...')
+        count = self.geodb.count_collection_rows(name, database=db,
+                                                 exact_count=True)
+        LOG.debug(f'...done.')
+        return count
+
+    def get_srid(self) -> int:
+        (db, name) = self.collection_id
+        return int(self.geodb.get_collection_srid(name, db))
+
+    def get_geometry_types(self) -> List[str]:
+        LOG.debug(f'Loading geometry types for vector cube '
+                  f'{self.collection_id} from geoDB...')
+        (db, name) = self.collection_id
+        return self.geodb.get_geometry_types(collection=name, aggregate=True,
+                                             database=db)
+
     def load_features(self, limit: int = STAC_DEFAULT_ITEMS_LIMIT,
                       offset: int = 0,
                       feature_id: Optional[str] = None) -> List[Feature]:
@@ -105,11 +144,11 @@ class GeoDBVectorSource(DataSource):
                 name, select=select, limit=limit, offset=offset, database=db)
 
         features = []
+        properties = list(self.collection_info['properties'].keys())
 
         for i, row in enumerate(gdf.iterrows()):
             bbox = gdf.bounds.iloc[i]
             coords = self._get_coords(row[1])
-            properties = list(gdf.columns)
 
             feature = {
                 'stac_version': STAC_VERSION,
@@ -129,14 +168,16 @@ class GeoDBVectorSource(DataSource):
         LOG.debug('...done.')
         return features
 
-    def get_geometry(self,
-                     bbox: Optional[Tuple[float, float, float, float]] = None
-                     ) -> List[Geometry]:
+    def get_vector_dim(self,
+                       bbox: Optional[Tuple[float, float, float, float]] = None
+                       ) -> List[Geometry]:
         select = f'geometry'
-        LOG.debug(f'Loading geometry for {self.collection_id} from geoDB...')
         if bbox:
+            LOG.debug(f'Loading geometry for {self.collection_id} from geoDB...')
             gdf = self._fetch_from_geodb(select, bbox)
         else:
+            LOG.debug(f'Loading global geometry for {self.collection_id} '
+                      f'from geoDB...')
             (db, name) = self.collection_id
             gdf = self.geodb.get_collection_pg(
                 name, select=select, group=select, database=db)
@@ -164,23 +205,61 @@ class GeoDBVectorSource(DataSource):
             -> List[Any]:
         pass
 
-    def _get_vector_cube_bbox(self):
+    def get_vector_cube_bbox(self) -> Tuple[float, float, float, float]:
         (db, name) = self.collection_id
         LOG.debug(f'Loading collection bbox for {self.collection_id} from '
                   f'geoDB...')
-        vector_cube_bbox = self.geodb.get_vector_cube_bbox(name, database=db)
+        vector_cube_bbox = self.geodb.get_collection_bbox(name, database=db)
         if vector_cube_bbox:
             vector_cube_bbox = self._transform_bbox_crs(vector_cube_bbox,
                                                         name, db)
         if not vector_cube_bbox:
-            vector_cube_bbox = self.geodb.get_vector_cube_bbox(name, db,
-                                                               exact=True)
+            vector_cube_bbox = self.geodb.get_collection_bbox(name, db,
+                                                              exact=True)
             if vector_cube_bbox:
                 vector_cube_bbox = self._transform_bbox_crs(vector_cube_bbox,
                                                             name, db)
 
         LOG.debug(f'...done.')
         return vector_cube_bbox
+
+    def get_metadata(self, bbox: Tuple[float, float, float, float]) -> Dict:
+        (db, name) = self.collection_id
+        col_names = list(self.collection_info['properties'].keys())
+        time_column = self._get_col_name(
+            ['date', 'time', 'timestamp', 'datetime'])
+        if time_column:
+            LOG.debug(f'Loading time interval for {self.collection_id} from '
+                      f'geoDB...')
+            earliest = self.geodb.get_collection_pg(
+                name, select=time_column,
+                order=time_column, limit=1,
+                database=db)[time_column][0]
+            earliest = dateutil.parser.parse(earliest).isoformat()
+            latest = self.geodb.get_collection_pg(
+                name, select=time_column,
+                order=f'{time_column} DESC',
+                limit=1, database=db)[time_column][0]
+            latest = dateutil.parser.parse(latest).isoformat()
+            LOG.debug(f'...done.')
+        else:
+            earliest, latest = None, None
+
+        metadata = {
+            'title': f'{name}',
+            'extent': {
+                'spatial': {
+                    'bbox': [bbox],
+                },
+                'temporal': {
+                    'interval': [[earliest, latest]]
+                }
+            },
+            'summaries': {
+                'column_names': col_names
+            },
+        }
+        return metadata
 
     def _transform_bbox(self, collection_id: Tuple[str, str],
                         bbox: Tuple[float, float, float, float],

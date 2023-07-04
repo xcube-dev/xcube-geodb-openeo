@@ -25,28 +25,8 @@ from ..backend import processes
 from .api import api
 from xcube.server.api import ApiHandler
 from xcube.server.api import ApiError
-from ..defaults import STAC_DEFAULT_COLLECTIONS_LIMIT, STAC_DEFAULT_ITEMS_LIMIT
-
-
-def get_limit(request, default: int) -> int:
-    limit = int(request.get_query_arg('limit')) if \
-        request.get_query_arg('limit') \
-        else default
-    return limit
-
-
-def get_offset(request) -> int:
-    return int(request.get_query_arg('offset')) if \
-        request.get_query_arg('offset') \
-        else 0
-
-
-def get_bbox(request):
-    if request.get_query_arg('bbox'):
-        bbox = str(request.get_query_arg('bbox'))
-        return tuple(bbox.split(','))
-    else:
-        return None
+from ..defaults import STAC_DEFAULT_COLLECTIONS_LIMIT, \
+    STAC_DEFAULT_ITEMS_LIMIT, STAC_MAX_ITEMS_LIMIT, STAC_MIN_ITEMS_LIMIT
 
 
 def get_base_url(request):
@@ -194,10 +174,10 @@ class CollectionsHandler(ApiHandler):
                           items that are presented in the response document.
             offset (int): Collections are listed starting at offset.
         """
-        limit = get_limit(self.request, STAC_DEFAULT_COLLECTIONS_LIMIT)
-        offset = get_offset(self.request)
+        limit = _get_limit(self.request, STAC_DEFAULT_COLLECTIONS_LIMIT)
+        offset = _get_offset(self.request)
         base_url = get_base_url(self.request)
-        self.ctx.fetch_collections(base_url, limit, offset)
+        self.ctx.get_collections(base_url, limit, offset)
         self.response.finish(self.ctx.collections)
 
 
@@ -215,7 +195,7 @@ class CollectionHandler(ApiHandler):
         base_url = get_base_url(self.request)
         db = collection_id.split('~')[0]
         name = collection_id.split('~')[1]
-        collection = self.ctx.get_collection(base_url, (db, name))
+        collection = self.ctx.get_collection(base_url, (db, name), True)
         if collection:
             self.response.finish(collection)
         else:
@@ -241,9 +221,11 @@ class CollectionItemsHandler(ApiHandler):
             bbox (array of numbers): Only features that intersect the bounding
                 box are selected. Example: bbox=160.6,-55.95,-170,-25.89
         """
-        limit = get_limit(self.request, STAC_DEFAULT_ITEMS_LIMIT)
-        offset = get_offset(self.request)
-        bbox = get_bbox(self.request)
+        limit = _get_limit(self.request, STAC_DEFAULT_ITEMS_LIMIT)
+        limit = STAC_MAX_ITEMS_LIMIT if limit > STAC_MAX_ITEMS_LIMIT else limit
+        limit = STAC_MIN_ITEMS_LIMIT if limit < STAC_MIN_ITEMS_LIMIT else limit
+        offset = _get_offset(self.request)
+        bbox = _get_bbox(self.request)
         base_url = get_base_url(self.request)
         db = collection_id.split('~')[0]
         name = collection_id.split('~')[1]
@@ -269,3 +251,24 @@ class FeatureHandler(ApiHandler):
         feature = self.ctx.get_collection_item(base_url, (db, name),
                                                feature_id)
         self.response.finish(feature)
+
+
+def _get_limit(request, default: int) -> int:
+    limit = int(request.get_query_arg('limit')) if \
+        request.get_query_arg('limit') \
+        else default
+    return limit
+
+
+def _get_offset(request) -> int:
+    return int(request.get_query_arg('offset')) if \
+        request.get_query_arg('offset') \
+        else 0
+
+
+def _get_bbox(request):
+    if request.get_query_arg('bbox'):
+        bbox = str(request.get_query_arg('bbox'))
+        return tuple(bbox.split(','))
+    else:
+        return None

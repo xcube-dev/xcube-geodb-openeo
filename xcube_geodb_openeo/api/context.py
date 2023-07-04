@@ -108,14 +108,14 @@ class GeoDbContext(ApiContext):
         assert isinstance(collections, Dict)
         self._collections = collections
 
-    def fetch_collections(self, base_url: str, limit: int, offset: int):
+    def get_collections(self, base_url: str, limit: int, offset: int):
         url = f'{base_url}/collections'
         links = get_collections_links(limit, offset, url,
                                       len(self.collection_ids))
         collection_list = []
         for collection_id in self.collection_ids[offset:offset + limit]:
-            vector_cube = self.get_vector_cube(collection_id, bbox=None)
-            collection = _get_vector_cube_collection(base_url, vector_cube)
+            collection = self.get_collection(base_url, collection_id,
+                                             full=False)
             collection_list.append(collection)
 
         self.collections = {
@@ -124,31 +124,40 @@ class GeoDbContext(ApiContext):
         }
 
     def get_collection(self, base_url: str,
-                       collection_dn: Tuple[str, str]):
-        vector_cube = self.get_vector_cube(collection_dn, bbox=None)
-        if vector_cube:
-            return _get_vector_cube_collection(base_url, vector_cube)
-        else:
-            return None
+                       collection_id: Tuple[str, str],
+                       full: bool = False):
+        vector_cube = self.get_vector_cube(collection_id, bbox=None)
+        return _get_vector_cube_collection(base_url, vector_cube, full)
 
     def get_collection_items(
             self, base_url: str, collection_id: Tuple[str, str], limit: int,
             offset: int, bbox: Optional[Tuple[float, float, float, float]]
-            = None):
-        _validate(limit)
+            = None) -> Dict:
         vector_cube = self.get_vector_cube(collection_id, bbox=bbox)
         stac_features = [
             _get_vector_cube_item(base_url, vector_cube, feature)
             for feature in vector_cube.load_features(limit, offset)
         ]
 
-        return {
+        result = {
             'type': 'FeatureCollection',
             'features': stac_features,
             'timeStamp': _utc_now(),
-            'numberMatched': vector_cube.metadata['total_feature_count'],
-            'numberReturned': len(stac_features),
+            'numberMatched': vector_cube.feature_count,
+            'numberReturned': len(stac_features)
         }
+
+        if offset + limit < vector_cube.feature_count:
+            new_offset = offset + limit
+            result['links'] = [
+                {
+                    'rel': 'next',
+                    'href': f'{base_url}/collections/{vector_cube.id}'
+                            f'/items?limit={limit}&offset={new_offset}'
+                },
+            ]
+
+        return result
 
     def get_collection_item(self, base_url: str,
                             collection_id: Tuple[str, str],
@@ -193,17 +202,11 @@ def get_collections_links(limit: int, offset: int, url: str,
 
 
 def _get_vector_cube_collection(base_url: str,
-                                vector_cube: VectorCube):
+                                vector_cube: VectorCube,
+                                full: bool = False):
     vector_cube_id = vector_cube.id
-    metadata = vector_cube.metadata
-    v_dim = vector_cube.get_vector_dim()
-    if len(v_dim) > MAX_NUMBER_OF_GEOMETRIES_DISPLAYED:
-        start = ','.join(str(v_dim[0:2]))
-        v_dim = f'{start}...{v_dim[-1]}'
-    z_dim = vector_cube.get_vertical_dim()
-    axes = ['x', 'y', 'z'] if z_dim else ['x', 'y']
     bbox = vector_cube.get_bbox()
-
+    metadata = vector_cube.metadata
     vector_cube_collection = {
         'stac_version': STAC_VERSION,
         'stac_extensions': STAC_EXTENSIONS,
@@ -216,15 +219,6 @@ def _get_vector_cube_collection(base_url: str,
         'keywords': metadata.get('keywords', []),
         'providers': metadata.get('providers', []),
         'extent': metadata.get('extent', {}),
-        'cube:dimensions': {
-            'vector': {
-                'type': 'geometry',
-                'axes': axes,
-                'bbox': str(bbox),
-                "values": v_dim,
-            }
-        },
-        'summaries': metadata.get('summaries', {}),
         'links': [
             {
                 'rel': 'self',
@@ -236,6 +230,22 @@ def _get_vector_cube_collection(base_url: str,
             }
         ]
     }
+    if full:
+        geometry_types = vector_cube.get_geometry_types()
+        z_dim = vector_cube.get_vertical_dim()
+        axes = ['x', 'y', 'z'] if z_dim else ['x', 'y']
+        srid = vector_cube.srid
+        vector_cube_collection['cube:dimensions'] = {
+            'vector': {
+                'type': 'geometry',
+                'axes': axes,
+                'bbox': str(bbox),
+                'geometry_types': geometry_types,
+                'reference_system': srid
+            }
+        }
+        vector_cube_collection['summaries'] = metadata.get('summaries', {}),
+
     if 'version' in metadata:
         vector_cube_collection['version'] = metadata['version']
     return vector_cube_collection
@@ -248,7 +258,8 @@ def _get_vector_cube_item(base_url: str, vector_cube: VectorCube,
     feature_bbox = feature.get('bbox')
     feature_geometry = feature.get('geometry')
     feature_properties = feature.get('properties', {})
-    feature_datetime = feature.get('datetime') if 'datetime' in feature else None
+    feature_datetime = feature.get('datetime') \
+        if 'datetime' in feature else None
 
     item = {
         'stac_version': STAC_VERSION,
@@ -279,15 +290,6 @@ def _utc_now():
                .utcnow() \
                .replace(microsecond=0) \
                .isoformat() + 'Z'
-
-
-def _validate(limit: int):
-    if limit < 1 or limit > STAC_MAX_ITEMS_LIMIT:
-        raise InvalidParameterException(f'if specified, limit has to be '
-                                        f'between 1 and '
-                                        f'{STAC_MAX_ITEMS_LIMIT}')
-
-
 class CollectionNotFoundException(Exception):
     pass
 
