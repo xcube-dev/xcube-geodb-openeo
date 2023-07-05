@@ -52,9 +52,9 @@ class VectorCube:
     The actual values within this VectorCube are provided by a dask Dataframe.
     """
 
-    def __init__(self, collection_dn: Tuple[str, str],
+    def __init__(self, collection_id: Tuple[str, str],
                  datasource: DataSource) -> None:
-        (self._database, self._id) = collection_dn
+        (self._database, self._id) = collection_id
         self._datasource = datasource
         self._metadata = {}
         self._feature_cache = Cache(1000)

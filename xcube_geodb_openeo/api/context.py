@@ -59,8 +59,10 @@ class GeoDbContext(ApiContext):
     def cube_provider(self) -> VectorCubeProvider:
         if not self.config:
             raise RuntimeError('config not set')
-        cube_provider_class = self.config['geodb_openeo']['datasource_class']
-        cube_provider_module = cube_provider_class[:cube_provider_class.rindex('.')]
+        cube_provider_class = \
+            self.config['geodb_openeo']['vectorcube_provider_class']
+        cube_provider_module = \
+            cube_provider_class[:cube_provider_class.rindex('.')]
         class_name = cube_provider_class[cube_provider_class.rindex('.') + 1:]
         module = importlib.import_module(cube_provider_module)
         cls = getattr(module, class_name)
@@ -73,6 +75,7 @@ class GeoDbContext(ApiContext):
 
     def __init__(self, root: Context):
         super().__init__(root)
+        self._cube_provider = None
         self._request = None
         # necessary because root.config and its sub-configs are not writable
         # so copy their config in a new dict

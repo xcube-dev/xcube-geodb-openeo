@@ -69,7 +69,7 @@ class DataDiscoveryTest(ServerTestCase):
         self.assertEqual(2, len(first_collection['links']))
 
     def test_collection(self):
-        url = f'http://localhost:{self.port}/collections/collection_1'
+        url = f'http://localhost:{self.port}/collections/database~collection_1'
         response = self.http.request('GET', url)
         self.assertEqual(200, response.status)
         collection_data = json.loads(response.data)

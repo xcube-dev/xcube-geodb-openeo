@@ -1,6 +1,6 @@
 # adapt to your needs and save as config.yml
 geodb_openeo:
-  datasource_class: xcube_geodb_openeo.core.geodb_datasource.GeoDBDataSource
+  vectorcube_provider_class: xcube_geodb_openeo.core.vectorcube_provider.GeoDBProvider
 
   postgrest_url:  <geoDB-PostGREST server url>
   postgrest_port: <geoDB-PostGREST server port>

@@ -56,14 +56,14 @@ class DataSource(abc.ABC):
     def get_time_dim(
             self,
             bbox: Optional[Tuple[float, float, float, float]] = None) \
-            -> List[datetime]:
+            -> Optional[List[datetime]]:
         pass
 
     @abc.abstractmethod
     def get_vertical_dim(
             self,
             bbox: Optional[Tuple[float, float, float, float]] = None) \
-            -> List[Any]:
+            -> Optional[List[Any]]:
         pass
 
     @abc.abstractmethod
@@ -202,8 +202,18 @@ class GeoDBVectorSource(DataSource):
 
     def get_vertical_dim(
             self, bbox: Optional[Tuple[float, float, float, float]] = None) \
-            -> List[Any]:
-        pass
+            -> Optional[List[Any]]:
+        select = self._get_col_name(['z', 'vertical'])
+        if not select:
+            return None
+        if bbox:
+            gdf = self._fetch_from_geodb(select, bbox)
+        else:
+            (db, name) = self.collection_id
+            gdf = self.geodb.get_collection_pg(
+                name, select=select, database=db)
+
+        return gdf[select]
 
     def get_vector_cube_bbox(self) -> Tuple[float, float, float, float]:
         (db, name) = self.collection_id

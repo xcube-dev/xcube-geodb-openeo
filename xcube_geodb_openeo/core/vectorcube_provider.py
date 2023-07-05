@@ -20,21 +20,14 @@
 # DEALINGS IN THE SOFTWARE.
 
 import abc
-import math
 from functools import cached_property
-from typing import Dict, Tuple, Optional, List, Mapping, Any
+from typing import Tuple, Optional, List, Mapping, Any
 
-import shapely.geometry
-import shapely.wkt
-from geopandas import GeoDataFrame
-from pandas import DataFrame
-from xcube.constants import LOG
 from xcube_geodb.core.geodb import GeoDBClient
 
 from .geodb_datasource import GeoDBVectorSource
 from .tools import create_geodb_client
 from .vectorcube import VectorCube
-from ..defaults import STAC_VERSION, STAC_EXTENSIONS
 
 
 class VectorCubeProvider(abc.ABC):
@@ -45,40 +38,9 @@ class VectorCubeProvider(abc.ABC):
 
     @abc.abstractmethod
     def get_vector_cube(self, collection_id: Tuple[str, str],
-                        bbox: Tuple[float, float, float, float])\
-            -> Optional[VectorCube]:
+                        bbox: Tuple[float, float, float, float]) \
+            -> VectorCube:
         pass
-
-    @staticmethod
-    def add_items_to_vector_cube(
-            collection: GeoDataFrame, vector_cube: VectorCube):
-        bounds = collection.bounds
-        for i, row in enumerate(collection.iterrows()):
-            bbox = bounds.iloc[i]
-            feature = row[1]
-            coords = VectorCubeProvider._get_coords(feature)
-            properties = {}
-            for k, key in enumerate(feature.keys()):
-                if not key == 'id' and not \
-                        collection.dtypes.values[k].name == 'geometry':
-                    if isinstance(feature[key], float) \
-                            and math.isnan(float(feature[key])):
-                        properties[key] = 'NaN'
-                    else:
-                        properties[key] = feature[key]
-
-            vector_cube['features'].append({
-                'stac_version': STAC_VERSION,
-                'stac_extensions': STAC_EXTENSIONS,
-                'type': 'Feature',
-                'id': feature['id'],
-                'bbox': [f'{bbox["minx"]:.4f}',
-                         f'{bbox["miny"]:.4f}',
-                         f'{bbox["maxx"]:.4f}',
-                         f'{bbox["maxy"]:.4f}'],
-                'geometry': coords,
-                'properties': properties
-            })
 
 
 class GeoDBProvider(VectorCubeProvider):
@@ -105,6 +67,6 @@ class GeoDBProvider(VectorCubeProvider):
 
     def get_vector_cube(self, collection_id: Tuple[str, str],
                         bbox: Tuple[float, float, float, float] = None) \
-            -> Optional[VectorCube]:
+            -> VectorCube:
         return VectorCube(collection_id,
                           GeoDBVectorSource(self.config, collection_id))
