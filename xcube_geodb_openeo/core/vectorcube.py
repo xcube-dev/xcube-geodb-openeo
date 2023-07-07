@@ -164,7 +164,7 @@ class VectorCube:
         self._feature_cache.insert(key, features)
         return features
 
-    def get_bbox(self) -> Tuple[float, float, float, float]:
+    def get_bbox(self) -> Optional[Tuple[float, float, float, float]]:
         if self._bbox:
             return self._bbox
         self._bbox = self._datasource.get_vector_cube_bbox()

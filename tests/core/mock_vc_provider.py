@@ -31,9 +31,7 @@ from typing import Tuple
 import geojson
 import shapely
 import shapely.wkt as wkt
-from geojson import coords
 from geojson.geometry import Geometry
-from shapely import LineString
 
 from xcube_geodb_openeo.core.geodb_datasource import DataSource, Feature
 from xcube_geodb_openeo.core.vectorcube import VectorCube
@@ -91,7 +89,7 @@ class MockProvider(VectorCubeProvider, DataSource):
     def get_vertical_dim(
             self,
             bbox: Optional[Tuple[float, float, float, float]] = None) \
-        -> Optional[List[Any]]:
+            -> Optional[List[Any]]:
         return None
 
     def load_features(self, limit: int = 2,

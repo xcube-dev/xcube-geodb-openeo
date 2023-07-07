@@ -29,6 +29,7 @@ from xcube.server.testing import ServerTestCase
 from xcube.util import extension
 from xcube.util.extension import ExtensionRegistry
 
+from xcube_geodb_openeo.defaults import STAC_EXTENSIONS
 from . import test_utils
 
 
@@ -74,11 +75,8 @@ class DataDiscoveryTest(ServerTestCase):
         self.assertEqual(200, response.status)
         collection_data = json.loads(response.data)
         self.assertEqual("1.0.0", collection_data['stac_version'])
-        self.assertEqual(
-            [
-             'https://stac-extensions.github.io/datacube/v2.2.0/schema.json'
-            ],
-            collection_data['stac_extensions'])
+        self.assertListEqual(STAC_EXTENSIONS,
+                             collection_data['stac_extensions'])
         response_type = collection_data['type']
         self.assertEqual(response_type, "Collection")
         self.assertIsNotNone(collection_data['id'])

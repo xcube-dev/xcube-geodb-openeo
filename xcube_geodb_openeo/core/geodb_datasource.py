@@ -215,7 +215,8 @@ class GeoDBVectorSource(DataSource):
 
         return gdf[select]
 
-    def get_vector_cube_bbox(self) -> Tuple[float, float, float, float]:
+    def get_vector_cube_bbox(self) -> \
+            Optional[Tuple[float, float, float, float]]:
         (db, name) = self.collection_id
         LOG.debug(f'Loading collection bbox for {self.collection_id} from '
                   f'geoDB...')
@@ -231,6 +232,8 @@ class GeoDBVectorSource(DataSource):
                                                             name, db)
 
         LOG.debug(f'...done.')
+        if not vector_cube_bbox:
+            LOG.warn(f'Empty collection {db}~{name}!')
         return vector_cube_bbox
 
     def get_metadata(self, bbox: Tuple[float, float, float, float]) -> Dict:

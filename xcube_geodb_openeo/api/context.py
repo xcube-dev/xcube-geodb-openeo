@@ -116,10 +116,18 @@ class GeoDbContext(ApiContext):
         links = get_collections_links(limit, offset, url,
                                       len(self.collection_ids))
         collection_list = []
-        for collection_id in self.collection_ids[offset:offset + limit]:
+        index = offset
+        actual_limit = limit
+        while index < offset + actual_limit:
+        # for collection_id in self.collection_ids[offset:offset + limit]:
+            collection_id = self.collection_ids[index]
             collection = self.get_collection(base_url, collection_id,
                                              full=False)
-            collection_list.append(collection)
+            if collection:
+                collection_list.append(collection)
+            else:
+                actual_limit = actual_limit + 1
+            index += 1
 
         self.collections = {
             'collections': collection_list,
@@ -128,9 +136,11 @@ class GeoDbContext(ApiContext):
 
     def get_collection(self, base_url: str,
                        collection_id: Tuple[str, str],
-                       full: bool = False):
+                       full: bool = False) -> Optional[Dict]:
         vector_cube = self.get_vector_cube(collection_id, bbox=None)
-        return _get_vector_cube_collection(base_url, vector_cube, full)
+        if vector_cube:
+            return _get_vector_cube_collection(base_url, vector_cube, full)
+        return None
 
     def get_collection_items(
             self, base_url: str, collection_id: Tuple[str, str], limit: int,
@@ -206,9 +216,11 @@ def get_collections_links(limit: int, offset: int, url: str,
 
 def _get_vector_cube_collection(base_url: str,
                                 vector_cube: VectorCube,
-                                full: bool = False):
+                                full: bool = False) -> Optional[Dict]:
     vector_cube_id = vector_cube.id
     bbox = vector_cube.get_bbox()
+    if not bbox:
+        return None
     metadata = vector_cube.metadata
     vector_cube_collection = {
         'stac_version': STAC_VERSION,
