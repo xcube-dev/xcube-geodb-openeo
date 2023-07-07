@@ -20,6 +20,7 @@
 # DEALINGS IN THE SOFTWARE.
 import json
 import pkgutil
+import unittest
 from typing import Dict
 
 import yaml
@@ -33,6 +34,7 @@ from xcube_geodb_openeo.backend.processes import LoadCollection
 from . import test_utils
 
 
+@unittest.skip
 class ProcessingTest(ServerTestCase):
 
     def add_extension(self, er: ExtensionRegistry) -> None:

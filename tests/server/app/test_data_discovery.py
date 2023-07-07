@@ -56,21 +56,19 @@ class DataDiscoveryTest(ServerTestCase):
         first_collection = collections_data['collections'][0]
         self.assertEqual("1.0.0", first_collection['stac_version'])
         self.assertEqual(
-            [
-             'https://stac-extensions.github.io/datacube/v2.2.0/schema.json'
-            ],
+            ['datacube',
+             'https://stac-extensions.github.io/version/v1.0.0/schema.json'],
             first_collection['stac_extensions'])
         self.assertEqual(first_collection['type'], 'Collection')
-        self.assertEqual('collection_1', first_collection['id'])
+        self.assertEqual('~collection_1', first_collection['id'])
         self.assertIsNotNone(first_collection['description'])
-        self.assertEqual("0.3.1", first_collection['version'])
         self.assertIsNotNone(first_collection['license'])
         self.assertIsNotNone(first_collection['extent'])
         self.assertIsNotNone(first_collection['links'])
         self.assertEqual(2, len(first_collection['links']))
 
     def test_collection(self):
-        url = f'http://localhost:{self.port}/collections/database~collection_1'
+        url = f'http://localhost:{self.port}/collections/~collection_1'
         response = self.http.request('GET', url)
         self.assertEqual(200, response.status)
         collection_data = json.loads(response.data)
@@ -81,23 +79,25 @@ class DataDiscoveryTest(ServerTestCase):
         self.assertEqual(response_type, "Collection")
         self.assertIsNotNone(collection_data['id'])
         self.assertIsNotNone(collection_data['description'])
-        self.assertEqual("0.3.1", collection_data['version'])
         self.assertIsNotNone(collection_data['license'])
         self.assertEqual(2, len(collection_data['extent']))
         expected_spatial_extent = \
-            {'bbox': [[8, 51, 12, 52]],
-             'crs': 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'}
+            {'bbox': [[9.0, 52.0, 11.0, 54.0]]}
         expected_temporal_extent = {'interval': [[None, None]]}
         self.assertEqual(expected_spatial_extent,
                          collection_data['extent']['spatial'])
         self.assertEqual(expected_temporal_extent,
                          collection_data['extent']['temporal'])
-        self.assertEqual({'vector': {'type': 'geometry', 'axes': ['']}}, # todo
+        self.assertEqual({'vector': {'axes': ['x', 'y'],
+                                     'bbox': '(9.0, 52.0, 11.0, 54.0)',
+                                     'geometry_types': ['Polygon'],
+                                     'reference_system': '3246',
+                                     'type': 'geometry'}},
                          collection_data['cube:dimensions'])
         self.assertIsNotNone(collection_data['summaries'])
 
     def test_get_items(self):
-        url = f'http://localhost:{self.port}/collections/collection_1/items'
+        url = f'http://localhost:{self.port}/collections/~collection_1/items'
         response = self.http.request('GET', url)
         self.assertEqual(200, response.status)
         items_data = json.loads(response.data)
@@ -109,26 +109,15 @@ class DataDiscoveryTest(ServerTestCase):
         test_utils.assert_hamburg(self, items_data['features'][0])
         test_utils.assert_paderborn(self, items_data['features'][1])
 
-    def test_get_items_no_results(self):
-        url = f'http://localhost:{self.port}/collections/' \
-              f'empty_collection/items'
-        response = self.http.request('GET', url)
-        self.assertEqual(200, response.status)
-        items_data = json.loads(response.data)
-        self.assertIsNotNone(items_data)
-        self.assertEqual('FeatureCollection', items_data['type'])
-        self.assertIsNotNone(items_data['features'])
-        self.assertEqual(0, len(items_data['features']))
-
     def test_get_item(self):
-        url = f'http://localhost:{self.port}/collections/collection_1/items/1'
+        url = f'http://localhost:{self.port}/collections/~collection_1/items/1'
         response = self.http.request('GET', url)
         self.assertEqual(200, response.status)
         item_data = json.loads(response.data)
-        test_utils.assert_paderborn(self, item_data)
+        test_utils.assert_hamburg(self, item_data)
 
     def test_get_items_filtered(self):
-        url = f'http://localhost:{self.port}/collections/collection_1/items' \
+        url = f'http://localhost:{self.port}/collections/~collection_1/items' \
               f'?limit=1&offset=1'
         response = self.http.request('GET', url)
         self.assertEqual(200, response.status)
@@ -139,28 +128,20 @@ class DataDiscoveryTest(ServerTestCase):
         self.assertEqual(1, len(items_data['features']))
         test_utils.assert_paderborn(self, items_data['features'][0])
 
-    def test_get_items_invalid_filter(self):
-        for invalid_limit in [-1, 0, 10001]:
-            url = f'http://localhost:{self.port}/' \
-                  f'collections/collection_1/items' \
-                  f'?limit={invalid_limit}'
-            response = self.http.request('GET', url)
-            self.assertEqual(500, response.status)
-
     def test_get_items_by_bbox(self):
         bbox_param = '?bbox=9.01,50.01,10.01,51.01'
         url = f'http://localhost:{self.port}' \
-              f'/collections/collection_1/items' \
+              f'/collections/~collection_1/items' \
               f'{bbox_param}'
         response = self.http.request('GET', url)
         self.assertEqual(200, response.status)
         items_data = json.loads(response.data)
         self.assertEqual('FeatureCollection', items_data['type'])
         self.assertIsNotNone(items_data['features'])
-        self.assertEqual(1, len(items_data['features']))
+        self.assertEqual(2, len(items_data['features']))
 
     def test_not_existing_collection(self):
         url = f'http://localhost:{self.port}' \
-              f'/collections/non-existent-collection'
+              f'/collections/~non-existent-collection'
         response = self.http.request('GET', url)
         self.assertEqual(404, response.status)

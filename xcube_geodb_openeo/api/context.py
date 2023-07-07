@@ -113,13 +113,11 @@ class GeoDbContext(ApiContext):
 
     def get_collections(self, base_url: str, limit: int, offset: int):
         url = f'{base_url}/collections'
-        links = get_collections_links(limit, offset, url,
-                                      len(self.collection_ids))
         collection_list = []
         index = offset
         actual_limit = limit
-        while index < offset + actual_limit:
-        # for collection_id in self.collection_ids[offset:offset + limit]:
+        while index < offset + actual_limit and \
+                index < len(self.collection_ids):
             collection_id = self.collection_ids[index]
             collection = self.get_collection(base_url, collection_id,
                                              full=False)
@@ -129,6 +127,9 @@ class GeoDbContext(ApiContext):
                 actual_limit = actual_limit + 1
             index += 1
 
+        links = get_collections_links(limit, offset, url,
+                                      len(self.collection_ids))
+
         self.collections = {
             'collections': collection_list,
             'links': links
@@ -137,10 +138,10 @@ class GeoDbContext(ApiContext):
     def get_collection(self, base_url: str,
                        collection_id: Tuple[str, str],
                        full: bool = False) -> Optional[Dict]:
+        if collection_id not in self.collection_ids:
+            return None
         vector_cube = self.get_vector_cube(collection_id, bbox=None)
-        if vector_cube:
-            return _get_vector_cube_collection(base_url, vector_cube, full)
-        return None
+        return _get_vector_cube_collection(base_url, vector_cube, full)
 
     def get_collection_items(
             self, base_url: str, collection_id: Tuple[str, str], limit: int,

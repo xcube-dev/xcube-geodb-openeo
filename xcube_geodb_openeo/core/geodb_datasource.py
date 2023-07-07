@@ -25,6 +25,7 @@ from typing import List, Mapping, Any, Optional, Tuple, Dict
 
 import dateutil.parser
 import shapely
+import shapely.wkt
 from geojson.geometry import Geometry
 from pandas import Series
 from xcube.constants import LOG
@@ -215,25 +216,19 @@ class GeoDBVectorSource(DataSource):
 
         return gdf[select]
 
-    def get_vector_cube_bbox(self) -> \
-            Optional[Tuple[float, float, float, float]]:
+    def get_vector_cube_bbox(self) -> Tuple[float, float, float, float]:
         (db, name) = self.collection_id
+        path = f'/geodb_bbox_lut?bbox&table_name=eq.{db}_{name}'
         LOG.debug(f'Loading collection bbox for {self.collection_id} from '
                   f'geoDB...')
-        vector_cube_bbox = self.geodb.get_collection_bbox(name, database=db)
+        get = self.geodb._get(path)
+        LOG.debug(f'...done.')
+        geometry = get.json()[0]['bbox']
+        vector_cube_bbox = shapely.wkt.loads(geometry).bounds
         if vector_cube_bbox:
             vector_cube_bbox = self._transform_bbox_crs(vector_cube_bbox,
                                                         name, db)
-        if not vector_cube_bbox:
-            vector_cube_bbox = self.geodb.get_collection_bbox(name, db,
-                                                              exact=True)
-            if vector_cube_bbox:
-                vector_cube_bbox = self._transform_bbox_crs(vector_cube_bbox,
-                                                            name, db)
 
-        LOG.debug(f'...done.')
-        if not vector_cube_bbox:
-            LOG.warn(f'Empty collection {db}~{name}!')
         return vector_cube_bbox
 
     def get_metadata(self, bbox: Tuple[float, float, float, float]) -> Dict:

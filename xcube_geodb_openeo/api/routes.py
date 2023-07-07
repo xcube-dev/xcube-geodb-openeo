@@ -158,6 +158,7 @@ class ConformanceHandler(ApiHandler):
 
 
 @api.route('/collections')
+@api.route('/collections/')
 class CollectionsHandler(ApiHandler):
     """
     Lists available collections with at least the required information.
@@ -204,6 +205,7 @@ class CollectionHandler(ApiHandler):
 
 
 @api.route('/collections/{collection_id}/items')
+@api.route('/collections/{collection_id}/items/')
 class CollectionItemsHandler(ApiHandler):
     """
     Get features of the feature collection with id collectionId.

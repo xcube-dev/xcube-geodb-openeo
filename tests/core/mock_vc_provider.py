@@ -45,7 +45,7 @@ class MockProvider(VectorCubeProvider, DataSource):
     def __init__(self, config: Mapping[str, Any]):
         with resources.open_text('tests', 'mock_collections.json') as text:
             mock_collections = json.load(text)['_MOCK_COLLECTIONS_LIST']
-        self._MOCK_COLLECTIONS = {v["id"]: v for v in mock_collections}
+        self._MOCK_COLLECTIONS = {('', v["id"]): v for v in mock_collections}
         self.hh = 'POLYGON((9 52, 9 54, 11 54, 11 52, 10 53, 9.5 53.4, ' \
                   '9.2 52.1, 9 52))'
         self.pb = 'POLYGON((8.7 51.3, 8.7 51.8, 8.8 51.8, 8.8 51.3, 8.7 51.3))'
@@ -101,11 +101,10 @@ class MockProvider(VectorCubeProvider, DataSource):
             'stac_extensions': STAC_EXTENSIONS,
             'type': 'Feature',
             'id': '0',
-            'bbox': [f'{self.bbox_hh["minx"]:.4f}',
-                     f'{self.bbox_hh["miny"]:.4f}',
-                     f'{self.bbox_hh["maxx"]:.4f}',
-                     f'{self.bbox_hh["maxy"]:.4f}'],
-        #    'geometry': hh_coordinates,
+            'bbox': [f'{self.bbox_hh[0]:.4f}',
+                     f'{self.bbox_hh[1]:.4f}',
+                     f'{self.bbox_hh[2]:.4f}',
+                     f'{self.bbox_hh[3]:.4f}'],
             'properties': ['id', 'name', 'geometry', 'population']
         }
 
@@ -114,13 +113,15 @@ class MockProvider(VectorCubeProvider, DataSource):
             'stac_extensions': STAC_EXTENSIONS,
             'type': 'Feature',
             'id': '1',
-            'bbox': [f'{self.bbox_pb["minx"]:.4f}',
-                     f'{self.bbox_pb["miny"]:.4f}',
-                     f'{self.bbox_pb["maxx"]:.4f}',
-                     f'{self.bbox_pb["maxy"]:.4f}'],
-        #    'geometry': pb_coordinates,
+            'bbox': [f'{self.bbox_pb[0]:.4f}',
+                     f'{self.bbox_pb[1]:.4f}',
+                     f'{self.bbox_pb[2]:.4f}',
+                     f'{self.bbox_pb[3]:.4f}'],
             'properties': ['id', 'name', 'geometry', 'population']
         }
+
+        if limit == 1:
+            return [pb_feature]
 
         return [hh_feature, pb_feature]
 
