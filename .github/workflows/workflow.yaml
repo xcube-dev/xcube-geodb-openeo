@@ -47,7 +47,7 @@ jobs:
           conda config --show-sources
           conda config --show
           printenv | sort
-          conda install mamba
+          conda install 'mamba>=0.27'
       - name: setup-xcube
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         run: |
