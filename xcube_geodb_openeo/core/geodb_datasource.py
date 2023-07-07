@@ -102,11 +102,7 @@ class GeoDBVectorSource(DataSource):
     @cached_property
     def collection_info(self):
         (db, name) = self.collection_id
-        try:
-            collection_info = self.geodb.get_collection_info(name, db)
-        except GeoDBError:
-            return None  # todo - raise meaningful error
-        return collection_info
+        return self.geodb.get_collection_info(name, db)
 
     def get_feature_count(self) -> int:
         (db, name) = self.collection_id
