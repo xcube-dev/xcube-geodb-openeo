@@ -221,10 +221,16 @@ class GeoDBVectorSource(DataSource):
         path = f'/geodb_bbox_lut?bbox&table_name=eq.{db}_{name}'
         LOG.debug(f'Loading collection bbox for {self.collection_id} from '
                   f'geoDB...')
-        get = self.geodb._get(path)
+        response = self.geodb._get(path)
         LOG.debug(f'...done.')
-        geometry = get.json()[0]['bbox']
-        vector_cube_bbox = shapely.wkt.loads(geometry).bounds
+        geometry = None
+        if response.json():
+            geometry = response.json()[0]['bbox']
+        if geometry:
+            vector_cube_bbox = shapely.wkt.loads(geometry).bounds
+        else:
+            vector_cube_bbox = self.geodb.get_collection_bbox(name,
+                                                              database=db)
         if vector_cube_bbox:
             vector_cube_bbox = self._transform_bbox_crs(vector_cube_bbox,
                                                         name, db)

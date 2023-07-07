@@ -27,6 +27,7 @@ from typing import Mapping
 from typing import Optional
 from typing import Tuple
 
+from xcube.constants import LOG
 from xcube.server.api import ApiContext
 from xcube.server.api import Context
 
@@ -124,6 +125,7 @@ class GeoDbContext(ApiContext):
             if collection:
                 collection_list.append(collection)
             else:
+                LOG.warning(f'Skipped empty collection {collection_id}')
                 actual_limit = actual_limit + 1
             index += 1
 
