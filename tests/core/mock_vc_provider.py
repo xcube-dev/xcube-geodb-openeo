@@ -56,8 +56,9 @@ class MockProvider(VectorCubeProvider, DataSource):
     def get_collection_keys(self) -> Sequence:
         return list(self._MOCK_COLLECTIONS.keys())
 
-    def get_vector_cube(self, collection_id: Tuple[str, str],
-                        bbox: Tuple[float, float, float, float]) \
+    def get_vector_cube(
+            self, collection_id: Tuple[str, str],
+            bbox: Optional[Tuple[float, float, float, float]] = None) \
             -> VectorCube:
         return VectorCube(collection_id, self)
 
@@ -93,7 +94,8 @@ class MockProvider(VectorCubeProvider, DataSource):
         return None
 
     def load_features(self, limit: int = 2,
-                      offset: int = 0, feature_id: Optional[str] = None) -> \
+                      offset: int = 0, feature_id: Optional[str] = None,
+                      with_stac_info: bool = False) -> \
             List[Feature]:
 
         hh_feature = {
@@ -132,12 +134,12 @@ class MockProvider(VectorCubeProvider, DataSource):
     def get_geometry_types(self) -> List[str]:
         return ['Polygon']
 
-    def get_metadata(self, bbox: Tuple[float, float, float, float]) -> Dict:
+    def get_metadata(self, full: bool = False) -> Dict:
         metadata = {
             'title': 'something',
             'extent': {
                 'spatial': {
-                    'bbox': [bbox],
+                    'bbox': [9.0, 52.0, 11.0, 54.0],
                 },
                 'temporal': {
                     'interval': [[None, None]]

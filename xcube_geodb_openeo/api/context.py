@@ -124,6 +124,7 @@ class GeoDbContext(ApiContext):
                                              full=False)
             if collection:
                 collection_list.append(collection)
+                LOG.debug(f'Loaded collection {collection_id} from geoDB')
             else:
                 LOG.warning(f'Skipped empty collection {collection_id}')
                 actual_limit = actual_limit + 1
@@ -186,6 +187,12 @@ class GeoDbContext(ApiContext):
             f'feature {feature_id!r} not found in collection {collection_id!r}'
         )
 
+    def transform_bbox(self, collection_id: Tuple[str, str],
+                       bbox: Tuple[float, float, float, float],
+                       crs: int) -> Tuple[float, float, float, float]:
+        from xcube_geodb.core.geodb import GeoDBClient
+        vector_cube = self.get_vector_cube(collection_id, bbox=None)
+        return GeoDBClient.transform_bbox_crs(bbox, vector_cube.srid, crs)
 
 def get_collections_links(limit: int, offset: int, url: str,
                           collection_count: int):
@@ -221,10 +228,7 @@ def _get_vector_cube_collection(base_url: str,
                                 vector_cube: VectorCube,
                                 full: bool = False) -> Optional[Dict]:
     vector_cube_id = vector_cube.id
-    bbox = vector_cube.get_bbox()
-    if not bbox:
-        return None
-    metadata = vector_cube.metadata
+    metadata = vector_cube.get_metadata(full)
     vector_cube_collection = {
         'stac_version': STAC_VERSION,
         'stac_extensions': STAC_EXTENSIONS,
@@ -250,6 +254,7 @@ def _get_vector_cube_collection(base_url: str,
     }
     if full:
         geometry_types = vector_cube.get_geometry_types()
+        bbox = vector_cube.get_bbox()
         z_dim = vector_cube.get_vertical_dim()
         axes = ['x', 'y', 'z'] if z_dim else ['x', 'y']
         srid = vector_cube.srid
@@ -308,6 +313,7 @@ def _utc_now():
                .utcnow() \
                .replace(microsecond=0) \
                .isoformat() + 'Z'
+
 class CollectionNotFoundException(Exception):
     pass
 

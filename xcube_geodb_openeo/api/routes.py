@@ -19,14 +19,17 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 import json
+import sys
 
+from openeo.internal.graph_building import PGNode
+from xcube.server.api import ApiError
+from xcube.server.api import ApiHandler
+
+from .api import api
 from ..backend import capabilities
 from ..backend import processes
-from .api import api
-from xcube.server.api import ApiHandler
-from xcube.server.api import ApiError
-from ..defaults import STAC_DEFAULT_COLLECTIONS_LIMIT, \
-    STAC_DEFAULT_ITEMS_LIMIT, STAC_MAX_ITEMS_LIMIT, STAC_MIN_ITEMS_LIMIT
+from ..defaults import STAC_DEFAULT_ITEMS_LIMIT, STAC_MAX_ITEMS_LIMIT, \
+    STAC_MIN_ITEMS_LIMIT
 
 
 def get_base_url(request):
@@ -118,20 +121,44 @@ class ResultHandler(ApiHandler):
         Processes requested processing task and returns result.
         """
         if not self.request.body:
-            raise (ApiError(400, 'Request body must contain key \'process\'.'))
+            raise (ApiError(
+                400,
+                'Request body must contain key \'process\'.'))
 
         processing_request = json.loads(self.request.body)['process']
-        process_id = processing_request['id']
-        process_parameters = processing_request['parameters']
         registry = processes.get_processes_registry()
-        process = registry.get_process(process_id)
+        graph = processing_request['process_graph']
+        pg_node = PGNode.from_flat_graph(graph)
 
-        expected_parameters = process.metadata['parameters']
-        self.ensure_parameters(expected_parameters, process_parameters)
-        process.parameters = process_parameters
+        error_message = ('Graphs different from `load_collection` -> '
+                         '`save_result` not yet supported.')
+        if pg_node.process_id == 'save_result':
+            source = pg_node.arguments['data']['from_node']
+            if source.process_id == 'load_collection':
+                process = registry.get_process(source.process_id)
+                expected_parameters = process.metadata['parameters']
+                process_parameters = source.arguments
+                self.ensure_parameters(expected_parameters, process_parameters)
+                process.parameters = process_parameters
+                load_collection_result = processes.submit_process_sync(
+                    process, self.ctx)
+                gj = load_collection_result.to_geojson()
+                self.response.finish(gj)
+            else:
+                raise ValueError(error_message)
+        else:
+            raise ValueError(error_message)
+        # process_id = processing_graph['id']
+        # process_parameters = processing_graph['parameters']
+        # registry = processes.get_processes_registry()
+        # process = registry.get_process(process_id)
 
-        result = processes.submit_process_sync(process, self.ctx)
-        self.response.finish(result)
+        # expected_parameters = process.metadata['parameters']
+        # self.ensure_parameters(expected_parameters, process_parameters)
+        # process.parameters = process_parameters
+
+        # result = processes.submit_process_sync(process, self.ctx)
+        # self.response.finish(result)
 
     @staticmethod
     def ensure_parameters(expected_parameters, process_parameters):
@@ -175,7 +202,7 @@ class CollectionsHandler(ApiHandler):
                           items that are presented in the response document.
             offset (int): Collections are listed starting at offset.
         """
-        limit = _get_limit(self.request, STAC_DEFAULT_COLLECTIONS_LIMIT)
+        limit = _get_limit(self.request)
         offset = _get_offset(self.request)
         base_url = get_base_url(self.request)
         self.ctx.get_collections(base_url, limit, offset)
@@ -255,7 +282,7 @@ class FeatureHandler(ApiHandler):
         self.response.finish(feature)
 
 
-def _get_limit(request, default: int) -> int:
+def _get_limit(request, default=sys.maxsize) -> int:
     limit = int(request.get_query_arg('limit')) if \
         request.get_query_arg('limit') \
         else default

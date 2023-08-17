@@ -37,8 +37,9 @@ class VectorCubeProvider(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_vector_cube(self, collection_id: Tuple[str, str],
-                        bbox: Tuple[float, float, float, float]) \
+    def get_vector_cube(
+            self, collection_id: Tuple[str, str],
+            bbox: Optional[Tuple[float, float, float, float]] = None) \
             -> VectorCube:
         pass
 
@@ -65,8 +66,9 @@ class GeoDBProvider(VectorCubeProvider):
 
         return result
 
-    def get_vector_cube(self, collection_id: Tuple[str, str],
-                        bbox: Tuple[float, float, float, float] = None) \
+    def get_vector_cube(
+            self, collection_id: Tuple[str, str],
+            bbox: Optional[Tuple[float, float, float, float]] = None) \
             -> VectorCube:
         return VectorCube(collection_id,
-                          GeoDBVectorSource(self.config, collection_id))
+                          GeoDBVectorSource(collection_id, self.geodb))

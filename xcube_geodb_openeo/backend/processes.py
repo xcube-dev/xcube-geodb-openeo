@@ -22,7 +22,7 @@ import importlib
 import importlib.resources as resources
 import json
 from abc import abstractmethod
-from typing import Dict, List
+from typing import Dict, List, Any
 
 from xcube.server.api import ServerContextT
 
@@ -107,7 +107,109 @@ class ProcessRegistry:
         return self.links.copy()
 
     def get_file_formats(self) -> Dict:
-        return {'input': {}, 'output': {}}
+        return {
+            "output": {
+                "GTiff": {
+                    "title": "GeoTiff",
+                    "description": "Export to GeoTiff. Doesn't support cloud-optimized GeoTiffs (COGs) yet.",
+                    "gis_data_types": [
+                        "raster"
+                    ],
+                    "parameters": {
+                        "tiled": {
+                            "type": "boolean",
+                            "description": "This option can be used to force creation of tiled TIFF files [true]. By default [false] stripped TIFF files are created.",
+                            "default": "false"
+                        },
+                        "compress": {
+                            "type": "string",
+                            "description": "Set the compression to use.",
+                            "default": "NONE",
+                            "enum": [
+                                "JPEG",
+                                "LZW",
+                                "DEFLATE",
+                                "NONE"
+                            ]
+                        },
+                        "jpeg_quality": {
+                            "type": "integer",
+                            "description": "Set the JPEG quality when using JPEG.",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 75
+                        }
+                    },
+                    "links": [
+                        {
+                            "href": "https://gdal.org/drivers/raster/gtiff.html",
+                            "rel": "about",
+                            "title": "GDAL on the GeoTiff file format and storage options"
+                        }
+                    ]
+                },
+                "GPKG": {
+                    "title": "OGC GeoPackage",
+                    "gis_data_types": [
+                        "raster",
+                        "vector"
+                    ],
+                    "parameters": {
+                        "version": {
+                            "type": "string",
+                            "description": "Set GeoPackage version. In AUTO mode, this will be equivalent to 1.2 starting with GDAL 2.3.",
+                            "enum": [
+                                "auto",
+                                "1",
+                                "1.1",
+                                "1.2"
+                            ],
+                            "default": "auto"
+                        }
+                    },
+                    "links": [
+                        {
+                            "href": "https://gdal.org/drivers/raster/gpkg.html",
+                            "rel": "about",
+                            "title": "GDAL on GeoPackage for raster data"
+                        },
+                        {
+                            "href": "https://gdal.org/drivers/vector/gpkg.html",
+                            "rel": "about",
+                            "title": "GDAL on GeoPackage for vector data"
+                        }
+                    ]
+                }
+            },
+            "input": {
+                "GPKG": {
+                    "title": "OGC GeoPackage",
+                    "gis_data_types": [
+                        "raster",
+                        "vector"
+                    ],
+                    "parameters": {
+                        "table": {
+                            "type": "string",
+                            "description": "**RASTER ONLY.** Name of the table containing the tiles. If the GeoPackage dataset only contains one table, this option is not necessary. Otherwise, it is required."
+                        }
+                    },
+                    "links": [
+                        {
+                            "href": "https://gdal.org/drivers/raster/gpkg.html",
+                            "rel": "about",
+                            "title": "GDAL on GeoPackage for raster data"
+                        },
+                        {
+                            "href": "https://gdal.org/drivers/vector/gpkg.html",
+                            "rel": "about",
+                            "title": "GDAL on GeoPackage for vector data"
+                        }
+                    ]
+                }
+            }
+        }
+        # return {'input': [], 'output': ['GeoJSON']}
 
     def get_process(self, process_id: str) -> Process:
         for process in self.processes:
@@ -134,12 +236,12 @@ def get_processes_registry() -> ProcessRegistry:
     return _PROCESS_REGISTRY_SINGLETON
 
 
-def submit_process_sync(p: Process, ctx: ServerContextT) -> str:
+def submit_process_sync(p: Process, ctx: ServerContextT) -> Any:
     """
     Submits a process synchronously, and returns the result.
     :param p: The process to execute.
     :param ctx: The Server context.
-    :return: processing result as geopandas object
+    :return: processing result
     """
     return p.execute(p.parameters, ctx)
 
@@ -148,45 +250,37 @@ class LoadCollection(Process):
     DEFAULT_CRS = 4326
 
     def execute(self, query_params: dict, ctx: ServerContextT) -> str:
-        backend_params = self.translate_parameters(query_params)
-        collection_id = backend_params['collection_id']
+        params = self.translate_parameters(query_params)
+        collection_id = tuple(params['collection_id'].split('~'))
         bbox_transformed = None
-        if backend_params['bbox']:
-            bbox = tuple(backend_params['bbox'].replace('(', '')
-                         .replace(')', '').replace(' ', '').split(','))
-            crs = backend_params['crs']
-            bbox_transformed = ctx.transform_bbox(collection_id, bbox, crs)
+        if params['bbox']:
+            bbox = [float(v) for v in
+                    params['bbox']
+                    .replace('(', '')
+                    .replace(')', '')
+                    .replace(' ', '')
+                    .split(',')]
+            crs = int(params['crs'])
+            bbox_transformed = ctx.transform_bbox(collection_id,
+                                                  bbox, crs)
 
-        vector_cube = ctx.data_source.get_vector_cube(
-            collection_id=collection_id,
-            with_items=True,
-            bbox=bbox_transformed
-        )
-        result = []
-        features = vector_cube['features']
-        for feature in features:
-            result.append({
-                'id': feature['id'],
-                'bbox': feature['bbox'],
-                'geometry': feature['geometry'],
-                'properties': feature['properties']
-            })
-
-        return json.dumps(result)
+        return ctx.get_vector_cube(collection_id, bbox=bbox_transformed)
 
     def translate_parameters(self, query_params: dict) -> dict:
         bbox_qp = query_params['spatial_extent']['bbox'] \
-            if query_params['spatial_extent'] else None
+            if ('spatial_extent' in query_params
+                and query_params['spatial_extent']
+                and 'bbox' in query_params['spatial_extent']) else None
         if not bbox_qp:
             crs_qp = None
         else:
             crs_qp = query_params['spatial_extent']['crs'] \
-                if query_params['spatial_extent'] and \
-                   'crs' in query_params['spatial_extent'] \
+                if ('spatial_extent' in query_params
+                    and query_params['spatial_extent']
+                    and 'crs' in query_params['spatial_extent']) \
                 else self.DEFAULT_CRS
-        backend_params = {
+        return {
             'collection_id': query_params['id'],
             'bbox': bbox_qp,
             'crs': crs_qp
         }
-        return backend_params

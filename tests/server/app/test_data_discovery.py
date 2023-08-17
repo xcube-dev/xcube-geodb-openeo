@@ -82,7 +82,7 @@ class DataDiscoveryTest(ServerTestCase):
         self.assertIsNotNone(collection_data['license'])
         self.assertEqual(2, len(collection_data['extent']))
         expected_spatial_extent = \
-            {'bbox': [[9.0, 52.0, 11.0, 54.0]]}
+            {'bbox': [9.0, 52.0, 11.0, 54.0]}
         expected_temporal_extent = {'interval': [[None, None]]}
         self.assertEqual(expected_spatial_extent,
                          collection_data['extent']['spatial'])

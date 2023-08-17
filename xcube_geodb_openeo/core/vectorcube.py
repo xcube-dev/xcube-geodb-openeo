@@ -20,12 +20,15 @@
 # DEALINGS IN THE SOFTWARE.
 from datetime import datetime
 from functools import cached_property
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Dict
 from typing import List
+
+from geojson import FeatureCollection
 from geojson.geometry import Geometry
 
 from xcube_geodb_openeo.core.geodb_datasource import DataSource, Feature
 from xcube_geodb_openeo.core.tools import Cache
+from xcube_geodb_openeo.defaults import STAC_DEFAULT_ITEMS_LIMIT
 
 
 class VectorCube:
@@ -156,11 +159,14 @@ class VectorCube:
         self._feature_cache.insert(feature_id, [feature])
         return feature
 
-    def load_features(self, limit: int, offset: int) -> List[Feature]:
+    def load_features(self, limit: int = STAC_DEFAULT_ITEMS_LIMIT,
+                      offset: int = 0,
+                      with_stac_info: bool = True) -> List[Feature]:
         key = (limit, offset)
         if key in self._feature_cache.get_keys():
             return self._feature_cache.get(key)
-        features = self._datasource.load_features(limit, offset)
+        features = self._datasource.load_features(limit, offset,
+                                                  None, with_stac_info)
         self._feature_cache.insert(key, features)
         return features
 
@@ -176,7 +182,9 @@ class VectorCube:
         self._geometry_types = self._datasource.get_geometry_types()
         return self._geometry_types
 
-    @cached_property
-    def metadata(self) -> {}:
-        bbox = self.get_bbox()
-        return self._datasource.get_metadata(bbox)
+    def get_metadata(self, full: bool = False) -> Dict:
+        return self._datasource.get_metadata(full)
+
+    def to_geojson(self) -> FeatureCollection:
+        return FeatureCollection(self.load_features(
+            self.feature_count, 0, False))
