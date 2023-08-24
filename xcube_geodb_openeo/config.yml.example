@@ -7,3 +7,15 @@ geodb_openeo:
   client_id:      <your client id>
   client_secret:  <your client secret>
   auth_domain:    <your auth domain>
+  kc_clientId: <keycloak-client-id>
+  kc_secret: <keycloak-secret>
+
+
+api_spec:
+  includes:
+    - geodb-openeo
+    - meta
+    - auth
+
+tornado:
+  xheaders: true

@@ -15,6 +15,8 @@ dependencies:
   - yaml
   - ipython
   - urllib3
+  - openeo
+  - requests
   # Testing
   - pytest >=4.4
   - pytest-cov >=2.6

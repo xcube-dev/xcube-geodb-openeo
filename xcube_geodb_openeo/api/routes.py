@@ -18,8 +18,10 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
+import base64
 import json
 import sys
+import requests
 
 from openeo.internal.graph_building import PGNode
 from xcube.server.api import ApiError
@@ -54,6 +56,65 @@ class RootHandler(ApiHandler):
         base_url = get_base_url(self.request)
         self.response.finish(capabilities.get_root(self.ctx.config, base_url))
 
+
+@api.route('/credentials/oidc')
+class RootHandler(ApiHandler):
+    """
+    Initiates the authentication process.
+    """
+
+    def get(self):
+        auth_endpoint = ('https://kc.brockmann-consult.de/auth/realms/'
+                         'xcube-geodb-openeo/protocol/openid-connect/auth')
+        # the values for client_id and redirect_uri must match the values
+        # set in Keycloak
+        payload = {'response_type': 'code',
+                   'client_id': 'openeo-server',
+                   'scope': 'openid',
+                   'redirect_uri':
+                       f'{get_base_url(self.request)}/create_access_token'}
+
+        # construct a redirect
+        self.response.set_status(302)
+
+        # as the method cannot be changed using the xcube server framework, we
+        # have to use GET as well, and thus construct a URL with the payload as
+        # query params
+        auth_endpoint = f'{auth_endpoint}?'
+        for k in payload.keys():
+            auth_endpoint = f'{auth_endpoint}{k}={payload[k]}&'
+        auth_endpoint = auth_endpoint[:-1]
+        self.response.set_header('Location', auth_endpoint)
+
+        self.response.finish()
+
+
+@api.route('/create_access_token')
+class RootHandler(ApiHandler):
+    """
+    Creates and validates an access token.
+    """
+
+    def get(self):
+        code = self.request.query['code'][0]
+        clientId = self.ctx.config['geodb_openeo']['kc_clientId']
+        secret = self.ctx.config['geodb_openeo']['kc_secret']
+        credentials = (base64.b64encode(
+            f'{clientId}:{secret}'.encode("ascii")).decode('ascii'))
+        auth_token_url = ('https://kc.brockmann-consult.de/auth/realms/'
+                          'xcube-geodb-openeo/protocol/openid-connect/token')
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': f'Basic {credentials}'
+        }
+
+        payload = {
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': 'http://localhost:8080/create_access_token'
+        }
+        resp = requests.post(auth_token_url, data=payload, headers=headers)
+        print(f'got access token! See: {resp.text}')
 
 @api.route('/.well-known/openeo')
 class WellKnownHandler(ApiHandler):
@@ -148,17 +209,6 @@ class ResultHandler(ApiHandler):
                 raise ValueError(error_message)
         else:
             raise ValueError(error_message)
-        # process_id = processing_graph['id']
-        # process_parameters = processing_graph['parameters']
-        # registry = processes.get_processes_registry()
-        # process = registry.get_process(process_id)
-
-        # expected_parameters = process.metadata['parameters']
-        # self.ensure_parameters(expected_parameters, process_parameters)
-        # process.parameters = process_parameters
-
-        # result = processes.submit_process_sync(process, self.ctx)
-        # self.response.finish(result)
 
     @staticmethod
     def ensure_parameters(expected_parameters, process_parameters):
