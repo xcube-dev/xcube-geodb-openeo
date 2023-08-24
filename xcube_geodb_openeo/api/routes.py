@@ -111,7 +111,7 @@ class RootHandler(ApiHandler):
         payload = {
             'grant_type': 'authorization_code',
             'code': code,
-            'redirect_uri': 'http://localhost:8080/create_access_token'
+            'redirect_uri': f'{get_base_url(self.request)}/create_access_token'
         }
         resp = requests.post(auth_token_url, data=payload, headers=headers)
         print(f'got access token! See: {resp.text}')
