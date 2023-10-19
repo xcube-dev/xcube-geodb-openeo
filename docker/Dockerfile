@@ -5,6 +5,10 @@ FROM mambaorg/micromamba:${MICROMAMBA_VERSION}
 LABEL maintainer="xcube-team@brockmann-consult.de"
 LABEL name=xcube_geodb_openeo
 
+ARG NEW_MAMBA_USER=xcube_geodb_openeo
+ARG NEW_MAMBA_USER_ID=1000
+ARG NEW_MAMBA_USER_GID=1000
+
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 USER root
 
