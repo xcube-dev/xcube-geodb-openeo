@@ -57,7 +57,12 @@ RUN git clone https://github.com/dcs4cop/xcube-geodb.git
 WORKDIR /tmp/xcube-geodb
 RUN pip install -e .
 
-WORKDIR /home/${NEW_MAMBA_USER}/xcube-geodb-openeo
+# Copy files for xcube source install
+COPY --chown=$MAMBA_USER:$MAMBA_USER ./xcube-geodb-openeo /tmp/xcube-geodb-openeo
+COPY --chown=$MAMBA_USER:$MAMBA_USER ./setup.py /tmp/setup.py
+
+# Switch into /tmp to install xcube-geodb-openeo .
+WORKDIR /tmp
 RUN pip install -e .
 
 RUN python -m xcube.cli.main --loglevel=DETAIL --traceback serve -vvv -c /etc/config/config.yml
