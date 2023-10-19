@@ -1,19 +1,21 @@
-FROM continuumio/miniconda3:23.5.2-0
+#FROM continuumio/miniconda3:23.5.2-0
+ARG MICROMAMBA_VERSION=1.3.1
+FROM mambaorg/micromamba:${MICROMAMBA_VERSION}
 
 LABEL maintainer="xcube-team@brockmann-consult.de"
 LABEL name=xcube_geodb_openeo
 
-RUN conda install -n base -c conda-forge 'mamba>=1.5.2' pip
+RUN micromamba install -n base -c conda-forge pip
 
 #ADD environment.yml /tmp/environment.yml
 ADD . /tmp/
 WORKDIR /tmp
-RUN mamba env update -n base
+RUN micromamba env update -n base
 RUN . activate base
 
 RUN git clone https://github.com/dcs4cop/xcube.git
 WORKDIR /tmp/xcube
-RUN mamba env update -n base
+RUN micromamba env update -n base
 RUN pip install -e .
 
 WORKDIR /tmp/
