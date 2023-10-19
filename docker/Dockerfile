@@ -1,9 +1,9 @@
-FROM continuumio/miniconda3:4.12.0
+FROM continuumio/miniconda3:23.5.2-0
 
 LABEL maintainer="xcube-team@brockmann-consult.de"
 LABEL name=xcube_geodb_openeo
 
-RUN conda install -n base -c conda-forge 'mamba>=0.27' pip
+RUN conda install -n base -c conda-forge 'mamba>=1.5.2' pip
 
 #ADD environment.yml /tmp/environment.yml
 ADD . /tmp/
