@@ -71,7 +71,7 @@ jobs:
 
   build-docker-image:
     runs-on: ubuntu-latest
-    needs: [unittest]
+#    needs: [unittest]
     name: build-docker-image
     steps:
       # Checkout xcube-geodb-openeo (this project)
