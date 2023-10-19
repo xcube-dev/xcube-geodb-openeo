@@ -34,8 +34,7 @@ ENV MAMBA_USER=$NEW_MAMBA_USER
 
 USER $MAMBA_USER
 
-#COPY --chown=$MAMBA_USER:$MAMBA_USER environment.yml /tmp/environment.yml
-COPY --chown=$MAMBA_USER:$MAMBA_USER ./* /tmp
+COPY --chown=$MAMBA_USER:$MAMBA_USER environment.yml /tmp/environment.yml
 RUN micromamba install --yes -n base --file /tmp/environment.yml && \
     micromamba clean --all --yes
 ARG MAMBA_DOCKERFILE_ACTIVATE=1
@@ -43,7 +42,7 @@ ARG MAMBA_DOCKERFILE_ACTIVATE=1
 RUN micromamba install -n base -c conda-forge pip
 
 #ADD environment.yml /tmp/environment.yml
-ADD . /tmp/
+ADD docker /tmp/
 WORKDIR /tmp
 #RUN micromamba env update -n base
 #RUN . activate base
@@ -57,8 +56,6 @@ WORKDIR /tmp/
 RUN git clone https://github.com/dcs4cop/xcube-geodb.git
 WORKDIR /tmp/xcube-geodb
 RUN pip install -e .
-
-WORKDIR /home/${NEW_MAMBA_USER}
 
 WORKDIR /home/${NEW_MAMBA_USER}/xcube-geodb-openeo
 RUN pip install -e .
