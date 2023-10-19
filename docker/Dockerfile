@@ -58,7 +58,7 @@ RUN git clone https://github.com/dcs4cop/xcube-geodb.git
 WORKDIR /tmp/xcube-geodb
 RUN pip install -e .
 
-WORKDIR /tmp/
+WORKDIR /home/${NEW_MAMBA_USER}
 RUN pip install -e .
 
 RUN python -m xcube.cli.main --loglevel=DETAIL --traceback serve -vvv -c /etc/config/config.yml
