@@ -35,14 +35,14 @@ USER $MAMBA_USER
 
 
 COPY --chown=$MAMBA_USER:$MAMBA_USER environment.yml /tmp/environment.yml
-RUN micromamba install --yes --file /tmp/environment.yml && \
+RUN micromamba install --yes -n base --file /tmp/environment.yml && \
     micromamba clean --all --yes
 ARG MAMBA_DOCKERFILE_ACTIVATE=1
 
 RUN micromamba install -n base -c conda-forge pip
 
 #ADD environment.yml /tmp/environment.yml
-ADD . /tmp/
+#ADD . /tmp/
 WORKDIR /tmp
 RUN #micromamba env update -n base
 #RUN . activate base
