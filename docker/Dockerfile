@@ -59,6 +59,9 @@ WORKDIR /tmp/xcube-geodb
 RUN pip install -e .
 
 WORKDIR /home/${NEW_MAMBA_USER}
+RUN ls
+
+WORKDIR /home/${NEW_MAMBA_USER}/xcube-geodb-openeo
 RUN pip install -e .
 
 RUN python -m xcube.cli.main --loglevel=DETAIL --traceback serve -vvv -c /etc/config/config.yml
