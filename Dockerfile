@@ -66,7 +66,7 @@ WORKDIR /tmp
 #RUN pip install -e .
 
 RUN mkdir -p /etc/config
-COPY --chown=$MAMBA_USER:$MAMBA_USER /tmp/xcube_geodb_openeo/config/config.yml /etc/config/config.yml
-RUN python -m xcube.cli.main --loglevel=DETAIL --traceback serve -vvv -c /etc/config/config.yml
+#COPY --chown=$MAMBA_USER:$MAMBA_USER xcube_geodb_openeo/config/config.yml /etc/config/config.yml
+RUN python -m xcube.cli.main --loglevel=DETAIL --traceback serve -vvv -c /tmp/xcube_geodb_openeo/config/config.yml
 
 #CMD ["python", "-m", "xcube.cli.main", "--loglevel=DETAIL", "--traceback", "serve", "-vvv", "-c", "/etc/config/config.yml"]
