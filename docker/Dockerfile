@@ -12,6 +12,8 @@ ARG NEW_MAMBA_USER_GID=1000
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 USER root
 
+RUN find / -name "*xcube*openeo*"
+
 # Update system and ensure that basic commands are available.
 RUN apt-get -y update && \
     apt-get -y upgrade vim jq curl wget && \
@@ -59,7 +61,6 @@ WORKDIR /tmp/xcube-geodb
 RUN pip install -e .
 
 WORKDIR /home/${NEW_MAMBA_USER}
-RUN find / -name "*xcube*openeo*"
 
 WORKDIR /home/${NEW_MAMBA_USER}/xcube-geodb-openeo
 RUN pip install -e .
