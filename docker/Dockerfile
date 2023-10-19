@@ -15,6 +15,7 @@ USER root
 # Update system and ensure that basic commands are available.
 RUN apt-get -y update && \
     apt-get -y upgrade vim jq curl wget && \
+    apt-get -y install git && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Magic taken from https://hub.docker.com/r/mambaorg/micromamba,
