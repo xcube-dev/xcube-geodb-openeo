@@ -12,8 +12,6 @@ ARG NEW_MAMBA_USER_GID=1000
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 USER root
 
-RUN find / -name "environment.yml"
-
 # Update system and ensure that basic commands are available.
 RUN apt-get -y update && \
     apt-get -y upgrade vim jq curl wget && \
@@ -36,8 +34,8 @@ ENV MAMBA_USER=$NEW_MAMBA_USER
 
 USER $MAMBA_USER
 
-
-COPY --chown=$MAMBA_USER:$MAMBA_USER environment.yml /tmp/environment.yml
+#COPY --chown=$MAMBA_USER:$MAMBA_USER environment.yml /tmp/environment.yml
+COPY --chown=$MAMBA_USER:$MAMBA_USER ./* /tmp
 RUN micromamba install --yes -n base --file /tmp/environment.yml && \
     micromamba clean --all --yes
 ARG MAMBA_DOCKERFILE_ACTIVATE=1
@@ -45,9 +43,9 @@ ARG MAMBA_DOCKERFILE_ACTIVATE=1
 RUN micromamba install -n base -c conda-forge pip
 
 #ADD environment.yml /tmp/environment.yml
-#ADD . /tmp/
+ADD . /tmp/
 WORKDIR /tmp
-RUN #micromamba env update -n base
+#RUN micromamba env update -n base
 #RUN . activate base
 
 RUN git clone https://github.com/dcs4cop/xcube.git
