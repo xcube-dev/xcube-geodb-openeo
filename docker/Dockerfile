@@ -59,7 +59,7 @@ WORKDIR /tmp/xcube-geodb
 RUN pip install -e .
 
 WORKDIR /home/${NEW_MAMBA_USER}
-RUN ls
+RUN find / -name "*xcube*openeo*"
 
 WORKDIR /home/${NEW_MAMBA_USER}/xcube-geodb-openeo
 RUN pip install -e .
