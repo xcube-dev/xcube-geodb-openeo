@@ -34,8 +34,8 @@ ENV MAMBA_USER=$NEW_MAMBA_USER
 USER $MAMBA_USER
 
 
-COPY --chown=$MAMBA_USER:$MAMBA_USER environment.yaml /tmp/environment.yaml
-RUN micromamba install --yes --file /tmp/environment.yaml && \
+COPY --chown=$MAMBA_USER:$MAMBA_USER environment.yml /tmp/environment.yml
+RUN micromamba install --yes --file /tmp/environment.yml && \
     micromamba clean --all --yes
 ARG MAMBA_DOCKERFILE_ACTIVATE=1
 
