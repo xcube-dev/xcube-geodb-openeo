@@ -58,8 +58,8 @@ WORKDIR /tmp/xcube-geodb
 RUN pip install -e .
 
 # Copy files for xcube source install
-COPY --chown=$MAMBA_USER:$MAMBA_USER ./xcube-geodb-openeo /tmp/xcube-geodb-openeo
 COPY --chown=$MAMBA_USER:$MAMBA_USER ./setup.py /tmp/setup.py
+COPY --chown=$MAMBA_USER:$MAMBA_USER ./xcube_geodb_openeo /tmp/xcube_geodb_openeo
 
 # Switch into /tmp to install xcube-geodb-openeo .
 WORKDIR /tmp
