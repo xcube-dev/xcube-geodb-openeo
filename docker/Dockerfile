@@ -12,7 +12,7 @@ ARG NEW_MAMBA_USER_GID=1000
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 USER root
 
-RUN find / -name "*xcube*openeo*"
+RUN find / -name "environment.yml"
 
 # Update system and ensure that basic commands are available.
 RUN apt-get -y update && \
