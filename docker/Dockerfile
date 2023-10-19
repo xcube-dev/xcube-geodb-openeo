@@ -5,7 +5,31 @@ FROM mambaorg/micromamba:${MICROMAMBA_VERSION}
 LABEL maintainer="xcube-team@brockmann-consult.de"
 LABEL name=xcube_geodb_openeo
 
-FROM mambaorg/micromamba:1.5.1
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+USER root
+
+# Update system and ensure that basic commands are available.
+RUN apt-get -y update && \
+    apt-get -y upgrade vim jq curl wget && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Magic taken from https://hub.docker.com/r/mambaorg/micromamba,
+# section "Changing the user id or name"
+RUN usermod "--login=${NEW_MAMBA_USER}" "--home=/home/${NEW_MAMBA_USER}" \
+        --move-home "-u ${NEW_MAMBA_USER_ID}" "${MAMBA_USER}" && \
+    groupmod "--new-name=${NEW_MAMBA_USER}" \
+             "-g ${NEW_MAMBA_USER_GID}" "${MAMBA_USER}" && \
+    # Update the expected value of MAMBA_USER for the
+    # _entrypoint.sh consistency check.
+    echo "${NEW_MAMBA_USER}" > "/etc/arg_mamba_user" && \
+    :
+
+ENV MAMBA_USER=$NEW_MAMBA_USER
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+USER $MAMBA_USER
+
+
 COPY --chown=$MAMBA_USER:$MAMBA_USER environment.yaml /tmp/environment.yaml
 RUN micromamba install --yes --file /tmp/environment.yaml && \
     micromamba clean --all --yes
