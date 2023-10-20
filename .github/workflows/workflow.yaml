@@ -33,26 +33,35 @@ jobs:
         with:
           repository: dcs4cop/xcube
           path: "xcube"
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: mamba-org/setup-micromamba@v1
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         with:
-          mamba-version: "*"
-          channels: conda-forge
-          auto-update-conda: false
-          activate-environment: xcube-geodb-openeo
+          micromamba-version: '1.4.8-0'
           environment-file: environment.yml
+          init-shell: >-
+            bash
+          cache-environment: true
+          post-cleanup: 'all'
+#      - uses: conda-incubator/setup-miniconda@v2
+#        if: ${{ env.SKIP_UNITTESTS == '0' }}
+#        with:
+#          mamba-version: "*"
+#          channels: conda-forge
+#          auto-update-conda: false
+#          activate-environment: xcube-geodb-openeo
+#          environment-file: environment.yml
       - run: |
           conda info
           conda list
-          conda config --show-sources
-          conda config --show
-          printenv | sort
-          conda install 'mamba>=0.27'
+#          conda config --show-sources
+#          conda config --show
+#          printenv | sort
+#          conda install 'mamba>=0.27'
       - name: setup-xcube
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         run: |
           cd xcube
-          mamba env update -n xcube-geodb-openeo -f environment.yml
+          micromamba env update -n xcube-geodb-openeo -f environment.yml
           pip install -e .
           cd ..
       - name: setup-xcube-geodb-openeo
