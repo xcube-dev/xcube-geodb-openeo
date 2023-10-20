@@ -63,6 +63,7 @@ COPY --chown=$MAMBA_USER:$MAMBA_USER ./xcube_geodb_openeo /tmp/xcube_geodb_opene
 
 # Switch into /tmp to install xcube-geodb-openeo .
 WORKDIR /tmp
+RUN python setup.py install
 #RUN pip install -e .
 
 #RUN mkdir -p /etc/config
