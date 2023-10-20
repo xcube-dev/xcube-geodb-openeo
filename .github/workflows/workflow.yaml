@@ -112,8 +112,7 @@ jobs:
         with:
           image: ${{ env.ORG_NAME }}/${{ env.APP_NAME }}-server
           directory: .
-#          dockerfile: docker/Dockerfile
-          dockerfile: Dockerfile
+          dockerfile: docker/Dockerfile
           addLatest: true
           registry: quay.io
           username: ${{ secrets.QUAY_REG_USERNAME }}
