@@ -14,7 +14,7 @@ env:
   WAIT_FOR_STARTUP: "1"
 
   # If set to 1, docker build is performed
-  FORCE_DOCKER_BUILD: "1"
+  FORCE_DOCKER_BUILD: "0"
 
 
 jobs:
@@ -42,21 +42,9 @@ jobs:
             bash
           cache-environment: true
           post-cleanup: 'all'
-#      - uses: conda-incubator/setup-miniconda@v2
-#        if: ${{ env.SKIP_UNITTESTS == '0' }}
-#        with:
-#          mamba-version: "*"
-#          channels: conda-forge
-#          auto-update-conda: false
-#          activate-environment: xcube-geodb-openeo
-#          environment-file: environment.yml
       - run: |
           conda info
           conda list
-#          conda config --show-sources
-#          conda config --show
-#          printenv | sort
-#          conda install 'mamba>=0.27'
       - name: setup-xcube
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         run: |
@@ -80,7 +68,7 @@ jobs:
 
   build-docker-image:
     runs-on: ubuntu-latest
-#    needs: [unittest]
+    needs: [unittest]
     name: build-docker-image
     steps:
       # Checkout xcube-geodb-openeo (this project)
