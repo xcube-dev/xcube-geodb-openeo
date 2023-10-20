@@ -23,5 +23,10 @@
 
 from setuptools import setup
 
-setup()
+setup(name='xcube_geodb_openeo',
+      version='0.1',
+      author='Thomas Storm',
+      author_email='thomas.storm@brockmann-consult.de',
+      packages=['xcube_geodb_openeo']
+      )
 
