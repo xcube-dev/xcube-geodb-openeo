@@ -30,7 +30,7 @@ default_config = {
 API_VERSION = '1.1.0'
 STAC_VERSION = '1.0.0'
 STAC_EXTENSIONS = \
-    ['datacube',
+    ['https://stac-extensions.github.io/datacube/v2.2.0/schema.json',
      'https://stac-extensions.github.io/version/v1.0.0/schema.json']
 
 STAC_DEFAULT_ITEMS_LIMIT = 10

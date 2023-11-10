@@ -20,6 +20,7 @@
 # DEALINGS IN THE SOFTWARE.
 import datetime
 import importlib
+import re
 from functools import cached_property
 from typing import Any, List
 from typing import Dict
@@ -36,8 +37,7 @@ from ..core.vectorcube import Feature
 from ..core.vectorcube import VectorCube
 from ..core.vectorcube_provider import VectorCubeProvider
 from ..defaults import default_config, STAC_VERSION, STAC_EXTENSIONS, \
-    STAC_MAX_ITEMS_LIMIT, DEFAULT_VC_CACHE_SIZE, \
-    MAX_NUMBER_OF_GEOMETRIES_DISPLAYED
+    DEFAULT_VC_CACHE_SIZE
 
 
 class GeoDbContext(ApiContext):
@@ -151,28 +151,45 @@ class GeoDbContext(ApiContext):
             offset: int, bbox: Optional[Tuple[float, float, float, float]]
             = None) -> Dict:
         vector_cube = self.get_vector_cube(collection_id, bbox=bbox)
-        stac_features = [
-            _get_vector_cube_item(base_url, vector_cube, feature)
-            for feature in vector_cube.load_features(limit, offset)
-        ]
+        stac_features = []
+        for feature in vector_cube.load_features(limit, offset):
+            _fix_time(feature)
+            stac_features.append(
+                _get_vector_cube_item(base_url, vector_cube, feature)
+            )
 
-        result = {
-            'type': 'FeatureCollection',
-            'features': stac_features,
-            'timeStamp': _utc_now(),
-            'numberMatched': vector_cube.feature_count,
-            'numberReturned': len(stac_features)
-        }
+        result = {'type': 'FeatureCollection', 'features': stac_features,
+                  'timeStamp': _utc_now(),
+                  'numberMatched': vector_cube.feature_count,
+                  'numberReturned': len(stac_features),
+                  'links': [
+                      {
+                          'rel': 'self',
+                          'href': f'{base_url}/collections/'
+                                  f'{vector_cube.id}/items',
+                          'type': 'application/json'
+                      },
+                      {
+                          'rel': 'root',
+                          'href': f'{base_url}',
+                          'type': 'application/json'
+                      },
+                      {
+                          'rel': 'items',
+                          'href': f'{base_url}collections/'
+                                  f'{vector_cube.id}/items',
+                          'type': 'application/json'
+                      }]
+                  }
 
         if offset + limit < vector_cube.feature_count:
             new_offset = offset + limit
-            result['links'] = [
+            result['links'].append(
                 {
                     'rel': 'next',
                     'href': f'{base_url}/collections/{vector_cube.id}'
                             f'/items?limit={limit}&offset={new_offset}'
-                },
-            ]
+                })
 
         return result
 
@@ -197,6 +214,13 @@ class GeoDbContext(ApiContext):
 def get_collections_links(limit: int, offset: int, url: str,
                           collection_count: int):
     links = []
+    root_url = url.replace('/collections', '')
+    root_link = {'rel': 'root',
+                 'href': f'{root_url}',
+                 'title': 'root'}
+    self_link = {'rel': 'self',
+                 'href': f'{url}',
+                 'title': 'self'}
     next_offset = offset + limit
     next_link = {'rel': 'next',
                  'href': f'{url}?limit={limit}&offset='f'{next_offset}',
@@ -213,6 +237,8 @@ def get_collections_links(limit: int, offset: int, url: str,
                  'href': f'{url}?limit={limit}&offset='f'{last_offset}',
                  'title': 'last'}
 
+    links.append(root_link)
+    links.append(self_link)
     if next_offset < collection_count:
         links.append(next_link)
     if offset > 0:
@@ -244,11 +270,23 @@ def _get_vector_cube_collection(base_url: str,
         'links': [
             {
                 'rel': 'self',
-                'href': f'{base_url}/collections/{vector_cube_id}'
+                'href': f'{base_url}/collections/{vector_cube_id}',
+                "type": "application/json"
             },
             {
                 'rel': 'root',
-                'href': f'{base_url}/collections/'
+                'href': f'{base_url}',
+                "type": "application/json"
+            },
+            {
+                'rel': 'parent',
+                'href': f'{base_url}/collections/',
+                "type": "application/json"
+            },
+            {
+                'rel': 'items',
+                'href': f'{base_url}/collections/{vector_cube_id}/items',
+                "type": "application/json"
             }
         ]
     }
@@ -267,8 +305,9 @@ def _get_vector_cube_collection(base_url: str,
                 'reference_system': srid
             }
         }
-        vector_cube_collection['summaries'] = metadata.get('summaries', {}),
-
+        vector_cube_collection['summaries'] = (metadata['summaries']
+                                               if 'summaries' in metadata
+                                               else {})
     if 'version' in metadata:
         vector_cube_collection['version'] = metadata['version']
     return vector_cube_collection
@@ -281,12 +320,11 @@ def _get_vector_cube_item(base_url: str, vector_cube: VectorCube,
     feature_bbox = feature.get('bbox')
     feature_geometry = feature.get('geometry')
     feature_properties = feature.get('properties', {})
-    feature_datetime = feature.get('datetime') \
-        if 'datetime' in feature else None
 
     item = {
         'stac_version': STAC_VERSION,
-        'stac_extensions': STAC_EXTENSIONS,
+        'stac_extensions': ['https://schemas.stacspec.org/v1.0.0/item-spec/'
+                            'json-schema/item.json'],
         'type': 'Feature',
         'id': feature_id,
         'bbox': feature_bbox,
@@ -298,12 +336,25 @@ def _get_vector_cube_item(base_url: str, vector_cube: VectorCube,
                 'rel': 'self',
                 'href': f'{base_url}/collections/'
                         f'{collection_id}/items/{feature_id}'
-            }
+            },
+            {
+                'rel': 'root',
+                'href': f'{base_url}',
+                'type': 'application/json'
+            },
+            {
+                'rel': 'parent',
+                'href': f'{base_url}/collections',
+                'type': 'application/json'
+            },
+            {
+                'rel': 'collection',
+                'href': f'{base_url}/collections/{collection_id}',
+                'type': 'application/json'
+            }            
         ],
         'assets': {}
     }
-    if feature_datetime:
-        item['datetime'] = feature_datetime
     return item
 
 
@@ -313,6 +364,34 @@ def _utc_now():
                .utcnow() \
                .replace(microsecond=0) \
                .isoformat() + 'Z'
+
+
+def _fix_time(feature):
+    time_column = _get_col_name(feature, ['date', 'time', 'timestamp',
+                                          'datetime'])
+    props = feature['properties']
+    if time_column and time_column != 'datetime':
+        props['datetime'] = props[time_column]
+        del props[time_column]
+    if 'datetime' not in props:
+        props['datetime'] = (datetime.datetime
+                             .strptime('19700101', '%Y%M%d')
+                             .isoformat() + 'Z')
+    if re.match('^\d\d\d\d.\d\d.\d\d$', props['datetime']):
+        props['datetime'] = props['datetime'] + 'T00:00:00Z'
+    is_tz_aware = (props['datetime'].endswith('Z')
+                   or props['datetime'].endswith('+00:00'))
+    if props['datetime'] and not is_tz_aware:
+        props['datetime'] = props['datetime'] + 'Z'
+
+
+def _get_col_name(feature: Feature, possible_names: List[str]) \
+        -> Optional[str]:
+    for key in feature['properties'].keys():
+        if key in possible_names:
+            return key
+    return None
+
 
 class CollectionNotFoundException(Exception):
     pass

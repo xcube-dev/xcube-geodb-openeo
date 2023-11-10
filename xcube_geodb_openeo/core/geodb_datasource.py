@@ -137,21 +137,24 @@ class GeoDBVectorSource(DataSource):
             bbox = gdf.bounds.iloc[i]
             props = dict(row[1])
             geometry = props['geometry']
-            id = props['id']
+            feature_id = str(props['id'])
             del props['geometry']
             del props['id']
-            if with_stac_info:
-                props['bbox']: [f'{bbox["minx"]:.4f}',
-                                f'{bbox["miny"]:.4f}',
-                                f'{bbox["maxx"]:.4f}',
-                                f'{bbox["maxy"]:.4f}']
-                props['stac_version']: STAC_VERSION
-                props['stac_extensions']: STAC_EXTENSIONS
-                props['type']: 'Feature'
+
             feature = Feature(
-                id=str(id),
+                id=feature_id,
                 geometry=geometry,
                 properties=props)
+
+            if with_stac_info:
+                feature['bbox'] = [bbox['minx'],
+                                   bbox['miny'],
+                                   bbox['maxx'],
+                                   bbox['maxy']]
+                feature['stac_version'] = STAC_VERSION
+                feature['stac_extensions'] = STAC_EXTENSIONS
+                feature['type'] = 'Feature'
+
             features.append(feature)
         LOG.debug('...done.')
         return features
@@ -235,12 +238,12 @@ class GeoDBVectorSource(DataSource):
                 name, select=time_column,
                 order=time_column, limit=1,
                 database=db)[time_column][0]
-            earliest = dateutil.parser.parse(earliest).isoformat()
+            earliest = dateutil.parser.parse(earliest).isoformat() + 'Z'
             latest = self._geodb.get_collection_pg(
                 name, select=time_column,
                 order=f'{time_column} DESC',
                 limit=1, database=db)[time_column][0]
-            latest = dateutil.parser.parse(latest).isoformat()
+            latest = dateutil.parser.parse(latest).isoformat() + 'Z'
             LOG.debug(f'...done.')
         else:
             earliest, latest = None, None
@@ -249,15 +252,15 @@ class GeoDBVectorSource(DataSource):
             'title': f'{name}',
             'extent': {
                 'spatial': {
-                    'bbox': [None] if not full else
-                    self.get_vector_cube_bbox(),
+                    'bbox': [[-180, -90, 180, 90]] if not full else
+                    [self.get_vector_cube_bbox()],
                 },
                 'temporal': {
                     'interval': [[earliest, latest]]
                 }
             },
             'summaries': {
-                'column_names': col_names
+                'properties': col_names
             },
         }
         return metadata

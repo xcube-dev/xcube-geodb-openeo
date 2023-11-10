@@ -24,10 +24,13 @@ import sys
 import requests
 
 from openeo.internal.graph_building import PGNode
+from xcube.constants import LOG
 from xcube.server.api import ApiError
 from xcube.server.api import ApiHandler
+from xcube_geodb.core.geodb import GeoDBError
 
 from .api import api
+from .context import _fix_time
 from ..backend import capabilities
 from ..backend import processes
 from ..defaults import STAC_DEFAULT_ITEMS_LIMIT, STAC_MAX_ITEMS_LIMIT, \
@@ -260,6 +263,7 @@ class CollectionsHandler(ApiHandler):
 
 
 @api.route('/collections/{collection_id}')
+@api.route('/collections/{collection_id}/')
 class CollectionHandler(ApiHandler):
     """
     Lists all information about a specific collection specified by the
@@ -271,14 +275,20 @@ class CollectionHandler(ApiHandler):
         Lists the collection information.
         """
         base_url = get_base_url(self.request)
+        if '~' not in collection_id:
+            self.response.set_status(404,
+                                     f'Collection {collection_id} does '
+                                     f'not exist')
+            return
         db = collection_id.split('~')[0]
         name = collection_id.split('~')[1]
         collection = self.ctx.get_collection(base_url, (db, name), True)
         if collection:
             self.response.finish(collection)
         else:
-            self.response.set_status(404, f'Collection {collection_id} does '
-                                          f'not exist')
+            self.response.set_status(404,
+                                     f'Collection {collection_id} does '
+                                     f'not exist')
 
 
 @api.route('/collections/{collection_id}/items')
@@ -310,7 +320,7 @@ class CollectionItemsHandler(ApiHandler):
         name = collection_id.split('~')[1]
         items = self.ctx.get_collection_items(base_url, (db, name),
                                               limit, offset, bbox)
-        self.response.finish(items)
+        self.response.finish(items, content_type='application/geo+json')
 
 
 @api.route('/collections/{collection_id}/items/{item_id}')
@@ -327,9 +337,30 @@ class FeatureHandler(ApiHandler):
         db = collection_id.split('~')[0]
         name = collection_id.split('~')[1]
         base_url = get_base_url(self.request)
-        feature = self.ctx.get_collection_item(base_url, (db, name),
-                                               feature_id)
-        self.response.finish(feature)
+        try:
+            feature = self.ctx.get_collection_item(base_url, (db, name),
+                                                   feature_id)
+        except GeoDBError as e:
+            if 'does not exist' in e.args[0]:
+                LOG.warning(f'Not existing feature with id {feature_id} '
+                            f'requested.')
+            self.response.set_status(404,
+                                     f'Feature {feature_id} does '
+                                     f'not exist')
+            return
+
+        _fix_time(feature)
+        self.response.finish(feature, content_type='application/geo+json')
+
+
+@api.route('/api.html')
+class FeatureHandler(ApiHandler):
+    """
+    Simply forwards to openapi.html
+    """
+
+    def get(self):
+        self.response._handler.redirect('/openapi.html', status=301)
 
 
 def _get_limit(request, default=sys.maxsize) -> int:

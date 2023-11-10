@@ -36,10 +36,14 @@ def get_root(config: Mapping[str, Any], base_url: str):
         'api_version': API_VERSION,
         'backend_version': __version__,
         'stac_version': STAC_VERSION,
-        'type': 'catalog',
+        'type': 'Catalog',
         "id": config['geodb_openeo']['SERVER_ID'],
         "title": config['geodb_openeo']['SERVER_TITLE'],
         "description": config['geodb_openeo']['SERVER_DESCRIPTION'],
+        "conformsTo": [
+            f'https://api.stacspec.org/v1.0.0/{part}'
+            for part in ['core', 'collections', 'ogcapi-features']
+        ],
         'endpoints': [
             {'path': '/.well-known/openeo', 'methods': ['GET']},
             {'path': '/file_formats', 'methods': ['GET']},
@@ -53,6 +57,12 @@ def get_root(config: Mapping[str, Any], base_url: str):
         ],
         "links": [
             {
+                "rel": "root",
+                "href": f"{base_url}/",
+                "type": "application/json",
+                "title": "this document"
+            },
+            {
                 "rel": "self",
                 "href": f"{base_url}/",
                 "type": "application/json",
@@ -60,7 +70,7 @@ def get_root(config: Mapping[str, Any], base_url: str):
             },
             {
                 "rel": "service-desc",
-                "href": f"{base_url}/api",
+                "href": f'{base_url}/openapi.json',
                 "type": "application/vnd.oai.openapi+json;version=3.0",
                 "title": "the API definition"
             },
