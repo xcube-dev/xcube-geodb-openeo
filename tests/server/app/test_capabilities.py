@@ -51,7 +51,7 @@ class CapabilitiesTest(ServerTestCase):
         self.assertEqual('1.1.0', metainfo['api_version'])
         self.assertEqual('0.0.2.dev0', metainfo['backend_version'])
         self.assertEqual('1.0.0', metainfo['stac_version'])
-        self.assertEqual('catalog', metainfo['type'])
+        self.assertEqual('Catalog', metainfo['type'])
         self.assertEqual('xcube-geodb-openeo', metainfo['id'])
         self.assertEqual(
             'xcube geoDB Server, openEO API', metainfo['title']

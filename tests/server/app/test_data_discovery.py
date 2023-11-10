@@ -56,7 +56,7 @@ class DataDiscoveryTest(ServerTestCase):
         first_collection = collections_data['collections'][0]
         self.assertEqual("1.0.0", first_collection['stac_version'])
         self.assertEqual(
-            ['datacube',
+            ['https://stac-extensions.github.io/datacube/v2.2.0/schema.json',
              'https://stac-extensions.github.io/version/v1.0.0/schema.json'],
             first_collection['stac_extensions'])
         self.assertEqual(first_collection['type'], 'Collection')
@@ -65,7 +65,7 @@ class DataDiscoveryTest(ServerTestCase):
         self.assertIsNotNone(first_collection['license'])
         self.assertIsNotNone(first_collection['extent'])
         self.assertIsNotNone(first_collection['links'])
-        self.assertEqual(2, len(first_collection['links']))
+        self.assertEqual(4, len(first_collection['links']))
 
     def test_collection(self):
         url = f'http://localhost:{self.port}/collections/~collection_1'

@@ -100,26 +100,34 @@ class MockProvider(VectorCubeProvider, DataSource):
 
         hh_feature = {
             'stac_version': 15.1,
-            'stac_extensions': STAC_EXTENSIONS,
+            'stac_extensions': ['https://schemas.stacspec.org/v1.0.0/'
+                                'item-spec/json-schema/item.json'],
             'type': 'Feature',
             'id': '0',
             'bbox': [f'{self.bbox_hh[0]:.4f}',
                      f'{self.bbox_hh[1]:.4f}',
                      f'{self.bbox_hh[2]:.4f}',
                      f'{self.bbox_hh[3]:.4f}'],
-            'properties': ['id', 'name', 'geometry', 'population']
+            'properties': {'id': 1234,
+                           'name': 'hamburg',
+                           'geometry': 'mygeometry',
+                           'population': 1000}
         }
 
         pb_feature = {
             'stac_version': 15.1,
-            'stac_extensions': STAC_EXTENSIONS,
+            'stac_extensions': ['https://schemas.stacspec.org/v1.0.0/'
+                                'item-spec/json-schema/item.json'],
             'type': 'Feature',
             'id': '1',
             'bbox': [f'{self.bbox_pb[0]:.4f}',
                      f'{self.bbox_pb[1]:.4f}',
                      f'{self.bbox_pb[2]:.4f}',
                      f'{self.bbox_pb[3]:.4f}'],
-            'properties': ['id', 'name', 'geometry', 'population']
+            'properties': {'id': 4321,
+                           'name': 'paderborn',
+                           'geometry': 'mygeometry',
+                           'population': 100}
         }
 
         if limit == 1:

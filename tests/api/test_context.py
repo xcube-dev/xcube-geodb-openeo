@@ -29,6 +29,9 @@ class ContextTest(unittest.TestCase):
         links = context.get_collections_links(
             2, 6, 'http://server.hh/collections', 10)
         self.assertEqual([
+            {'href': 'http://server.hh', 'rel': 'root', 'title': 'root'},
+            {'href': 'http://server.hh/collections',
+             'rel': 'self', 'title': 'self'},
             {'href': 'http://server.hh/collections?limit=2&offset=8',
              'rel': 'next',
              'title': 'next'},
@@ -44,17 +47,24 @@ class ContextTest(unittest.TestCase):
 
         links = context.get_collections_links(
             3, 0, 'http://server.hh/collections', 5)
-        self.assertEqual([
-            {'href': 'http://server.hh/collections?limit=3&offset=3',
-             'rel': 'next',
-             'title': 'next'},
-            {'href': 'http://server.hh/collections?limit=3&offset=2',
+        self.assertEqual(
+            [{'href': 'http://server.hh', 'rel': 'root', 'title': 'root'},
+             {'href': 'http://server.hh/collections', 'rel': 'self',
+              'title': 'self'},
+
+             {'href': 'http://server.hh/collections?limit=3&offset=3',
+              'rel': 'next',
+              'title': 'next'},
+             {'href': 'http://server.hh/collections?limit=3&offset=2',
              'rel': 'last',
              'title': 'last'}], links)
 
         links = context.get_collections_links(
             2, 8, 'http://server.hh/collections', 10)
         self.assertEqual([
+            {'href': 'http://server.hh', 'rel': 'root', 'title': 'root'},
+            {'href': 'http://server.hh/collections', 'rel': 'self',
+             'title': 'self'},
             {'href': 'http://server.hh/collections?limit=2&offset=6',
              'rel': 'prev',
              'title': 'prev'},
@@ -64,4 +74,7 @@ class ContextTest(unittest.TestCase):
 
         links = context.get_collections_links(
             10, 0, 'http://server.hh/collections', 7)
-        self.assertEqual([], links)
+        self.assertEqual(
+            [{'href': 'http://server.hh', 'rel': 'root', 'title': 'root'},
+             {'href': 'http://server.hh/collections', 'rel': 'self',
+              'title': 'self'}], links)

@@ -28,10 +28,10 @@ class VectorCubeTest(unittest.TestCase):
             "51.8000"
         ], feature_2['bbox'])
         self.assertEqual([
-            "datacube",
-            "https://stac-extensions.github.io/version/v1.0.0/schema.json"
+            'https://schemas.stacspec.org/v1.0.0/item-spec/'
+            'json-schema/item.json'
         ], feature_1['stac_extensions'])
         self.assertEqual([
-            "datacube",
-            "https://stac-extensions.github.io/version/v1.0.0/schema.json"
+            'https://schemas.stacspec.org/v1.0.0/item-spec/'
+            'json-schema/item.json'
         ], feature_2['stac_extensions'])
