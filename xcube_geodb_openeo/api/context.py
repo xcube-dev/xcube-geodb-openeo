@@ -176,7 +176,7 @@ class GeoDbContext(ApiContext):
                       },
                       {
                           'rel': 'items',
-                          'href': f'{base_url}collections/'
+                          'href': f'{base_url}/collections/'
                                   f'{vector_cube.id}/items',
                           'type': 'application/json'
                       }]
