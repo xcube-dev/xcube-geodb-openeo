@@ -25,6 +25,8 @@ from typing import List
 
 from geojson import FeatureCollection
 from geojson.geometry import Geometry
+from shapely.geometry import Polygon
+from shapely.geometry import shape
 
 from xcube_geodb_openeo.core.geodb_datasource import DataSource, Feature
 from xcube_geodb_openeo.core.tools import Cache
@@ -70,6 +72,7 @@ class VectorCube:
         self._vector_dim = []
         self._vertical_dim = []
         self._time_dim = []
+        self._time_dim_name = None
 
     @cached_property
     def id(self) -> str:
@@ -150,6 +153,23 @@ class VectorCube:
         self._time_dim_cache.insert(bbox if bbox else global_key, time_dim)
         return time_dim
 
+    def get_time_dim_name(self):
+        if not self._time_dim_name:
+            self._time_dim = self._datasource.get_time_dim_name()
+        return self._time_dim
+
+    def get_features_by_geometry(self, limit: int = STAC_DEFAULT_ITEMS_LIMIT,
+                                 offset: int = 0) \
+            -> dict[str, list[Feature]]:
+        features = self.load_features(limit, offset)
+        features_by_geometry = {}
+        for f in features:
+            current_geometry = shape(f["geometry"]).wkt
+            if current_geometry not in features_by_geometry:
+                features_by_geometry[current_geometry] = []
+            features_by_geometry[current_geometry].append(f)
+        return features_by_geometry
+
     def get_feature(self, feature_id: str) -> Feature:
         for key in self._feature_cache.get_keys():
             for feature in self._feature_cache.get(key):
@@ -188,3 +208,72 @@ class VectorCube:
     def to_geojson(self) -> FeatureCollection:
         return FeatureCollection(self.load_features(
             self.feature_count, 0, False))
+
+
+class StaticVectorCubeFactory(DataSource):
+
+    def __init__(self):
+        self.time_dim = None
+        self.vector_dim = None
+        self.collection_id = None
+        self.srid = None
+        self.vertical_dim = None
+        self.features = None
+        self.bbox = None
+        self.geometry_types = None
+        self.metadata = None
+
+    def get_vector_dim(
+            self,
+            bbox: Optional[Tuple[float, float, float, float]] = None) \
+            -> List[Geometry]:
+        result = []
+        coords = [(bbox[0], bbox[1]),
+                  (bbox[0], bbox[3]),
+                  (bbox[2], bbox[3]),
+                  (bbox[2], bbox[1]),
+                  (bbox[0], bbox[1])]
+        box = Polygon(coords)
+        for geometry in self.vector_dim:
+            if box.intersects(geometry):
+                result.append(geometry)
+        return result
+
+    def get_srid(self) -> int:
+        return self.srid
+
+    def get_feature_count(self) -> int:
+        return len(self.features)
+
+    def get_time_dim(
+            self,
+            bbox: Optional[Tuple[float, float, float, float]] = None) \
+            -> Optional[List[datetime]]:
+        return self.time_dim
+
+    def get_time_dim_name(self) -> Optional[str]:
+        return self.time_dim_name
+
+    def get_vertical_dim(
+            self,
+            bbox: Optional[Tuple[float, float, float, float]] = None) \
+            -> Optional[List[Any]]:
+        return self.vertical_dim
+
+    def load_features(self, limit: int = STAC_DEFAULT_ITEMS_LIMIT,
+                      offset: int = 0, feature_id: Optional[str] = None,
+                      with_stac_info: bool = True) -> List[Feature]:
+        return self.features
+
+    def get_vector_cube_bbox(self) -> Tuple[float, float, float, float]:
+        return self.bbox
+
+    def get_geometry_types(self) -> List[str]:
+        return self.geometry_types
+
+    def get_metadata(self, full: bool = False) -> Dict:
+        return self.metadata
+
+    def create(self) -> VectorCube:
+        return VectorCube(tuple(self.collection_id.split('~')), self)
+

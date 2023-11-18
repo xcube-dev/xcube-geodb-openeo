@@ -59,6 +59,10 @@ class DataSource(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def get_time_dim_name(self) -> Optional[str]:
+        pass
+
+    @abc.abstractmethod
     def get_vertical_dim(
             self,
             bbox: Optional[Tuple[float, float, float, float]] = None) \
@@ -190,6 +194,9 @@ class GeoDBVectorSource(DataSource):
                 name, select=select, database=db)
 
         return [dateutil.parser.parse(d) for d in gdf[select]]
+
+    def get_time_dim_name(self) -> Optional[str]:
+        return self._get_col_name(['date', 'time', 'timestamp', 'datetime'])
 
     def get_vertical_dim(
             self, bbox: Optional[Tuple[float, float, float, float]] = None) \

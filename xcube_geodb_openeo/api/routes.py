@@ -193,25 +193,28 @@ class ResultHandler(ApiHandler):
         registry = processes.get_processes_registry()
         graph = processing_request['process_graph']
         pg_node = PGNode.from_flat_graph(graph)
+        registry.get_process(pg_node.process_id)
 
-        error_message = ('Graphs different from `load_collection` -> '
-                         '`save_result` not yet supported.')
-        if pg_node.process_id == 'save_result':
-            source = pg_node.arguments['data']['from_node']
-            if source.process_id == 'load_collection':
-                process = registry.get_process(source.process_id)
-                expected_parameters = process.metadata['parameters']
-                process_parameters = source.arguments
-                self.ensure_parameters(expected_parameters, process_parameters)
-                process.parameters = process_parameters
-                load_collection_result = processes.submit_process_sync(
-                    process, self.ctx)
-                gj = load_collection_result.to_geojson()
-                self.response.finish(gj)
-            else:
-                raise ValueError(error_message)
-        else:
-            raise ValueError(error_message)
+        nodes = []
+        current_node = pg_node
+        while 'data' in current_node.arguments and 'from_node' in current_node.arguments['data']:
+            nodes.append(current_node)
+            current_node = current_node.arguments['data']['from_node']
+        nodes.append(current_node)
+        nodes.reverse()
+
+        current_result = None
+        for node in nodes:
+            process = registry.get_process(node.process_id)
+            expected_parameters = process.metadata['parameters']
+            process_parameters = node.arguments
+            process_parameters['input'] = current_result
+            self.ensure_parameters(expected_parameters, process_parameters)
+            process.parameters = process_parameters
+            current_result = processes.submit_process_sync(process, self.ctx)
+
+        current_result = json.dumps(current_result, default=str)
+        self.response.finish(current_result)
 
     @staticmethod
     def ensure_parameters(expected_parameters, process_parameters):
@@ -219,8 +222,9 @@ class ResultHandler(ApiHandler):
             is_optional_param = 'optional' in ep and ep['optional']
             if not is_optional_param:
                 if ep['name'] not in process_parameters:
-                    raise (ApiError(400, f'Request body must contain parameter'
-                                         f' \'{ep["name"]}\'.'))
+                    raise (ApiError(400,
+                                    f'Request body must contain parameter'
+                                    f' \'{ep["name"]}\'.'))
 
 
 @api.route('/conformance')

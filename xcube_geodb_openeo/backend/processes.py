@@ -18,13 +18,21 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
+import datetime
+import dateutil.parser
 import importlib
 import importlib.resources as resources
 import json
+import pytz
+
 from abc import abstractmethod
 from typing import Dict, List, Any
 
+import shapely
+from geojson import Feature, FeatureCollection
 from xcube.server.api import ServerContextT
+from openeo.internal.graph_building import PGNode
+from ..core.vectorcube import StaticVectorCubeFactory
 
 
 class Process:
@@ -56,17 +64,16 @@ class Process:
         self._parameters = p
 
     @abstractmethod
-    def execute(self, parameters: dict, ctx: ServerContextT) -> str:
+    def execute(self, parameters: dict, ctx: ServerContextT) -> Any:
         pass
 
-    @abstractmethod
     def translate_parameters(self, parameters: dict) -> dict:
         """
         Translate params from query params to backend params
         :param parameters: query params
         :return: backend params
         """
-        pass
+        return parameters
 
 
 def read_default_processes() -> List[Process]:
@@ -145,6 +152,20 @@ class ProcessRegistry:
                             "href": "https://gdal.org/drivers/raster/gtiff.html",
                             "rel": "about",
                             "title": "GDAL on the GeoTiff file format and storage options"
+                        }
+                    ]
+                },
+                "GeoJSON": {
+                    "title": "GeoJSON",
+                    "description": "Export to GeoJSON.",
+                    "gis_data_types": [
+                        "vector"
+                    ],
+                    "links": [
+                        {
+                            "href": "https://geojson.org/",
+                            "rel": "about",
+                            "title": "GeoJSON is a format for encoding a variety of geographic data structures."
                         }
                     ]
                 },
@@ -249,7 +270,7 @@ def submit_process_sync(p: Process, ctx: ServerContextT) -> Any:
 class LoadCollection(Process):
     DEFAULT_CRS = 4326
 
-    def execute(self, query_params: dict, ctx: ServerContextT) -> str:
+    def execute(self, query_params: dict, ctx: ServerContextT):
         params = self.translate_parameters(query_params)
         collection_id = tuple(params['collection_id'].split('~'))
         bbox_transformed = None
@@ -284,3 +305,90 @@ class LoadCollection(Process):
             'bbox': bbox_qp,
             'crs': crs_qp
         }
+
+
+class AggregateTemporal(Process):
+
+    def execute(self, query_params: dict, ctx: ServerContextT):
+        # todo allow for more complex reducer functions
+        # todo allow for more than one interval
+        reducer_node = PGNode.from_flat_graph(query_params['reducer']
+                                              ['process_graph'])
+        reducer_id = reducer_node.process_id
+        registry = get_processes_registry()
+        reducer = registry.get_process(reducer_id)
+        vector_cube = query_params['input']
+        interval = query_params['intervals'][0]
+        pattern = query_params['context']['pattern']
+        utc = pytz.UTC
+        start_date = (datetime.datetime.strptime(interval[0], pattern)
+                      .replace(tzinfo=utc))
+        end_date = (datetime.datetime.strptime(interval[1], pattern)
+                    .replace(tzinfo=utc))
+        time_dim_name = vector_cube.get_time_dim_name()
+        features_by_geometry = vector_cube.get_features_by_geometry(limit=None)
+
+        result = StaticVectorCubeFactory()
+        result.collection_id = vector_cube.id + '_agg_temp'
+        result.vector_dim = vector_cube.get_vector_dim()
+        result.srid = vector_cube.srid
+        result.time_dim = vector_cube.get_time_dim()
+        result.bbox = vector_cube.get_bbox()
+        result.geometry_types = vector_cube.get_geometry_types()
+        result.metadata = vector_cube.get_metadata()
+        result.features = []
+
+        for geometry in features_by_geometry:
+            features = features_by_geometry[geometry]
+            extractions = {}
+            for feature in features:
+                for prop in [p for p in feature['properties'] if
+                             not p == 'created_at'
+                             and not p == 'modified_at'
+                             and not p == time_dim_name
+                             and (type(feature['properties'][p]) == float
+                                  or type(feature['properties'][p]) == int)]:
+                    if prop not in extractions:
+                        extractions[prop] = []
+                    date = (dateutil.parser.parse(
+                        feature['properties'][time_dim_name]).replace(tzinfo=utc))
+                    if start_date <= date < end_date:
+                        extractions[prop].append(feature['properties'][prop])
+
+            new_properties = {'created_at': datetime.datetime.now(utc),
+                              time_dim_name: end_date}
+            for prop in extractions.keys():
+                new_properties[prop] = reducer.execute(
+                    {'input': extractions[prop]}, ctx=ctx)
+            for prop in feature['properties']:
+                if prop not in new_properties:
+                    new_properties[prop] = feature['properties'][prop]
+            result.features.append(
+                Feature(None, shapely.wkt.loads(geometry), new_properties))
+
+        return result.create()
+
+
+class SaveResult(Process):
+
+    def execute(self, query_params: dict, ctx: ServerContextT):
+        vector_cube = query_params['input']
+        if query_params['format'].lower() == 'geojson':
+            collection = FeatureCollection(
+                vector_cube.load_features(limit=None))
+            return collection
+
+
+class Mean(Process):
+
+    def execute(self, query_params: dict, ctx: ServerContextT):
+        import numpy as np
+        return np.mean(query_params['input'])
+
+
+class Median(Process):
+
+    def execute(self, query_params: dict, ctx: ServerContextT):
+        import numpy as np
+        return np.median(query_params['input'])
+

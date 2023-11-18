@@ -87,6 +87,9 @@ class MockProvider(VectorCubeProvider, DataSource):
             -> Optional[List[datetime]]:
         return None
 
+    def get_time_dim_name(self) -> Optional[str]:
+        return 'time'
+
     def get_vertical_dim(
             self,
             bbox: Optional[Tuple[float, float, float, float]] = None) \
