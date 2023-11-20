@@ -18,6 +18,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
+import copy
 from datetime import datetime
 from functools import cached_property
 from typing import Any, Optional, Tuple, Dict
@@ -27,6 +28,8 @@ from geojson import FeatureCollection
 from geojson.geometry import Geometry
 from shapely.geometry import Polygon
 from shapely.geometry import shape
+
+import uuid
 
 from xcube_geodb_openeo.core.geodb_datasource import DataSource, Feature
 from xcube_geodb_openeo.core.tools import Cache
@@ -179,7 +182,7 @@ class VectorCube:
         self._feature_cache.insert(feature_id, [feature])
         return feature
 
-    def load_features(self, limit: int = STAC_DEFAULT_ITEMS_LIMIT,
+    def load_features(self, limit: Optional[int] = STAC_DEFAULT_ITEMS_LIMIT,
                       offset: int = 0,
                       with_stac_info: bool = True) -> List[Feature]:
         key = (limit, offset)
@@ -214,6 +217,7 @@ class StaticVectorCubeFactory(DataSource):
 
     def __init__(self):
         self.time_dim = None
+        self.time_dim_name = None
         self.vector_dim = None
         self.collection_id = None
         self.srid = None
@@ -223,20 +227,44 @@ class StaticVectorCubeFactory(DataSource):
         self.geometry_types = None
         self.metadata = None
 
+    def copy(self, base: VectorCube, with_features, postfix=None):
+        if postfix:
+            self.collection_id = base.id + postfix
+        else:
+            self.collection_id = base.id + '_' + str(uuid.uuid4())
+        self.vector_dim = base.get_vector_dim()
+        self.srid = base.srid
+        self.time_dim = base.get_time_dim()
+        self.time_dim_name = base.get_time_dim_name()
+        self.bbox = base.get_bbox()
+        self.geometry_types = base.get_geometry_types()
+        self.metadata = base.get_metadata()
+        if with_features:
+            self.features = copy.deepcopy(
+                base.load_features(limit=None, with_stac_info=False))
+        else:
+            self.features = []
+        return self
+
     def get_vector_dim(
             self,
             bbox: Optional[Tuple[float, float, float, float]] = None) \
             -> List[Geometry]:
         result = []
-        coords = [(bbox[0], bbox[1]),
-                  (bbox[0], bbox[3]),
-                  (bbox[2], bbox[3]),
-                  (bbox[2], bbox[1]),
-                  (bbox[0], bbox[1])]
-        box = Polygon(coords)
-        for geometry in self.vector_dim:
-            if box.intersects(geometry):
+        if bbox:
+            coords = [(bbox[0], bbox[1]),
+                      (bbox[0], bbox[3]),
+                      (bbox[2], bbox[3]),
+                      (bbox[2], bbox[1]),
+                      (bbox[0], bbox[1])]
+            box = Polygon(coords)
+            for geometry in self.vector_dim:
+                if box.intersects(geometry):
+                    result.append(geometry)
+        else:
+            for geometry in self.vector_dim:
                 result.append(geometry)
+
         return result
 
     def get_srid(self) -> int:
@@ -276,4 +304,3 @@ class StaticVectorCubeFactory(DataSource):
 
     def create(self) -> VectorCube:
         return VectorCube(tuple(self.collection_id.split('~')), self)
-

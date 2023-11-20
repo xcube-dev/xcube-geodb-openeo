@@ -19,6 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 import datetime
+import operator
+
 import dateutil.parser
 import importlib
 import importlib.resources as resources
@@ -26,13 +28,13 @@ import json
 import pytz
 
 from abc import abstractmethod
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Callable
 
 import shapely
 from geojson import Feature, FeatureCollection
 from xcube.server.api import ServerContextT
 from openeo.internal.graph_building import PGNode
-from ..core.vectorcube import StaticVectorCubeFactory
+from ..core.vectorcube import StaticVectorCubeFactory, VectorCube
 
 
 class Process:
@@ -328,15 +330,8 @@ class AggregateTemporal(Process):
         time_dim_name = vector_cube.get_time_dim_name()
         features_by_geometry = vector_cube.get_features_by_geometry(limit=None)
 
-        result = StaticVectorCubeFactory()
-        result.collection_id = vector_cube.id + '_agg_temp'
-        result.vector_dim = vector_cube.get_vector_dim()
-        result.srid = vector_cube.srid
-        result.time_dim = vector_cube.get_time_dim()
-        result.bbox = vector_cube.get_bbox()
-        result.geometry_types = vector_cube.get_geometry_types()
-        result.metadata = vector_cube.get_metadata()
-        result.features = []
+        result = StaticVectorCubeFactory().copy(vector_cube, False,
+                                                '_agg_temp')
 
         for geometry in features_by_geometry:
             features = features_by_geometry[geometry]
@@ -375,7 +370,7 @@ class SaveResult(Process):
         vector_cube = query_params['input']
         if query_params['format'].lower() == 'geojson':
             collection = FeatureCollection(
-                vector_cube.load_features(limit=None))
+                vector_cube.load_features(limit=None, with_stac_info=False))
             return collection
 
 
@@ -386,9 +381,124 @@ class Mean(Process):
         return np.mean(query_params['input'])
 
 
+class Std(Process):
+
+    def execute(self, query_params: dict, ctx: ServerContextT):
+        import numpy as np
+        return np.std(query_params['input'])
+
+
 class Median(Process):
 
     def execute(self, query_params: dict, ctx: ServerContextT):
         import numpy as np
         return np.median(query_params['input'])
 
+
+class ArrayApply(Process):
+
+    def execute(self, query_params: dict, ctx: ServerContextT) -> Any:
+        graph = query_params['process']['process_graph']
+        node = PGNode.from_flat_graph(graph)
+
+        current_result = query_params['input']
+        registry = get_processes_registry()
+        process = registry.get_process(node.process_id)
+        process_parameters = node.arguments
+        process_parameters['input'] = current_result
+        process.parameters = process_parameters
+        current_result = submit_process_sync(process, ctx)
+
+        return current_result
+
+
+class Add(Process):
+
+    def execute(self, query_params: dict, ctx: ServerContextT) -> Any:
+        return execute_math_function(query_params, ctx, operator.add)
+
+
+class Multiply(Process):
+
+    def execute(self, query_params: dict, ctx: ServerContextT) -> VectorCube:
+        return execute_math_function(query_params, ctx, operator.mul)
+
+
+def execute_math_function(query_params: dict, ctx: ServerContextT,
+                          op: Callable) -> VectorCube:
+    current_result = query_params['input']
+    y = query_params['y']
+    if isinstance(y, dict) and 'process_graph' in y:
+        process = get_next_process(current_result, y)
+        result = basic_math_vc(current_result,
+                               submit_process_sync(process, ctx),
+                               op)
+    elif isinstance(y, dict) and 'from_node' in y:
+        process = get_prev_process(current_result, y)
+        result = basic_math_vc(current_result,
+                               submit_process_sync(process, ctx),
+                               op)
+    else:
+        result = basic_math(current_result, y, op)
+    return result
+
+def basic_math(vc: VectorCube, v: [int, float], operation: Callable):
+    result = (StaticVectorCubeFactory()
+              .copy(vc, True)
+              .create())
+    features = result.load_features(limit=None,
+                                    with_stac_info=False)
+    time_dim_name = result.get_time_dim_name()
+    for feature in features:
+        for prop in [p for p in feature['properties'] if
+                     not p == 'created_at'
+                     and not p == 'modified_at'
+                     and not p == time_dim_name
+                     and (isinstance(feature['properties'][p], float)
+                          or
+                          isinstance(feature['properties'][p], int))]:
+            feature['properties'][prop] = (
+                operation(v, feature['properties'][prop]))
+    return result
+
+
+def basic_math_vc(a: VectorCube, b: VectorCube, operation: Callable) \
+        -> VectorCube:
+    result = (StaticVectorCubeFactory()
+              .copy(a, True)
+              .create())
+    features = result.load_features(limit=None, with_stac_info=False)
+    time_dim_name = result.get_time_dim_name()
+    for feature in features:
+        for prop in [p for p in feature['properties'] if
+                     not p == 'created_at'
+                     and not p == 'modified_at'
+                     and not p == time_dim_name
+                     and (isinstance(feature['properties'][p], float)
+                          or isinstance(feature['properties'][p], int))]:
+            feature_b = b.get_feature(feature['id'])
+            feature['properties'][prop] = (
+                operation(feature['properties'][prop],
+                           feature_b['properties'][prop]))
+    return result
+
+
+def get_next_process(current_result, y) -> Process:
+    sub_graph = y['process_graph']
+    node = PGNode.from_flat_graph(sub_graph)
+    registry = get_processes_registry()
+    process = registry.get_process(node.process_id)
+    process_parameters = node.arguments
+    process_parameters['input'] = current_result
+    process.parameters = process_parameters
+    return process
+
+
+def get_prev_process(current_result, y) -> Process:
+    node = y['from_node']
+    registry = get_processes_registry()
+    process = registry.get_process(node.process_id)
+    process_parameters = node.arguments
+    process_parameters['input'] = current_result
+    process.parameters = process_parameters
+    return process
