@@ -171,65 +171,8 @@ class ProcessRegistry:
                         }
                     ]
                 },
-                "GPKG": {
-                    "title": "OGC GeoPackage",
-                    "gis_data_types": [
-                        "raster",
-                        "vector"
-                    ],
-                    "parameters": {
-                        "version": {
-                            "type": "string",
-                            "description": "Set GeoPackage version. In AUTO mode, this will be equivalent to 1.2 starting with GDAL 2.3.",
-                            "enum": [
-                                "auto",
-                                "1",
-                                "1.1",
-                                "1.2"
-                            ],
-                            "default": "auto"
-                        }
-                    },
-                    "links": [
-                        {
-                            "href": "https://gdal.org/drivers/raster/gpkg.html",
-                            "rel": "about",
-                            "title": "GDAL on GeoPackage for raster data"
-                        },
-                        {
-                            "href": "https://gdal.org/drivers/vector/gpkg.html",
-                            "rel": "about",
-                            "title": "GDAL on GeoPackage for vector data"
-                        }
-                    ]
-                }
             },
             "input": {
-                "GPKG": {
-                    "title": "OGC GeoPackage",
-                    "gis_data_types": [
-                        "raster",
-                        "vector"
-                    ],
-                    "parameters": {
-                        "table": {
-                            "type": "string",
-                            "description": "**RASTER ONLY.** Name of the table containing the tiles. If the GeoPackage dataset only contains one table, this option is not necessary. Otherwise, it is required."
-                        }
-                    },
-                    "links": [
-                        {
-                            "href": "https://gdal.org/drivers/raster/gpkg.html",
-                            "rel": "about",
-                            "title": "GDAL on GeoPackage for raster data"
-                        },
-                        {
-                            "href": "https://gdal.org/drivers/vector/gpkg.html",
-                            "rel": "about",
-                            "title": "GDAL on GeoPackage for vector data"
-                        }
-                    ]
-                }
             }
         }
         # return {'input': [], 'output': ['GeoJSON']}
