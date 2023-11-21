@@ -42,7 +42,7 @@ from ..defaults import default_config, STAC_VERSION, STAC_EXTENSIONS, \
 
 class GeoDbContext(ApiContext):
 
-    @cached_property
+    @property
     def collection_ids(self) -> List[Tuple[str, str]]:
         return self.cube_provider.get_collection_keys()
 
