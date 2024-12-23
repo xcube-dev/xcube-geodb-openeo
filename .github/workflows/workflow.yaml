@@ -64,7 +64,9 @@ jobs:
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         with:
           fail_ci_if_error: true
-          verbose: false
+          uses: codecov/codecov-action@v4.0.1
+          token: ${{ secrets.CODECOV_TOKEN }}
+          codecov_yml_path: ./codecov.yml
 
   build-docker-image:
     runs-on: ubuntu-latest
