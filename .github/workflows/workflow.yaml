@@ -60,11 +60,11 @@ jobs:
         if: ${{ env.SKIP_UNITTESTS == '0' }}
         run: |
           pytest --cov=./ --cov-report=xml --tb=native tests
-      - uses: codecov/codecov-action@v2
+      - name: Upload coverage reports to Codecov
         if: ${{ env.SKIP_UNITTESTS == '0' }}
+        uses: codecov/codecov-action@v4.0.1
         with:
           fail_ci_if_error: true
-          uses: codecov/codecov-action@v4.0.1
           token: ${{ secrets.CODECOV_TOKEN }}
           codecov_yml_path: ./codecov.yml
 
