@@ -10,7 +10,7 @@ dependencies:
   - pandas
   - shapely
   - xcube >= 1.1.1
-  - xcube_geodb >= 1.0.5
+  - xcube_geodb >= 1.0.8
   - geojson
   - yaml
   - ipython

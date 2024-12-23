@@ -138,7 +138,7 @@ class DataDiscoveryTest(ServerTestCase):
         items_data = json.loads(response.data)
         self.assertEqual('FeatureCollection', items_data['type'])
         self.assertIsNotNone(items_data['features'])
-        self.assertEqual(2, len(items_data['features']))
+        self.assertEqual(1, len(items_data['features']))
 
     def test_not_existing_collection(self):
         url = f'http://localhost:{self.port}' \

@@ -1,0 +1,19 @@
+{
+  "prozzess": {
+    "summary": "loads collection sample~features",
+    "parameters": {
+      "id": "collection_1"
+    },
+    "process_graph": {
+      "my_process_graph": {
+        "process_id": "load_collection",
+        "arguments": {
+          "id": "sample~features",
+          "temporal_extent": "None",
+          "spatial_extent": "None"
+        },
+        "result": true
+      }
+    }
+  }
+}

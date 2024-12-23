@@ -51,12 +51,12 @@ def assert_hamburg(cls, vector_cube):
     assert_hamburg_data(cls, vector_cube)
 
 
-def assert_hamburg_data(cls, vector_cube):
+def assert_hamburg_data(cls, feature):
     cls.assertEqual(['9.0000', '52.0000', '11.0000', '54.0000'],
-                    vector_cube['bbox'])
+                    feature['bbox'])
     cls.assertEqual({'datetime': '1970-01-01T00:01:00Z',
                      'geometry': 'mygeometry',
                      'id': 1234,
                      'name': 'hamburg',
                      'population': 1000},
-                    vector_cube['properties'])
+                    feature['properties'])

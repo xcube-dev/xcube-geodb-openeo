@@ -33,6 +33,7 @@ from .api import api
 from .context import _fix_time
 from ..backend import capabilities
 from ..backend import processes
+from ..core.vectorcube import VectorCube
 from ..defaults import STAC_DEFAULT_ITEMS_LIMIT, STAC_MAX_ITEMS_LIMIT, \
     STAC_MIN_ITEMS_LIMIT
 
@@ -66,6 +67,7 @@ class RootHandler(ApiHandler):
     Initiates the authentication process.
     """
 
+    @api.operation(operationId='initiate_auth')
     def get(self):
         auth_endpoint = ('https://kc.brockmann-consult.de/auth/realms/'
                          'xcube-geodb-openeo/protocol/openid-connect/auth')
@@ -98,8 +100,12 @@ class RootHandler(ApiHandler):
     Creates and validates an access token.
     """
 
+    @api.operation(operationId='create_auth_token')
     def get(self):
         code = self.request.query['code'][0]
+
+        # these should not come from the config, but must be entered by the user!
+
         clientId = self.ctx.config['geodb_openeo']['kc_clientId']
         secret = self.ctx.config['geodb_openeo']['kc_secret']
         credentials = (base64.b64encode(
@@ -178,18 +184,26 @@ class ResultHandler(ApiHandler):
     will be downloaded.
     """
 
-    @api.operation(operationId='result', summary='Execute process'
+    @api.operation(operationId='result', summary='Execute process '
                                                  'synchronously.')
     def post(self):
         """
         Processes requested processing task and returns result.
         """
         if not self.request.body:
+            raise ApiError(400, 'Request must contain body with valid process graph,'
+                                ' see openEO specification.')
+        try:
+            request = json.loads(self.request.body)
+        except Exception as exc:
+            raise ApiError(400, 'Request must contain body with valid process graph,'
+                                ' see openEO specification. Error: ' + exc.args[0])
+        if not 'process' in request:
             raise (ApiError(
                 400,
-                'Request body must contain key \'process\'.'))
+                'Request body must contain parameter \'process\'.'))
 
-        processing_request = json.loads(self.request.body)['process']
+        processing_request = request['process']
         registry = processes.get_processes_registry()
         graph = processing_request['process_graph']
         pg_node = PGNode.from_flat_graph(graph)
@@ -213,8 +227,13 @@ class ResultHandler(ApiHandler):
             process.parameters = process_parameters
             current_result = processes.submit_process_sync(process, self.ctx)
 
-        current_result = json.dumps(current_result, default=str)
-        self.response.finish(current_result)
+        current_result: VectorCube
+        try:
+            current_result.load_features()
+        except GeoDBError as exc:
+            raise ApiError(400, exc.args[0])
+        final_result = current_result.to_geojson()
+        self.response.finish(final_result)
 
     @staticmethod
     def ensure_parameters(expected_parameters, process_parameters):
@@ -259,6 +278,15 @@ class CollectionsHandler(ApiHandler):
                           items that are presented in the response document.
             offset (int): Collections are listed starting at offset.
         """
+
+        # check if header contains auth token
+        # - otherwise, redirect to login
+        # decode token, get id
+        # get user from identity provider (Auth0, Keycloak)
+        # check user properties
+        # if all good, continue
+        # otherwise, raise error message
+
         limit = _get_limit(self.request)
         offset = _get_offset(self.request)
         base_url = get_base_url(self.request)

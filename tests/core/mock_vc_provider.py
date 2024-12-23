@@ -60,6 +60,7 @@ class MockProvider(VectorCubeProvider, DataSource):
             self, collection_id: Tuple[str, str],
             bbox: Optional[Tuple[float, float, float, float]] = None) \
             -> VectorCube:
+        self.bbox = bbox
         return VectorCube(collection_id, self)
 
     def get_vector_dim(
@@ -111,7 +112,8 @@ class MockProvider(VectorCubeProvider, DataSource):
                      f'{self.bbox_hh[1]:.4f}',
                      f'{self.bbox_hh[2]:.4f}',
                      f'{self.bbox_hh[3]:.4f}'],
-            'properties': {'id': 1234,
+            'properties': {'datetime': '1970-01-01T00:01:00Z',
+                           'id': 1234,
                            'name': 'hamburg',
                            'geometry': 'mygeometry',
                            'population': 1000}
@@ -127,7 +129,8 @@ class MockProvider(VectorCubeProvider, DataSource):
                      f'{self.bbox_pb[1]:.4f}',
                      f'{self.bbox_pb[2]:.4f}',
                      f'{self.bbox_pb[3]:.4f}'],
-            'properties': {'id': 4321,
+            'properties': {'datetime': '1970-01-01T00:01:00Z',
+                           'id': 4321,
                            'name': 'paderborn',
                            'geometry': 'mygeometry',
                            'population': 100}
@@ -135,12 +138,13 @@ class MockProvider(VectorCubeProvider, DataSource):
 
         if limit == 1:
             return [pb_feature]
+        if self.bbox:
+            return [hh_feature]
 
         return [hh_feature, pb_feature]
 
     def get_vector_cube_bbox(self) -> Tuple[float, float, float, float]:
         return wkt.loads(self.hh).bounds
-
 
     def get_geometry_types(self) -> List[str]:
         return ['Polygon']

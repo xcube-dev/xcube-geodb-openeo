@@ -34,7 +34,6 @@ from xcube_geodb_openeo.backend.processes import LoadCollection
 from . import test_utils
 
 
-@unittest.skip
 class ProcessingTest(ServerTestCase):
 
     def add_extension(self, er: ExtensionRegistry) -> None:
@@ -71,8 +70,9 @@ class ProcessingTest(ServerTestCase):
                 load_collection = p
 
         self.assertIsNotNone(load_collection)
-        self.assertEqual(1, len(load_collection['categories']))
-        self.assertTrue('import', load_collection['categories'][0])
+        self.assertEqual(2, len(load_collection['categories']))
+        self.assertTrue('cubes', load_collection['categories'][0])
+        self.assertTrue('import', load_collection['categories'][1])
 
         self.assertTrue('Load a collection.', load_collection['summary'])
 
@@ -86,9 +86,9 @@ class ProcessingTest(ServerTestCase):
         self.assertEqual(list, type(load_collection['parameters']))
 
         collection_param = None
-        database_param = None
+        temp_extent_param = None
         spatial_extent_param = None
-        self.assertEqual(3, len(load_collection['parameters']))
+        self.assertEqual(5, len(load_collection['parameters']))
         for p in load_collection['parameters']:
             self.assertEqual(dict, type(p))
             self.assertTrue('name' in p)
@@ -96,21 +96,17 @@ class ProcessingTest(ServerTestCase):
             self.assertTrue('schema' in p)
             if p['name'] == 'id':
                 collection_param = p
-            if p['name'] == 'database':
-                database_param = p
+            if p['name'] == 'temporal_extent':
+                temp_extent_param = p
             if p['name'] == 'spatial_extent':
                 spatial_extent_param = p
 
         self.assertIsNotNone(collection_param)
-        self.assertIsNotNone(database_param)
+        self.assertIsNotNone(temp_extent_param)
         self.assertIsNotNone(spatial_extent_param)
 
         self.assertEqual('string', collection_param['schema']['type'])
         self.assertEqual(dict, type(collection_param['schema']))
-
-        self.assertEqual(dict, type(database_param['schema']))
-        self.assertEqual('string', database_param['schema']['type'])
-        self.assertEqual(True, database_param['optional'])
 
         self.assertEqual(list, type(spatial_extent_param['schema']))
 
@@ -120,7 +116,7 @@ class ProcessingTest(ServerTestCase):
         return_schema = load_collection['returns']['schema']
         self.assertEqual(dict, type(return_schema))
         self.assertEqual('object', return_schema['type'])
-        self.assertEqual('vector-cube', return_schema['subtype'])
+        self.assertEqual('datacube', return_schema['subtype'])
 
     def test_get_file_formats(self):
         response = self.http.request('GET', f'http://localhost:{self.port}'
@@ -134,13 +130,8 @@ class ProcessingTest(ServerTestCase):
         self.assertTrue('output' in formats)
 
     def test_result(self):
-        body = json.dumps({"process": {
-            "id": "load_collection",
-            "parameters": {
-                "id": "collection_1",
-                "spatial_extent": None
-            }
-        }})
+        data = pkgutil.get_data("tests.res", "sample-process.json")
+        body = data.decode("UTF-8")
         response = self.http.request('POST',
                                      f'http://localhost:{self.port}/result',
                                      body=body,
@@ -149,25 +140,17 @@ class ProcessingTest(ServerTestCase):
                                      })
 
         self.assertEqual(200, response.status)
-        vector_cube = json.loads(response.data)
-        self.assertEqual(list, type(vector_cube))
-        self.assertIsNotNone(vector_cube)
-        self.assertEqual(2, len(vector_cube))
+        feature_collection = json.loads(response.data)
+        self.assertEqual(dict, type(feature_collection))
+        self.assertIsNotNone(feature_collection)
+        self.assertEqual(2, len(feature_collection["features"]))
 
-        test_utils.assert_hamburg_data(self, vector_cube[0])
-        test_utils.assert_paderborn_data(self, vector_cube[1])
+        test_utils.assert_hamburg_data(self, feature_collection["features"][0])
+        test_utils.assert_paderborn_data(self, feature_collection["features"][1])
 
     def test_result_bbox(self):
-        body = json.dumps({"process": {
-            "id": "load_collection",
-            "parameters": {
-                "id": "collection_1",
-                "spatial_extent": {
-                    "bbox": "(33, -10, 71, 43)",
-                    "crs": 4326
-                }
-            }
-        }})
+        data = pkgutil.get_data("tests.res", "sample-process-spatial_extent.json")
+        body = data.decode("UTF-8")
         response = self.http.request('POST',
                                      f'http://localhost:{self.port}/result',
                                      body=body,
@@ -176,23 +159,17 @@ class ProcessingTest(ServerTestCase):
                                      })
 
         self.assertEqual(200, response.status)
-        vector_cube = json.loads(response.data)
-        self.assertEqual(list, type(vector_cube))
-        self.assertIsNotNone(vector_cube)
-        self.assertEqual(1, len(vector_cube))
+        feature_collection = json.loads(response.data)
+        self.assertEqual(dict, type(feature_collection))
+        self.assertIsNotNone(feature_collection)
+        self.assertEqual(1, len(feature_collection["features"]))
 
-        test_utils.assert_hamburg_data(self, vector_cube[0])
+        test_utils.assert_hamburg_data(self, feature_collection["features"][0])
 
     def test_result_bbox_default_crs(self):
-        body = json.dumps({"process": {
-            "id": "load_collection",
-            "parameters": {
-                "id": "collection_1",
-                "spatial_extent": {
-                    "bbox": "(33, -10, 71, 43)"
-                }
-            }
-        }})
+        data = pkgutil.get_data("tests.res", "sample-process-spatial_extent-default-crs.json")
+        body = data.decode("UTF-8")
+
         response = self.http.request('POST',
                                      f'http://localhost:{self.port}/result',
                                      body=body,
@@ -201,17 +178,15 @@ class ProcessingTest(ServerTestCase):
                                      })
 
         self.assertEqual(200, response.status)
-        vector_cube = json.loads(response.data)
-        self.assertEqual(list, type(vector_cube))
-        self.assertIsNotNone(vector_cube)
-        self.assertEqual(1, len(vector_cube))
-        test_utils.assert_hamburg_data(self, vector_cube[0])
+        feature_collection = json.loads(response.data)
+        self.assertEqual(dict, type(feature_collection))
+        self.assertIsNotNone(feature_collection)
+        self.assertEqual(1, len(feature_collection["features"]))
+        test_utils.assert_hamburg_data(self, feature_collection["features"][0])
 
     def test_result_missing_parameters(self):
-        body = json.dumps({'process': {
-            'id': 'load_collection',
-            'parameters': {}
-        }})
+        data = pkgutil.get_data("tests.res", "sample-process-broken.json")
+        body = data.decode("UTF-8")
         response = self.http.request('POST',
                                      f'http://localhost:{self.port}/result',
                                      body=body,
@@ -220,7 +195,7 @@ class ProcessingTest(ServerTestCase):
                                      })
         self.assertEqual(400, response.status)
         message = json.loads(response.data)
-        self.assertTrue('Request body must contain parameter \'id\'.' in
+        self.assertTrue('Request body must contain parameter \'process\'.' in
                         message['error']['message'])
 
     def test_result_no_query_param(self):
@@ -228,8 +203,8 @@ class ProcessingTest(ServerTestCase):
                                      f'http://localhost:{self.port}/result')
         self.assertEqual(400, response.status)
         message = json.loads(response.data)
-        self.assertTrue('Request body must contain key \'process\'.' in
-                        message['error']['message'])
+        self.assertTrue('Request must contain body with valid process graph,'
+                        ' see openEO specification.', message)
 
     def test_invalid_process_id(self):
         with self.assertRaises(ValueError):
