@@ -9,7 +9,7 @@ dependencies:
   - geojson
   - geopandas
   - ipython
-  - jwt
+  - pyjwt
   - openeo
   - pandas
   - urllib3
