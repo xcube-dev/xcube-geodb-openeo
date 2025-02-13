@@ -6,17 +6,18 @@ dependencies:
   # Python
   - python >=3.8
   # Required
+  - geojson
   - geopandas
+  - ipython
+  - jwt
+  - openeo
   - pandas
+  - urllib3
+  - requests
   - shapely
   - xcube >= 1.1.1
   - xcube_geodb >= 1.0.8
-  - geojson
   - yaml
-  - ipython
-  - urllib3
-  - openeo
-  - requests
   # Testing
   - pytest >=4.4
   - pytest-cov >=2.6

@@ -18,40 +18,33 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
-import os
+import collections
 from typing import Optional, TypeVar
 from typing import OrderedDict, Hashable
 
 from xcube_geodb.core.geodb import GeoDBClient
 
 
-def create_geodb_client(api_config: dict) -> GeoDBClient:
-    server_url = api_config['postgrest_url']
-    server_port = api_config['postgrest_port']
-    client_id = api_config['client_id'] \
-        if 'client_id' in api_config \
-        else os.getenv('XC_GEODB_OPENEO_CLIENT_ID')
-    client_secret = api_config['client_secret'] \
-        if 'client_secret' in api_config \
-        else os.getenv('XC_GEODB_OPENEO_CLIENT_SECRET')
-    auth_domain = api_config['auth_domain']
+def create_geodb_client(api_config: dict, access_token: str) -> GeoDBClient:
+    server_url = api_config["postgrest_url"]
+    server_port = api_config["postgrest_port"]
+    auth_domain = api_config["auth_domain"]
 
     return GeoDBClient(
         server_url=server_url,
         server_port=server_port,
-        client_id=client_id,
-        client_secret=client_secret,
-        auth_aud=auth_domain
+        auth_domain=auth_domain,
+        access_token=access_token,
     )
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class Cache:
     def __init__(self, capacity: int):
         self.capacity = capacity
-        self._cache: OrderedDict[Hashable, T] = OrderedDict()
+        self._cache: OrderedDict[Hashable, T] = collections.OrderedDict()
 
     def get(self, key: Hashable) -> Optional[T]:
         if key not in self._cache:

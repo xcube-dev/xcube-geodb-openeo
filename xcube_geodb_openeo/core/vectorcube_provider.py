@@ -20,7 +20,6 @@
 # DEALINGS IN THE SOFTWARE.
 
 import abc
-from functools import cached_property
 from typing import Tuple, Optional, List, Mapping, Any
 
 from xcube_geodb.core.geodb import GeoDBClient
@@ -31,35 +30,39 @@ from .vectorcube import VectorCube
 
 
 class VectorCubeProvider(abc.ABC):
-
     @abc.abstractmethod
     def get_collection_keys(self) -> List[Tuple[str, str]]:
         pass
 
     @abc.abstractmethod
     def get_vector_cube(
-            self, collection_id: Tuple[str, str],
-            bbox: Optional[Tuple[float, float, float, float]] = None) \
-            -> VectorCube:
+        self,
+        collection_id: Tuple[str, str],
+        bbox: Optional[Tuple[float, float, float, float]] = None,
+    ) -> VectorCube:
         pass
 
 
 class GeoDBProvider(VectorCubeProvider):
-
-    def __init__(self, config: Mapping[str, Any]):
+    def __init__(self, config: Mapping[str, Any], access_token: str):
         self.config = config
+        self._geodb = None
+        self._access_token = access_token
 
-    @cached_property
+    @property
     def geodb(self) -> GeoDBClient:
+        if self._geodb:
+            return self._geodb
         assert self.config
-        api_config = self.config['geodb_openeo']
-        return create_geodb_client(api_config)
+        api_config = self.config["geodb_openeo"]
+        self._geodb = create_geodb_client(api_config, self._access_token)
+        return self._geodb
 
     def get_collection_keys(self) -> List[Tuple[str, str]]:
         collections = self.geodb.get_my_collections()
         result = []
-        collection_list = collections.get('collection')
-        for idx, database in enumerate(collections.get('database')):
+        collection_list = collections.get("collection")
+        for idx, database in enumerate(collections.get("database")):
             collection_id = collection_list[idx]
             if collection_id:
                 result.append((database, collection_id))
@@ -67,8 +70,8 @@ class GeoDBProvider(VectorCubeProvider):
         return result
 
     def get_vector_cube(
-            self, collection_id: Tuple[str, str],
-            bbox: Optional[Tuple[float, float, float, float]] = None) \
-            -> VectorCube:
-        return VectorCube(collection_id,
-                          GeoDBVectorSource(collection_id, self.geodb))
+        self,
+        collection_id: Tuple[str, str],
+        bbox: Optional[Tuple[float, float, float, float]] = None,
+    ) -> VectorCube:
+        return VectorCube(collection_id, GeoDBVectorSource(collection_id, self.geodb))

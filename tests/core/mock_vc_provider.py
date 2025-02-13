@@ -36,19 +36,16 @@ from geojson.geometry import Geometry
 from xcube_geodb_openeo.core.geodb_datasource import DataSource, Feature
 from xcube_geodb_openeo.core.vectorcube import VectorCube
 from xcube_geodb_openeo.core.vectorcube_provider import VectorCubeProvider
-from xcube_geodb_openeo.defaults import STAC_EXTENSIONS
 
 
 class MockProvider(VectorCubeProvider, DataSource):
-
     # noinspection PyUnusedLocal
-    def __init__(self, config: Mapping[str, Any]):
-        with resources.open_text('tests', 'mock_collections.json') as text:
-            mock_collections = json.load(text)['_MOCK_COLLECTIONS_LIST']
-        self._MOCK_COLLECTIONS = {('', v["id"]): v for v in mock_collections}
-        self.hh = 'POLYGON((9 52, 9 54, 11 54, 11 52, 10 53, 9.5 53.4, ' \
-                  '9.2 52.1, 9 52))'
-        self.pb = 'POLYGON((8.7 51.3, 8.7 51.8, 8.8 51.8, 8.8 51.3, 8.7 51.3))'
+    def __init__(self, config: Mapping[str, Any], _: str):
+        with resources.open_text("tests", "mock_collections.json") as text:
+            mock_collections = json.load(text)["_MOCK_COLLECTIONS_LIST"]
+        self._MOCK_COLLECTIONS = {("", v["id"]): v for v in mock_collections}
+        self.hh = "POLYGON((9 52, 9 54, 11 54, 11 52, 10 53, 9.5 53.4, 9.2 52.1, 9 52))"
+        self.pb = "POLYGON((8.7 51.3, 8.7 51.8, 8.8 51.8, 8.8 51.3, 8.7 51.3))"
 
         self.bbox_hh = wkt.loads(self.hh).bounds
         self.bbox_pb = wkt.loads(self.pb).bounds
@@ -57,24 +54,28 @@ class MockProvider(VectorCubeProvider, DataSource):
         return list(self._MOCK_COLLECTIONS.keys())
 
     def get_vector_cube(
-            self, collection_id: Tuple[str, str],
-            bbox: Optional[Tuple[float, float, float, float]] = None) \
-            -> VectorCube:
+        self,
+        collection_id: Tuple[str, str],
+        bbox: Optional[Tuple[float, float, float, float]] = None,
+    ) -> VectorCube:
         self.bbox = bbox
         return VectorCube(collection_id, self)
 
     def get_vector_dim(
-            self,
-            bbox: Optional[Tuple[float, float, float, float]] = None) \
-            -> List[Geometry]:
+        self, bbox: Optional[Tuple[float, float, float, float]] = None
+    ) -> List[Geometry]:
+        hh = (
+            "Polygon(((9, 52), (9, 54), (11, 54), (11, 52), (10, 53), "
+            "(9.8, 53.4), (9.2, 52.1), (9, 52)))"
+        )
+        pb = (
+            "Polygon(((8.7, 51.3), (8.7, 51.8), (8.8, 51.8), (8.8, 51.3), (8.7, 51.3)))"
+        )
 
-        hh = 'Polygon(((9, 52), (9, 54), (11, 54), (11, 52), (10, 53), ' \
-             '(9.8, 53.4), (9.2, 52.1), (9, 52)))'
-        pb = 'Polygon(((8.7, 51.3), (8.7, 51.8), (8.8, 51.8), (8.8, 51.3), ' \
-             '(8.7, 51.3)))'
-
-        return [geojson.dumps(shapely.geometry.mapping(wkt.loads(hh))),
-                geojson.dumps(shapely.geometry.mapping(wkt.loads(pb)))]
+        return [
+            geojson.dumps(shapely.geometry.mapping(wkt.loads(hh))),
+            geojson.dumps(shapely.geometry.mapping(wkt.loads(pb))),
+        ]
 
     def get_srid(self) -> int:
         return 3246
@@ -83,57 +84,67 @@ class MockProvider(VectorCubeProvider, DataSource):
         return 2
 
     def get_time_dim(
-            self,
-            bbox: Optional[Tuple[float, float, float, float]] = None) \
-            -> Optional[List[datetime]]:
+        self, bbox: Optional[Tuple[float, float, float, float]] = None
+    ) -> Optional[List[datetime]]:
         return None
 
     def get_time_dim_name(self) -> Optional[str]:
-        return 'time'
+        return "time"
 
     def get_vertical_dim(
-            self,
-            bbox: Optional[Tuple[float, float, float, float]] = None) \
-            -> Optional[List[Any]]:
+        self, bbox: Optional[Tuple[float, float, float, float]] = None
+    ) -> Optional[List[Any]]:
         return None
 
-    def load_features(self, limit: int = 2,
-                      offset: int = 0, feature_id: Optional[str] = None,
-                      with_stac_info: bool = False) -> \
-            List[Feature]:
-
+    def load_features(
+        self,
+        limit: int = 2,
+        offset: int = 0,
+        feature_id: Optional[str] = None,
+        with_stac_info: bool = False,
+    ) -> List[Feature]:
         hh_feature = {
-            'stac_version': 15.1,
-            'stac_extensions': ['https://schemas.stacspec.org/v1.0.0/'
-                                'item-spec/json-schema/item.json'],
-            'type': 'Feature',
-            'id': '0',
-            'bbox': [f'{self.bbox_hh[0]:.4f}',
-                     f'{self.bbox_hh[1]:.4f}',
-                     f'{self.bbox_hh[2]:.4f}',
-                     f'{self.bbox_hh[3]:.4f}'],
-            'properties': {'datetime': '1970-01-01T00:01:00Z',
-                           'id': 1234,
-                           'name': 'hamburg',
-                           'geometry': 'mygeometry',
-                           'population': 1000}
+            "stac_version": 15.1,
+            "stac_extensions": [
+                "https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json"
+            ],
+            "type": "Feature",
+            "id": "0",
+            "bbox": [
+                f"{self.bbox_hh[0]:.4f}",
+                f"{self.bbox_hh[1]:.4f}",
+                f"{self.bbox_hh[2]:.4f}",
+                f"{self.bbox_hh[3]:.4f}",
+            ],
+            "properties": {
+                "datetime": "1970-01-01T00:01:00Z",
+                "id": 1234,
+                "name": "hamburg",
+                "geometry": "mygeometry",
+                "population": 1000,
+            },
         }
 
         pb_feature = {
-            'stac_version': 15.1,
-            'stac_extensions': ['https://schemas.stacspec.org/v1.0.0/'
-                                'item-spec/json-schema/item.json'],
-            'type': 'Feature',
-            'id': '1',
-            'bbox': [f'{self.bbox_pb[0]:.4f}',
-                     f'{self.bbox_pb[1]:.4f}',
-                     f'{self.bbox_pb[2]:.4f}',
-                     f'{self.bbox_pb[3]:.4f}'],
-            'properties': {'datetime': '1970-01-01T00:01:00Z',
-                           'id': 4321,
-                           'name': 'paderborn',
-                           'geometry': 'mygeometry',
-                           'population': 100}
+            "stac_version": 15.1,
+            "stac_extensions": [
+                "https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json"
+            ],
+            "type": "Feature",
+            "id": "1",
+            "bbox": [
+                f"{self.bbox_pb[0]:.4f}",
+                f"{self.bbox_pb[1]:.4f}",
+                f"{self.bbox_pb[2]:.4f}",
+                f"{self.bbox_pb[3]:.4f}",
+            ],
+            "properties": {
+                "datetime": "1970-01-01T00:01:00Z",
+                "id": 4321,
+                "name": "paderborn",
+                "geometry": "mygeometry",
+                "population": 100,
+            },
         }
 
         if limit == 1:
@@ -147,26 +158,23 @@ class MockProvider(VectorCubeProvider, DataSource):
         return wkt.loads(self.hh).bounds
 
     def get_geometry_types(self) -> List[str]:
-        return ['Polygon']
+        return ["Polygon"]
 
     def get_metadata(self, full: bool = False) -> Dict:
         metadata = {
-            'title': 'something',
-            'extent': {
-                'spatial': {
-                    'bbox': [9.0, 52.0, 11.0, 54.0],
+            "title": "something",
+            "extent": {
+                "spatial": {
+                    "bbox": [9.0, 52.0, 11.0, 54.0],
                 },
-                'temporal': {
-                    'interval': [[None, None]]
-                }
+                "temporal": {"interval": [[None, None]]},
             },
-            'summaries': {
-                'column_names': 'col_names'
-            },
+            "summaries": {"column_names": "col_names"},
         }
         return metadata
 
-'''
+
+"""
     @staticmethod
     def add_items_to_vector_cube(
             collection: GeoDataFrame, vector_cube: VectorCube):
@@ -197,9 +205,9 @@ class MockProvider(VectorCubeProvider, DataSource):
                 'geometry': coords,
                 'properties': properties
             })
-'''
+"""
 
-'''
+"""
         data = {
             'id': ['0', '1'],
             'name': ['hamburg', 'paderborn'],
@@ -228,4 +236,4 @@ class MockProvider(VectorCubeProvider, DataSource):
             DataFrame(columns=["collection", "column_name", "data_type"]),
             '0.3.1', vector_cube)
 
-'''
+"""

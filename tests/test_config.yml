@@ -4,6 +4,9 @@ geodb_openeo:
   SERVER_ID: xcube-geodb-openeo
   SERVER_TITLE: xcube geoDB Server, openEO API
   SERVER_DESCRIPTION: Catalog of geoDB collections.
+  kc_client_id: winchester
+  kc_client_secret: e4eacc48-cc30-470e-9e4f-a8613369ab97
+  auth_domain: https://winchester.production.brockmann-consult.de/winchester
 
 api_spec:
   includes:

@@ -4,11 +4,9 @@ geodb_openeo:
 
   postgrest_url:  <geoDB-PostGREST server url>
   postgrest_port: <geoDB-PostGREST server port>
-  client_id:      <your client id>
-  client_secret:  <your client secret>
+  kc_client_id:     winchester
+  kc_client_secret: <winchester-keycloak-client-secret>
   auth_domain:    <your auth domain>
-  kc_clientId: <keycloak-client-id>
-  kc_secret: <keycloak-secret>
 
 
 api_spec:

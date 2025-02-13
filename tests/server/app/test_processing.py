@@ -19,8 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 import json
+import os
 import pkgutil
-import unittest
 from typing import Dict
 
 import yaml
@@ -35,109 +35,115 @@ from . import test_utils
 
 
 class ProcessingTest(ServerTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.access_token = "abc"
+        os.environ["KC_CLIENT_SECRET"] = "something"
 
     def add_extension(self, er: ExtensionRegistry) -> None:
         er.add_extension(
-            loader=extension.import_component('xcube_geodb_openeo.api:api'),
-            point=EXTENSION_POINT_SERVER_APIS, name='geodb-openeo'
+            loader=extension.import_component("xcube_geodb_openeo.api:api"),
+            point=EXTENSION_POINT_SERVER_APIS,
+            name="geodb-openeo",
         )
 
     def add_config(self, config: Dict):
-        data = pkgutil.get_data('tests', 'test_config.yml')
+        data = pkgutil.get_data("tests", "test_config.yml")
         config.update(yaml.safe_load(data))
 
     def test_get_predefined_processes(self):
-        response = self.http.request('GET',
-                                     f'http://localhost:{self.port}/processes')
+        response = self.http.request("GET", f"http://localhost:{self.port}/processes")
         self.assertEqual(200, response.status)
-        self.assertTrue(
-            'application/json' in response.headers['content-type']
-        )
+        self.assertTrue("application/json" in response.headers["content-type"])
         processes_resp = json.loads(response.data)
-        self.assertTrue('processes' in processes_resp)
-        self.assertTrue('links' in processes_resp)
+        self.assertTrue("processes" in processes_resp)
+        self.assertTrue("links" in processes_resp)
 
-        processes_md = processes_resp['processes']
+        processes_md = processes_resp["processes"]
         self.assertTrue(len(processes_md) > 0)
         load_collection = None
         for p in processes_md:
-            self.assertTrue('id' in p)
-            self.assertTrue('description' in p)
-            self.assertTrue('parameters' in p)
-            self.assertTrue('returns' in p)
+            self.assertTrue("id" in p)
+            self.assertTrue("description" in p)
+            self.assertTrue("parameters" in p)
+            self.assertTrue("returns" in p)
 
-            if p['id'] == 'load_collection':
+            if p["id"] == "load_collection":
                 load_collection = p
 
         self.assertIsNotNone(load_collection)
-        self.assertEqual(2, len(load_collection['categories']))
-        self.assertTrue('cubes', load_collection['categories'][0])
-        self.assertTrue('import', load_collection['categories'][1])
+        self.assertEqual(2, len(load_collection["categories"]))
+        self.assertTrue("cubes", load_collection["categories"][0])
+        self.assertTrue("import", load_collection["categories"][1])
 
-        self.assertTrue('Load a collection.', load_collection['summary'])
+        self.assertTrue("Load a collection.", load_collection["summary"])
 
-        self.assertTrue('Loads a collection from the current back-end '
-                        'by its id and returns it as a vector cube.'
-                        'The data that is added to the data cube can be'
-                        ' restricted with the parameters'
-                        '"spatial_extent" and "properties".'
-                        , load_collection['description'])
+        self.assertTrue(
+            "Loads a collection from the current back-end "
+            "by its id and returns it as a vector cube."
+            "The data that is added to the data cube can be"
+            " restricted with the parameters"
+            '"spatial_extent" and "properties".',
+            load_collection["description"],
+        )
 
-        self.assertEqual(list, type(load_collection['parameters']))
+        self.assertEqual(list, type(load_collection["parameters"]))
 
         collection_param = None
         temp_extent_param = None
         spatial_extent_param = None
-        self.assertEqual(5, len(load_collection['parameters']))
-        for p in load_collection['parameters']:
+        self.assertEqual(5, len(load_collection["parameters"]))
+        for p in load_collection["parameters"]:
             self.assertEqual(dict, type(p))
-            self.assertTrue('name' in p)
-            self.assertTrue('description' in p)
-            self.assertTrue('schema' in p)
-            if p['name'] == 'id':
+            self.assertTrue("name" in p)
+            self.assertTrue("description" in p)
+            self.assertTrue("schema" in p)
+            if p["name"] == "id":
                 collection_param = p
-            if p['name'] == 'temporal_extent':
+            if p["name"] == "temporal_extent":
                 temp_extent_param = p
-            if p['name'] == 'spatial_extent':
+            if p["name"] == "spatial_extent":
                 spatial_extent_param = p
 
         self.assertIsNotNone(collection_param)
         self.assertIsNotNone(temp_extent_param)
         self.assertIsNotNone(spatial_extent_param)
 
-        self.assertEqual('string', collection_param['schema']['type'])
-        self.assertEqual(dict, type(collection_param['schema']))
+        self.assertEqual("string", collection_param["schema"]["type"])
+        self.assertEqual(dict, type(collection_param["schema"]))
 
-        self.assertEqual(list, type(spatial_extent_param['schema']))
+        self.assertEqual(list, type(spatial_extent_param["schema"]))
 
-        self.assertIsNotNone(load_collection['returns'])
-        self.assertEqual(dict, type(load_collection['returns']))
-        self.assertTrue('schema' in load_collection['returns'])
-        return_schema = load_collection['returns']['schema']
+        self.assertIsNotNone(load_collection["returns"])
+        self.assertEqual(dict, type(load_collection["returns"]))
+        self.assertTrue("schema" in load_collection["returns"])
+        return_schema = load_collection["returns"]["schema"]
         self.assertEqual(dict, type(return_schema))
-        self.assertEqual('object', return_schema['type'])
-        self.assertEqual('datacube', return_schema['subtype'])
+        self.assertEqual("object", return_schema["type"])
+        self.assertEqual("datacube", return_schema["subtype"])
 
     def test_get_file_formats(self):
-        response = self.http.request('GET', f'http://localhost:{self.port}'
-                                            f'/file_formats')
-        self.assertEqual(200, response.status)
-        self.assertTrue(
-            'application/json' in response.headers['content-type']
+        response = self.http.request(
+            "GET", f"http://localhost:{self.port}/file_formats"
         )
+        self.assertEqual(200, response.status)
+        self.assertTrue("application/json" in response.headers["content-type"])
         formats = json.loads(response.data)
-        self.assertTrue('input' in formats)
-        self.assertTrue('output' in formats)
+        self.assertTrue("input" in formats)
+        self.assertTrue("output" in formats)
 
     def test_result(self):
         data = pkgutil.get_data("tests.res", "sample-process.json")
         body = data.decode("UTF-8")
-        response = self.http.request('POST',
-                                     f'http://localhost:{self.port}/result',
-                                     body=body,
-                                     headers={
-                                         'content-type': 'application/json'
-                                     })
+        response = self.http.request(
+            "POST",
+            f"http://localhost:{self.port}/result",
+            body=body,
+            headers={
+                "content-type": "application/json",
+                "Cookie": f"access_token={self.access_token};refresh_token=def",
+            },
+        )
 
         self.assertEqual(200, response.status)
         feature_collection = json.loads(response.data)
@@ -151,12 +157,15 @@ class ProcessingTest(ServerTestCase):
     def test_result_bbox(self):
         data = pkgutil.get_data("tests.res", "sample-process-spatial_extent.json")
         body = data.decode("UTF-8")
-        response = self.http.request('POST',
-                                     f'http://localhost:{self.port}/result',
-                                     body=body,
-                                     headers={
-                                         'content-type': 'application/json'
-                                     })
+        response = self.http.request(
+            "POST",
+            f"http://localhost:{self.port}/result",
+            body=body,
+            headers={
+                "content-type": "application/json",
+                "Cookie": f"access_token={self.access_token};refresh_token=def",
+            },
+        )
 
         self.assertEqual(200, response.status)
         feature_collection = json.loads(response.data)
@@ -167,15 +176,20 @@ class ProcessingTest(ServerTestCase):
         test_utils.assert_hamburg_data(self, feature_collection["features"][0])
 
     def test_result_bbox_default_crs(self):
-        data = pkgutil.get_data("tests.res", "sample-process-spatial_extent-default-crs.json")
+        data = pkgutil.get_data(
+            "tests.res", "sample-process-spatial_extent-default-crs.json"
+        )
         body = data.decode("UTF-8")
 
-        response = self.http.request('POST',
-                                     f'http://localhost:{self.port}/result',
-                                     body=body,
-                                     headers={
-                                         'content-type': 'application/json'
-                                     })
+        response = self.http.request(
+            "POST",
+            f"http://localhost:{self.port}/result",
+            body=body,
+            headers={
+                "content-type": "application/json",
+                "Cookie": f"access_token={self.access_token};refresh_token=def",
+            },
+        )
 
         self.assertEqual(200, response.status)
         feature_collection = json.loads(response.data)
@@ -187,56 +201,62 @@ class ProcessingTest(ServerTestCase):
     def test_result_missing_parameters(self):
         data = pkgutil.get_data("tests.res", "sample-process-broken.json")
         body = data.decode("UTF-8")
-        response = self.http.request('POST',
-                                     f'http://localhost:{self.port}/result',
-                                     body=body,
-                                     headers={
-                                         'content-type': 'application/json'
-                                     })
+        response = self.http.request(
+            "POST",
+            f"http://localhost:{self.port}/result",
+            body=body,
+            headers={
+                "content-type": "application/json",
+                "Cookie": f"access_token={self.access_token};refresh_token=def",
+            },
+        )
         self.assertEqual(400, response.status)
         message = json.loads(response.data)
-        self.assertTrue('Request body must contain parameter \'process\'.' in
-                        message['error']['message'])
+        self.assertTrue(
+            "Request body must contain parameter 'process'."
+            in message["error"]["message"]
+        )
 
     def test_result_no_query_param(self):
-        response = self.http.request('POST',
-                                     f'http://localhost:{self.port}/result')
+        response = self.http.request(
+            "POST",
+            f"http://localhost:{self.port}/result",
+            headers={
+                "Cookie": f"access_token={self.access_token};refresh_token=def",
+            },
+        )
         self.assertEqual(400, response.status)
         message = json.loads(response.data)
-        self.assertTrue('Request must contain body with valid process graph,'
-                        ' see openEO specification.', message)
+        self.assertTrue(
+            "Request must contain body with valid process graph,"
+            " see openEO specification.",
+            message,
+        )
 
     def test_invalid_process_id(self):
         with self.assertRaises(ValueError):
-            processes.get_processes_registry().get_process('miau!')
+            processes.get_processes_registry().get_process("miau!")
 
     def test_translate_parameters(self):
-        lc = LoadCollection({
-            "id": "load_collection",
-            "summary": "Load a collection"
-        })
+        lc = LoadCollection({"id": "load_collection", "summary": "Load a collection"})
         query_params = {
-            'id': 'collection_1',
-            'spatial_extent': None
+            "id": "collection_1",
+            "spatial_extent": None,
+            "access_token": "yo",
         }
         backend_params = lc.translate_parameters(query_params)
-        self.assertEqual(backend_params['collection_id'], 'collection_1')
-        self.assertIsNone(backend_params['bbox'])
-        self.assertIsNone(backend_params['crs'])
+        self.assertEqual(backend_params["collection_id"], "collection_1")
+        self.assertIsNone(backend_params["bbox"])
+        self.assertIsNone(backend_params["crs"])
 
     def test_translate_parameters_with_bbox(self):
-        lc = LoadCollection({
-            "id": "load_collection",
-            "summary": "Load a collection"
-        })
+        lc = LoadCollection({"id": "load_collection", "summary": "Load a collection"})
         query_params = {
-            'id': 'collection_1',
-            'spatial_extent': {
-                'bbox': (33, -10, 71, 43),
-                'crs': 4326
-            }
+            "id": "collection_1",
+            "spatial_extent": {"bbox": (33, -10, 71, 43), "crs": 4326},
+            "access_token": "yo",
         }
         backend_params = lc.translate_parameters(query_params)
-        self.assertEqual(backend_params['collection_id'], 'collection_1')
-        self.assertEqual((33, -10, 71, 43), backend_params['bbox'])
-        self.assertEqual(4326, backend_params['crs'])
+        self.assertEqual(backend_params["collection_id"], "collection_1")
+        self.assertEqual((33, -10, 71, 43), backend_params["bbox"])
+        self.assertEqual(4326, backend_params["crs"])

@@ -20,6 +20,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import json
+import os
 import pkgutil
 from typing import Dict
 
@@ -31,64 +32,58 @@ from xcube.util.extension import ExtensionRegistry
 
 
 class CapabilitiesTest(ServerTestCase):
+    def setUp(self):
+        super().setUp()
+        os.environ["KC_CLIENT_SECRET"] = "something"
 
     def add_extension(self, er: ExtensionRegistry) -> None:
         er.add_extension(
-            loader=extension.import_component('xcube_geodb_openeo.api:api'),
-            point=EXTENSION_POINT_SERVER_APIS, name='geodb-openeo')
+            loader=extension.import_component("xcube_geodb_openeo.api:api"),
+            point=EXTENSION_POINT_SERVER_APIS,
+            name="geodb-openeo",
+        )
 
     def add_config(self, config: Dict):
-        data = pkgutil.get_data('tests', 'test_config.yml')
+        data = pkgutil.get_data("tests", "test_config.yml")
         config.update(yaml.safe_load(data))
 
     def test_root(self):
-        response = self.http.request('GET', f'http://localhost:{self.port}/')
+        response = self.http.request("GET", f"http://localhost:{self.port}/")
         self.assertEqual(200, response.status)
-        self.assertTrue(
-            'application/json' in response.headers['content-type']
-        )
+        self.assertTrue("application/json" in response.headers["content-type"])
         metainfo = json.loads(response.data)
-        self.assertEqual('1.1.0', metainfo['api_version'])
-        self.assertEqual('0.0.2.dev0', metainfo['backend_version'])
-        self.assertEqual('1.0.0', metainfo['stac_version'])
-        self.assertEqual('Catalog', metainfo['type'])
-        self.assertEqual('xcube-geodb-openeo', metainfo['id'])
+        self.assertEqual("1.1.0", metainfo["api_version"])
+        self.assertEqual("0.0.2.dev0", metainfo["backend_version"])
+        self.assertEqual("1.0.0", metainfo["stac_version"])
+        self.assertEqual("Catalog", metainfo["type"])
+        self.assertEqual("xcube-geodb-openeo", metainfo["id"])
+        self.assertEqual("xcube geoDB Server, openEO API", metainfo["title"])
+        self.assertEqual("Catalog of geoDB collections.", metainfo["description"])
+        self.assertEqual("/.well-known/openeo", metainfo["endpoints"][0]["path"])
+        self.assertEqual("GET", metainfo["endpoints"][0]["methods"][0])
+
+        self.assertEqual("/result", metainfo["endpoints"][2]["path"])
+        self.assertEqual("POST", metainfo["endpoints"][2]["methods"][0])
+
         self.assertEqual(
-            'xcube geoDB Server, openEO API', metainfo['title']
+            "/collections/{collection_id}/items", metainfo["endpoints"][6]["path"]
         )
-        self.assertEqual(
-            'Catalog of geoDB collections.', metainfo['description'])
-        self.assertEqual(
-            '/.well-known/openeo', metainfo['endpoints'][0]['path'])
-        self.assertEqual(
-            'GET', metainfo['endpoints'][0]['methods'][0])
-
-        self.assertEqual(
-            '/result', metainfo['endpoints'][2]['path'])
-        self.assertEqual(
-            'POST', metainfo['endpoints'][2]['methods'][0])
-
-        self.assertEqual(
-            '/collections/{collection_id}/items', metainfo['endpoints'][6]['path'])
-        self.assertEqual(
-            'GET', metainfo['endpoints'][7]['methods'][0])
-        self.assertIsNotNone(metainfo['links'])
+        self.assertEqual("GET", metainfo["endpoints"][7]["methods"][0])
+        self.assertIsNotNone(metainfo["links"])
 
     def test_well_known_info(self):
         response = self.http.request(
-            'GET', f'http://localhost:{self.port}/.well-known/openeo'
+            "GET", f"http://localhost:{self.port}/.well-known/openeo"
         )
         self.assertEqual(200, response.status)
         well_known_data = json.loads(response.data)
-        self.assertEqual('http://xcube-geoDB-openEO.de',
-                         well_known_data['versions'][0]['url'])
-        self.assertEqual('1.1.0',
-                         well_known_data['versions'][0]['api_version'])
+        self.assertEqual(
+            "http://xcube-geoDB-openEO.de", well_known_data["versions"][0]["url"]
+        )
+        self.assertEqual("1.1.0", well_known_data["versions"][0]["api_version"])
 
     def test_conformance(self):
-        response = self.http.request(
-            'GET', f'http://localhost:{self.port}/conformance'
-        )
+        response = self.http.request("GET", f"http://localhost:{self.port}/conformance")
         self.assertEqual(200, response.status)
         conformance_data = json.loads(response.data)
-        self.assertIsNotNone(conformance_data['conformsTo'])
+        self.assertIsNotNone(conformance_data["conformsTo"])
