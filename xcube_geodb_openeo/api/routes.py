@@ -120,13 +120,13 @@ def do_authenticate(
             },
         )
 
-        print("##########")
-        print(str(response.status_code))
-        print(response.text)
-        print(response.reason)
-        print(response.raw)
-        print(response.json())
-        print("##########")
+        LOG.info("##########")
+        LOG.info(str(response.status_code))
+        LOG.info(response.text)
+        LOG.info(response.reason)
+        LOG.info(response.raw)
+        LOG.info(response.json())
+        LOG.info("##########")
         tokens = response.json()
         access_token = tokens["access_token"]
         refresh_token = tokens["refresh_token"]
