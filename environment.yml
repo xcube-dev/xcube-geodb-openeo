@@ -6,6 +6,7 @@ dependencies:
   # Python
   - python >=3.8
   # Required
+  - cryptography
   - geojson
   - geopandas
   - ipython
