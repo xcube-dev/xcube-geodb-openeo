@@ -120,6 +120,8 @@ def do_authenticate(
             },
         )
 
+        if response.status_code >= 300:
+            print(response.json())
         tokens = response.json()
         access_token = tokens["access_token"]
         refresh_token = tokens["refresh_token"]
