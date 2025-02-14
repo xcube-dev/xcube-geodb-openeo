@@ -2,6 +2,11 @@
 geodb_openeo:
   vectorcube_provider_class: xcube_geodb_openeo.core.vectorcube_provider.GeoDBProvider
 
+  SERVER_URL:
+  SERVER_ID: xcube-geodb-openeo
+  SERVER_TITLE: xcube geoDB Server, openEO API
+  SERVER_DESCRIPTION: Catalog of geoDB collections.
+
   postgrest_url:  <geoDB-PostGREST server url>
   postgrest_port: <geoDB-PostGREST server port>
   kc_client_id:     winchester

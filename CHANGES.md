@@ -1,4 +1,10 @@
-## 0.0.2 (in development)
+## 0.1.0
+
+This version:
+- adds first version of user authentication
+  (to be enhanced)
+
+## 0.0.2
 
 This version:
 - extends the GitHub actions workflow to build and deploy a Docker image

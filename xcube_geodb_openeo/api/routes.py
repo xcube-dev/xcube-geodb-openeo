@@ -60,6 +60,19 @@ def authenticate(request: ApiRequest, response: ApiResponse) -> Optional[str]:
 def do_authenticate(
     request: ApiRequest, response: ApiResponse
 ) -> Optional[Tuple[str, str, bool]]:
+    """
+    todo
+    Our Keycloak version v15.0.2 does not support PKCE correctly. It's what we are using
+    for testing and development. However, this means we cannot develop auth in the way
+    that the openeo specification requests:
+
+    A default OpenID Connect client is managed by the back-end implementer. It MUST
+    be configured to be usable without a client secret, which limits its applicability
+    to OpenID Connect grant types like "Authorization Code Grant with PKCE" and
+    "Device Authorization Grant with PKCE"
+
+    """
+
     cookie = request.headers["Cookie"] if "Cookie" in request.headers else None
     if cookie and "access_token=" in cookie:
         access_token = cookie.split(";")[0].split("=")[1]
