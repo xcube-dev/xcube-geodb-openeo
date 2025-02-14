@@ -43,6 +43,11 @@ RUN micromamba install -n base -c conda-forge pip
 ADD docker /tmp/
 WORKDIR /tmp
 
+WORKDIR /tmp/
+RUN git clone https://github.com/xcube-dev/xcube-geodb.git
+WORKDIR /tmp/xcube-geodb
+RUN pip install -e .
+
 # Copy files for xcube_geodb_openeo source install
 COPY --chown=$MAMBA_USER:$MAMBA_USER ../setup.py /tmp/setup.py
 COPY --chown=$MAMBA_USER:$MAMBA_USER ../xcube_geodb_openeo /tmp/xcube_geodb_openeo
