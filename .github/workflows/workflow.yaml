@@ -2,8 +2,9 @@ name: Unit-level tests xcube-geodb-openeo
 
 
 on:
-  workflow_dispatch:
   push:
+  release:
+    types: [published]
 
 
 env:
@@ -11,7 +12,6 @@ env:
   ORG_NAME: bcdev
 
   SKIP_UNITTESTS: "0"
-  WAIT_FOR_STARTUP: "1"
 
 jobs:
   unittest:
