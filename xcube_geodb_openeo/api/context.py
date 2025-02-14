@@ -82,7 +82,10 @@ class GeoDbContext(ApiContext):
         self._request = None
         self.config = dict(root.config)
         self._collections = {}
-        os.environ["KC_CLIENT_SECRET"] = self.config["geodb_openeo"]["kc_client_secret"]
+        if "KC_CLIENT_SECRET" not in os.environ.keys():
+            os.environ["KC_CLIENT_SECRET"] = self.config["geodb_openeo"][
+                "kc_client_secret"
+            ]
         os.environ["KC_CLIENT_ID"] = self.config["geodb_openeo"]["kc_client_id"]
         self._vector_cube_cache = Cache(DEFAULT_VC_CACHE_SIZE)
         self._geodb_connection_cache = Cache(DEFAULT_VC_CACHE_SIZE)

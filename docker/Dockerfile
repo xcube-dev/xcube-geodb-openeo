@@ -1,6 +1,6 @@
 ARG MICROMAMBA_VERSION=1.3.1
 FROM mambaorg/micromamba:${MICROMAMBA_VERSION}
-
+LABEL authors="Thomas"
 LABEL maintainer="xcube-team@brockmann-consult.de"
 LABEL name=xcube_geodb_openeo
 
@@ -42,15 +42,6 @@ RUN micromamba install -n base -c conda-forge pip
 
 ADD docker /tmp/
 WORKDIR /tmp
-
-RUN git clone https://github.com/dcs4cop/xcube.git
-WORKDIR /tmp/xcube
-RUN pip install -e .
-
-WORKDIR /tmp/
-RUN git clone https://github.com/dcs4cop/xcube-geodb.git
-WORKDIR /tmp/xcube-geodb
-RUN pip install -e .
 
 # Copy files for xcube_geodb_openeo source install
 COPY --chown=$MAMBA_USER:$MAMBA_USER ../setup.py /tmp/setup.py
