@@ -1,6 +1,5 @@
 # Files that may contain private data
 xcube_geodb_openeo/config.yml
-tests/test_config.yml
 
 # IDEs
 .idea/
