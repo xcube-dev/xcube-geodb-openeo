@@ -38,7 +38,7 @@ class DataDiscoveryTest(ServerTestCase):
     def setUp(self):
         super().setUp()
         self.access_token = "abc"
-        os.environ["KC_CLIENT_SECRET"] = "something"
+        os.environ["SKIP_TOKEN_VALIDATION"] = "True"
 
     def add_extension(self, er: ExtensionRegistry) -> None:
         er.add_extension(

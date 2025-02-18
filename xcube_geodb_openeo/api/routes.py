@@ -45,21 +45,48 @@ from xcube_geodb_openeo.defaults import (
 
 
 def authenticate(request: ApiRequest, response: ApiResponse) -> Optional[str]:
-    tokens: Optional[Tuple[str, str, str]] = do_authenticate(request, response)
+    tokens: Optional[Tuple[str, str]] = do_authenticate(request, response)
     if tokens:
-        access_token, refresh_token, must_validate = tokens
+        access_token, refresh_token = tokens
     else:
         # if no authentication has been possible, a redirect has been prepared
         return None
+    if not bool(os.getenv("SKIP_TOKEN_VALIDATION", False)) and not validate(
+        access_token
+    ):
+        LOG.info("access token has expired, trying to refresh...")
+        kc_client_id = os.environ["KC_CLIENT_ID"]
+        kc_client_secret = os.environ["KC_CLIENT_SECRET"]
+
+        token_response = requests.post(
+            f"{os.environ['KC_BASE_URL']}/protocol/openid-connect/token",
+            data={
+                "grant_type": "refresh_token",
+                "client_id": kc_client_id,
+                "client_secret": kc_client_secret,
+                "refresh_token": refresh_token,
+            },
+        )
+
+        if token_response.status_code != 200:
+            LOG.debug(token_response.json())
+            raise ValueError(
+                "Invalid refresh token. Please clean your cookies, and try again."
+            )
+
+        tokens = token_response.json()
+        LOG.info(f"refresh response status: {token_response.status_code}")
+
+        access_token = tokens["access_token"]
+        refresh_token = tokens["refresh_token"]
+
     set_cookies(response, access_token, refresh_token)
-    if must_validate:
-        validate(access_token)
     return access_token
 
 
 def do_authenticate(
     request: ApiRequest, response: ApiResponse
-) -> Optional[Tuple[str, str, bool]]:
+) -> Optional[Tuple[str, str]]:
     """
     todo
     Our Keycloak version v15.0.2 does not support PKCE correctly. It's what we are using
@@ -75,9 +102,10 @@ def do_authenticate(
 
     cookie = request.headers["Cookie"] if "Cookie" in request.headers else None
     if cookie and "access_token=" in cookie:
-        access_token = cookie.split(";")[0].split("=")[1]
-        refresh_token = cookie.split(";")[1].split("=")[1]
-        return access_token, refresh_token, False
+        LOG.debug("authorization via cookie")
+        access_token = cookie.split("access_token=")[1].split(";")[0]
+        refresh_token = cookie.split("refresh_token=")[1].split(";")[0]
+        return access_token, refresh_token
 
     redirect_uri = request.url.split("?")[0]
 
@@ -92,9 +120,10 @@ def do_authenticate(
     kc_client_id = os.environ["KC_CLIENT_ID"]
 
     if "code" not in request.query:
+        LOG.info("authorization needs authentication first, redirecting to login")
         login_url = (
-            f"https://kc.brockmann-consult.de/auth/realms/bc-services/"
-            f"protocol/openid-connect/auth"
+            f"{os.environ['KC_BASE_URL']}"
+            f"/protocol/openid-connect/auth"
             f"?response_type=code"
             f"&scope=openid"
             f"&client_id={kc_client_id}"
@@ -103,11 +132,11 @@ def do_authenticate(
         response._handler.redirect(login_url, status=301)
         return None
     else:
+        LOG.info("authorization via auth code, fetching token")
         code = request.query["code"][0]
         kc_client_secret = os.environ["KC_CLIENT_SECRET"]
         response = requests.post(
-            "https://kc.brockmann-consult.de/auth/realms/bc-services/"
-            "protocol/openid-connect/token",
+            f"{os.environ['KC_BASE_URL']}/protocol/openid-connect/token",
             data={
                 "grant_type": "authorization_code",
                 "code": code,
@@ -120,18 +149,12 @@ def do_authenticate(
             },
         )
 
-        LOG.info("##########")
-        LOG.info(str(response.status_code))
-        LOG.info(response.text)
-        LOG.info(response.reason)
-        LOG.info(response.raw)
-        LOG.info(response.json())
-        LOG.info("##########")
+        LOG.info(f"Response from fetching token: {str(response.status_code)}")
         tokens = response.json()
         access_token = tokens["access_token"]
         refresh_token = tokens["refresh_token"]
 
-        return access_token, refresh_token, True
+        return access_token, refresh_token
 
 
 def set_cookies(response: ApiResponse, access_token: str, refresh_token: str) -> None:
@@ -144,8 +167,7 @@ def set_cookies(response: ApiResponse, access_token: str, refresh_token: str) ->
 
 
 def validate(access_token: str):
-    KEYCLOAK_URL = "https://kc.brockmann-consult.de/auth/realms/bc-services"
-    KEYCLOAK_JWKS_URL = f"{KEYCLOAK_URL}/protocol/openid-connect/certs"
+    KEYCLOAK_JWKS_URL = f"{os.environ['KC_BASE_URL']}/protocol/openid-connect/certs"
 
     # Fetch public keys from Keycloak
     jwks = requests.get(KEYCLOAK_JWKS_URL).json()
@@ -160,10 +182,13 @@ def validate(access_token: str):
     if not public_key:
         raise Exception("Invalid token: No matching public key found")
 
-    payload = jwt.decode(
-        access_token, public_key, algorithms=["RS256"], audience="account"
-    )
-    return payload
+    try:
+        jwt.decode(access_token, public_key, algorithms=["RS256"], audience="account")
+    except jwt.ExpiredSignatureError as ese:
+        LOG.info(ese.args[0])
+        return None
+
+    return True
 
 
 @api.route("/")
