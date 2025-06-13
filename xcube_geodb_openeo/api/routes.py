@@ -18,14 +18,17 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
+import base64
+import hashlib
 import json
-import os
-import sys
-from typing import Tuple, Optional
-
 import jwt
 import jwt.algorithms
+import os
 import requests
+import sys
+
+from typing import Tuple, Optional
+
 from openeo.internal.graph_building import PGNode
 from xcube.constants import LOG
 from xcube.server.api import ApiError, ApiRequest, ApiResponse
@@ -44,8 +47,35 @@ from xcube_geodb_openeo.defaults import (
 )
 
 
-def authenticate(request: ApiRequest, response: ApiResponse) -> Optional[str]:
-    tokens: Optional[Tuple[str, str]] = do_authenticate(request, response)
+def refresh_pkce_pair(ctx):
+    if not hasattr(ctx, "cv") or ctx.cv is None:
+        cv, cc = generate_pkce_pair()
+        ctx.cv = cv
+        ctx.cc = cc
+
+
+def invalidate_pkce_pair(ctx):
+    LOG.debug("got an access token, so invalidating PKCE challenge and verifier")
+    ctx.cv = None
+    ctx.cc = None
+
+
+def generate_pkce_pair():
+    code_verifier = (
+        base64.urlsafe_b64encode(os.urandom(32)).rstrip(b"=").decode("utf-8")
+    )
+    code_challenge = (
+        base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode("utf-8")).digest())
+        .rstrip(b"=")
+        .decode("utf-8")
+    )
+    return code_verifier, code_challenge
+
+
+def authenticate(
+    request: ApiRequest, response: ApiResponse, cv: str, cc: str
+) -> Optional[str]:
+    tokens: Optional[Tuple[str, str]] = do_authenticate(request, response, cv, cc)
     if tokens:
         access_token, refresh_token = tokens
     else:
@@ -56,14 +86,12 @@ def authenticate(request: ApiRequest, response: ApiResponse) -> Optional[str]:
     ):
         LOG.info("access token has expired, trying to refresh...")
         kc_client_id = os.environ["KC_CLIENT_ID"]
-        kc_client_secret = os.environ["KC_CLIENT_SECRET"]
 
         token_response = requests.post(
             f"{os.environ['KC_BASE_URL']}/protocol/openid-connect/token",
             data={
                 "grant_type": "refresh_token",
                 "client_id": kc_client_id,
-                "client_secret": kc_client_secret,
                 "refresh_token": refresh_token,
             },
         )
@@ -85,21 +113,8 @@ def authenticate(request: ApiRequest, response: ApiResponse) -> Optional[str]:
 
 
 def do_authenticate(
-    request: ApiRequest, response: ApiResponse
+    request: ApiRequest, response: ApiResponse, cv: str, cc: str
 ) -> Optional[Tuple[str, str]]:
-    """
-    todo
-    Our Keycloak version v15.0.2 does not support PKCE correctly. It's what we are using
-    for testing and development. However, this means we cannot develop auth in the way
-    that the openeo specification requests:
-
-    A default OpenID Connect client is managed by the back-end implementer. It MUST
-    be configured to be usable without a client secret, which limits its applicability
-    to OpenID Connect grant types like "Authorization Code Grant with PKCE" and
-    "Device Authorization Grant with PKCE"
-
-    """
-
     cookie = request.headers["Cookie"] if "Cookie" in request.headers else None
     if cookie and "access_token=" in cookie:
         LOG.debug("authorization via cookie")
@@ -109,11 +124,13 @@ def do_authenticate(
 
     redirect_uri = request.url.split("?")[0]
 
-    for index, (key, value) in enumerate(request.query.items()):
-        if key == "code" or key == "session_state":
+    first_arg = True
+    for key, value in request.query.items():
+        if key == "code" or key == "session_state" or key == "iss":
             continue
-        if index == 0:
+        if first_arg:
             redirect_uri += f"?{key}={value[0]}"
+            first_arg = False
         else:
             redirect_uri += f"&{key}={value[0]}"
 
@@ -126,6 +143,8 @@ def do_authenticate(
             f"/protocol/openid-connect/auth"
             f"?response_type=code"
             f"&scope=openid"
+            f"&code_challenge={cc}"
+            f"&code_challenge_method=S256"
             f"&client_id={kc_client_id}"
             f"&redirect_uri={redirect_uri}"
         )
@@ -134,7 +153,6 @@ def do_authenticate(
     else:
         LOG.info("authorization via auth code, fetching token")
         code = request.query["code"][0]
-        kc_client_secret = os.environ["KC_CLIENT_SECRET"]
         response = requests.post(
             f"{os.environ['KC_BASE_URL']}/protocol/openid-connect/token",
             data={
@@ -142,7 +160,7 @@ def do_authenticate(
                 "code": code,
                 "redirect_uri": redirect_uri,
                 "client_id": kc_client_id,
-                "client_secret": kc_client_secret,
+                "code_verifier": cv,
             },
             headers={
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -296,10 +314,14 @@ class ResultHandler(ApiHandler):
         Processes requested processing task and returns result.
         """
 
-        access_token = authenticate(self.request, self.response)
+        refresh_pkce_pair(self.ctx)
+        access_token = authenticate(
+            self.request, self.response, self.ctx.cv, self.ctx.cc
+        )
         if not access_token:
             # a redirect has been prepared; initialise authentication
             return
+        invalidate_pkce_pair(self.ctx)
 
         if not self.request.body:
             raise ApiError(
@@ -402,10 +424,14 @@ class CollectionsHandler(ApiHandler):
             offset (int): Collections are listed starting at offset.
         """
 
-        access_token = authenticate(self.request, self.response)
+        refresh_pkce_pair(self.ctx)
+        access_token = authenticate(
+            self.request, self.response, self.ctx.cv, self.ctx.cc
+        )
         if not access_token:
             # a redirect has been prepared; initialise authentication
             return
+        invalidate_pkce_pair(self.ctx)
 
         limit = _get_limit(self.request)
         offset = _get_offset(self.request)
@@ -430,10 +456,14 @@ class CollectionHandler(ApiHandler):
             self.response.set_status(404, f"Collection {collection_id} does not exist")
             return
 
-        access_token = authenticate(self.request, self.response)
+        refresh_pkce_pair(self.ctx)
+        access_token = authenticate(
+            self.request, self.response, self.ctx.cv, self.ctx.cc
+        )
         if not access_token:
             # a redirect has been prepared; initialise authentication
             return
+        invalidate_pkce_pair(self.ctx)
 
         base_url = self.request.base_url
         db = collection_id.split("~")[0]
@@ -467,10 +497,14 @@ class CollectionItemsHandler(ApiHandler):
                 box are selected. Example: bbox=160.6,-55.95,-170,-25.89
         """
 
-        access_token = authenticate(self.request, self.response)
+        refresh_pkce_pair(self.ctx)
+        access_token = authenticate(
+            self.request, self.response, self.ctx.cv, self.ctx.cc
+        )
         if not access_token:
             # a redirect has been prepared; initialise authentication
             return
+        invalidate_pkce_pair(self.ctx)
 
         limit = _get_limit(self.request, STAC_DEFAULT_ITEMS_LIMIT)
         limit = STAC_MAX_ITEMS_LIMIT if limit > STAC_MAX_ITEMS_LIMIT else limit
@@ -497,10 +531,14 @@ class FeatureHandler(ApiHandler):
         Returns the feature.
         """
 
-        access_token = authenticate(self.request, self.response)
+        refresh_pkce_pair(self.ctx)
+        access_token = authenticate(
+            self.request, self.response, self.ctx.cv, self.ctx.cc
+        )
         if not access_token:
             # a redirect has been prepared; initialise authentication
             return
+        invalidate_pkce_pair(self.ctx)
 
         feature_id = item_id
         db = collection_id.split("~")[0]

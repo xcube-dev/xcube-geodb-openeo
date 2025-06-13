@@ -82,10 +82,6 @@ class GeoDbContext(ApiContext):
         self._request = None
         self.config = dict(root.config)
         self._collections = {}
-        if "KC_CLIENT_SECRET" not in os.environ.keys():
-            os.environ["KC_CLIENT_SECRET"] = self.config["geodb_openeo"][
-                "kc_client_secret"
-            ]
         os.environ["KC_CLIENT_ID"] = self.config["geodb_openeo"]["kc_client_id"]
         os.environ["KC_BASE_URL"] = self.config["geodb_openeo"]["kc_base_url"]
         self._vector_cube_cache = Cache(DEFAULT_VC_CACHE_SIZE)
@@ -135,7 +131,6 @@ class GeoDbContext(ApiContext):
             )
             if collection:
                 collection_list.append(collection)
-                LOG.debug(f"Loaded collection {collection_id} from geoDB")
             else:
                 LOG.warning(f"Skipped empty collection {collection_id}")
                 actual_limit = actual_limit + 1

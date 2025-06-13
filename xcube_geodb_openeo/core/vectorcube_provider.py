@@ -63,6 +63,8 @@ class GeoDBProvider(VectorCubeProvider):
         result = []
         collection_list = collections.get("collection")
         for idx, database in enumerate(collections.get("database")):
+            if database == "tt":
+                continue
             collection_id = collection_list[idx]
             if collection_id:
                 result.append((database, collection_id))

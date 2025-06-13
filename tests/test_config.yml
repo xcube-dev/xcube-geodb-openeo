@@ -5,7 +5,6 @@ geodb_openeo:
   SERVER_TITLE: xcube geoDB Server, openEO API
   SERVER_DESCRIPTION: Catalog of geoDB collections.
   kc_client_id:     placeholder
-  kc_client_secret: placeholder
   kc_base_url:      placeholder
 
 api_spec:

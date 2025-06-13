@@ -19,7 +19,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 import json
-import os
 import pkgutil
 from typing import Dict
 
@@ -38,7 +37,6 @@ class ProcessingTest(ServerTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.access_token = "abc"
-        os.environ["KC_CLIENT_SECRET"] = "something"
 
     def add_extension(self, er: ExtensionRegistry) -> None:
         er.add_extension(

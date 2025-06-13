@@ -20,7 +20,6 @@
 # DEALINGS IN THE SOFTWARE.
 
 import json
-import os
 import pkgutil
 from typing import Dict
 
@@ -34,7 +33,6 @@ from xcube.util.extension import ExtensionRegistry
 class CapabilitiesTest(ServerTestCase):
     def setUp(self):
         super().setUp()
-        os.environ["KC_CLIENT_SECRET"] = "something"
 
     def add_extension(self, er: ExtensionRegistry) -> None:
         er.add_extension(

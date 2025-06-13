@@ -31,7 +31,6 @@ OPENEO_CONFIG_SCHEMA = JsonObjectSchema(
                 postgrest_port=JsonNumberSchema(),
                 auth_domain=JsonStringSchema(),
                 kc_client_id=JsonStringSchema(),
-                kc_client_secret=JsonStringSchema(),
             )
         )
     ),
