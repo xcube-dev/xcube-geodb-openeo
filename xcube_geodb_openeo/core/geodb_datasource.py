@@ -215,7 +215,7 @@ class GeoDBVectorSource(DataSource):
     def get_vector_cube_bbox(self) -> Tuple[float, float, float, float]:
         (db, name) = self.collection_id
         path = f"/geodb_bbox_lut?bbox&table_name=eq.{db}_{name}"
-        response = self._geodb._get(path)
+        response = self._geodb._db_interface.get(path)
         geometry = None
         if response.json():
             geometry = response.json()[0]["bbox"]

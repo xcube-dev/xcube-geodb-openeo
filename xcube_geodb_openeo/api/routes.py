@@ -81,6 +81,12 @@ def authenticate(
     else:
         # if no authentication has been possible, a redirect has been prepared
         return None
+
+    set_cookies(response, access_token, refresh_token)
+    return access_token
+
+
+def maybe_refresh_token(access_token, refresh_token):
     if not bool(os.getenv("SKIP_TOKEN_VALIDATION", False)) and not validate(
         access_token
     ):
@@ -107,9 +113,7 @@ def authenticate(
 
         access_token = tokens["access_token"]
         refresh_token = tokens["refresh_token"]
-
-    set_cookies(response, access_token, refresh_token)
-    return access_token
+    return access_token, refresh_token
 
 
 def do_authenticate(
@@ -118,9 +122,35 @@ def do_authenticate(
     cookie = request.headers["Cookie"] if "Cookie" in request.headers else None
     if cookie and "access_token=" in cookie:
         LOG.debug("authorization via cookie")
-        access_token = cookie.split("access_token=")[1].split(";")[0]
+
         refresh_token = cookie.split("refresh_token=")[1].split(";")[0]
-        return access_token, refresh_token
+        access_token = cookie.split("access_token=")[1].split(";")[0]
+
+        new_access_token, new_refresh_token = maybe_refresh_token(
+            access_token, refresh_token
+        )
+        if new_access_token != access_token or bool(
+            os.getenv("SKIP_TOKEN_VALIDATION", False)
+        ):
+            LOG.debug("refreshed access token")
+            return new_access_token, new_refresh_token
+
+        LOG.debug("verifiying that we're still logged in...")
+        url = f"{os.environ['KC_BASE_URL']}/protocol/openid-connect/token/introspect"
+        data = {
+            "token": access_token,
+        }
+        auth = (
+            os.environ["KC_INTERNAL_CLIENT_ID"],
+            os.environ["KC_INTERNAL_CLIENT_SECRET"],
+        )
+        validation_resp = requests.post(url, data=data, auth=auth)
+        if not validation_resp.json()["active"]:
+            # we are logged out and have to log in again, using the below redirect
+            LOG.debug("...we are not! - redirecting to login.")
+        else:
+            LOG.debug("...we are.")
+            return access_token, refresh_token
 
     redirect_uri = request.url.split("?")[0]
 
@@ -148,7 +178,13 @@ def do_authenticate(
             f"&client_id={kc_client_id}"
             f"&redirect_uri={redirect_uri}"
         )
-        response._handler.redirect(login_url, status=301)
+        response_handler = response._handler
+        response_handler.set_header(
+            "Cache-Control", "no-store, no-cache, must-revalidate, max-age=0"
+        )
+        response_handler.set_header("Pragma", "no-cache")
+        response_handler.set_header("Expires", "0")
+        response_handler.redirect(login_url, status=301)
         return None
     else:
         LOG.info("authorization via auth code, fetching token")
@@ -168,6 +204,10 @@ def do_authenticate(
         )
 
         LOG.info(f"Response from fetching token: {str(response.status_code)}")
+        if response.status_code >= 400:
+            raise Exception(
+                "Unable to fetch token. Is PKCE configured on the Keycloak-server?"
+            )
         tokens = response.json()
         access_token = tokens["access_token"]
         refresh_token = tokens["refresh_token"]
@@ -429,7 +469,7 @@ class CollectionsHandler(ApiHandler):
             self.request, self.response, self.ctx.cv, self.ctx.cc
         )
         if not access_token:
-            # a redirect has been prepared; initialise authentication
+            # a redirect has been prepared (in do_authenticate); initialise authentication
             return
         invalidate_pkce_pair(self.ctx)
 

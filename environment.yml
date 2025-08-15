@@ -17,7 +17,7 @@ dependencies:
   - requests
   - shapely
   - xcube >= 1.1.1
-  - xcube_geodb >= 1.0.8
+  - xcube_geodb >= 1.1.0
   - yaml
   # Testing
   - pytest >=4.4

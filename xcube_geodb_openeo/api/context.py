@@ -84,6 +84,12 @@ class GeoDbContext(ApiContext):
         self._collections = {}
         os.environ["KC_CLIENT_ID"] = self.config["geodb_openeo"]["kc_client_id"]
         os.environ["KC_BASE_URL"] = self.config["geodb_openeo"]["kc_base_url"]
+        os.environ["KC_INTERNAL_CLIENT_ID"] = self.config["geodb_openeo"][
+            "kc_internal_client_id"
+        ]
+        os.environ["KC_INTERNAL_CLIENT_SECRET"] = self.config["geodb_openeo"][
+            "kc_internal_client_secret"
+        ]
         self._vector_cube_cache = Cache(DEFAULT_VC_CACHE_SIZE)
         self._geodb_connection_cache = Cache(DEFAULT_VC_CACHE_SIZE)
 
