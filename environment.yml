@@ -7,12 +7,13 @@ dependencies:
   - python >=3.8
   # Required
   - cryptography
+  - ipython
   - geojson
   - geopandas
-  - ipython
-  - pyjwt
   - openeo
   - pandas
+  - pyjwt
+  - python-dotenv
   - urllib3
   - requests
   - shapely
