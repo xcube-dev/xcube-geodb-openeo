@@ -51,7 +51,7 @@ class CapabilitiesTest(ServerTestCase):
         self.assertTrue("application/json" in response.headers["content-type"])
         metainfo = json.loads(response.data)
         self.assertEqual("1.1.0", metainfo["api_version"])
-        self.assertEqual("0.1.1", metainfo["backend_version"])
+        self.assertEqual("0.1.2", metainfo["backend_version"])
         self.assertEqual("1.0.0", metainfo["stac_version"])
         self.assertEqual("Catalog", metainfo["type"])
         self.assertEqual("xcube-geodb-openeo", metainfo["id"])
