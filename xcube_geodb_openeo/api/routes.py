@@ -31,7 +31,7 @@ from typing import Tuple, Optional
 
 from openeo.internal.graph_building import PGNode
 from xcube.constants import LOG
-from xcube.server.api import ApiError, ApiRequest, ApiResponse
+from xcube.server.api import ApiError, ApiRequest, ApiResponse, ServerContextT
 from xcube.server.api import ApiHandler
 from xcube_geodb.core.geodb import GeoDBError
 
@@ -54,8 +54,7 @@ def refresh_pkce_pair(ctx):
         ctx.cc = cc
 
 
-def invalidate_pkce_pair(ctx):
-    LOG.debug("got an access token, so invalidating PKCE challenge and verifier")
+def invalidate_pkce_pair(ctx: ServerContextT):
     ctx.cv = None
     ctx.cc = None
 
@@ -73,9 +72,9 @@ def generate_pkce_pair():
 
 
 def authenticate(
-    request: ApiRequest, response: ApiResponse, cv: str, cc: str
+    request: ApiRequest, response: ApiResponse, ctx: ServerContextT
 ) -> Optional[str]:
-    tokens: Optional[Tuple[str, str]] = do_authenticate(request, response, cv, cc)
+    tokens: Optional[Tuple[str, str]] = do_authenticate(request, response, ctx)
     if tokens:
         access_token, refresh_token = tokens
     else:
@@ -86,7 +85,13 @@ def authenticate(
     return access_token
 
 
-def maybe_refresh_token(access_token, refresh_token):
+def maybe_refresh_token(
+    access_token: str,
+    refresh_token: str,
+    ctx: ServerContextT,
+    request: ApiRequest,
+    response: ApiResponse,
+):
     if not bool(os.getenv("SKIP_TOKEN_VALIDATION", False)) and not validate(
         access_token
     ):
@@ -103,10 +108,7 @@ def maybe_refresh_token(access_token, refresh_token):
         )
 
         if token_response.status_code != 200:
-            LOG.debug(token_response.json())
-            raise ValueError(
-                "Invalid refresh token. Please clean your cookies, and try again."
-            )
+            return redirect_to_login(ctx, kc_client_id, request, response)
 
         tokens = token_response.json()
         LOG.info(f"refresh response status: {token_response.status_code}")
@@ -116,8 +118,33 @@ def maybe_refresh_token(access_token, refresh_token):
     return access_token, refresh_token
 
 
+def redirect_to_login(
+    ctx: ServerContextT, kc_client_id: str, request: ApiRequest, response: ApiResponse
+):
+    redirect_uri = request.url.split("?")[0]
+    LOG.info("Refresh token invalid, redirecting to login")
+    login_url = (
+        f"{os.environ['KC_BASE_URL']}"
+        f"/protocol/openid-connect/auth"
+        f"?response_type=code"
+        f"&scope=openid"
+        f"&code_challenge={ctx.cc}"
+        f"&code_challenge_method=S256"
+        f"&client_id={kc_client_id}"
+        f"&redirect_uri={redirect_uri}"
+    )
+    response_handler = response._handler
+    response_handler.set_header(
+        "Cache-Control", "no-store, no-cache, must-revalidate, max-age=0"
+    )
+    response_handler.set_header("Pragma", "no-cache")
+    response_handler.set_header("Expires", "0")
+    response_handler.redirect(login_url, status=301)
+    return None
+
+
 def do_authenticate(
-    request: ApiRequest, response: ApiResponse, cv: str, cc: str
+    request: ApiRequest, response: ApiResponse, ctx: ServerContextT
 ) -> Optional[Tuple[str, str]]:
     cookie = request.headers["Cookie"] if "Cookie" in request.headers else None
     if cookie and "access_token=" in cookie:
@@ -127,7 +154,7 @@ def do_authenticate(
         access_token = cookie.split("access_token=")[1].split(";")[0]
 
         new_access_token, new_refresh_token = maybe_refresh_token(
-            access_token, refresh_token
+            access_token, refresh_token, ctx, request, response
         )
         if new_access_token != access_token or bool(
             os.getenv("SKIP_TOKEN_VALIDATION", False)
@@ -168,24 +195,7 @@ def do_authenticate(
 
     if "code" not in request.query:
         LOG.info("authorization needs authentication first, redirecting to login")
-        login_url = (
-            f"{os.environ['KC_BASE_URL']}"
-            f"/protocol/openid-connect/auth"
-            f"?response_type=code"
-            f"&scope=openid"
-            f"&code_challenge={cc}"
-            f"&code_challenge_method=S256"
-            f"&client_id={kc_client_id}"
-            f"&redirect_uri={redirect_uri}"
-        )
-        response_handler = response._handler
-        response_handler.set_header(
-            "Cache-Control", "no-store, no-cache, must-revalidate, max-age=0"
-        )
-        response_handler.set_header("Pragma", "no-cache")
-        response_handler.set_header("Expires", "0")
-        response_handler.redirect(login_url, status=301)
-        return None
+        return redirect_to_login(ctx, kc_client_id, request, response)
     else:
         LOG.info("authorization via auth code, fetching token")
         code = request.query["code"][0]
@@ -196,7 +206,7 @@ def do_authenticate(
                 "code": code,
                 "redirect_uri": redirect_uri,
                 "client_id": kc_client_id,
-                "code_verifier": cv,
+                "code_verifier": ctx.cv,
             },
             headers={
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -211,6 +221,8 @@ def do_authenticate(
         tokens = response.json()
         access_token = tokens["access_token"]
         refresh_token = tokens["refresh_token"]
+
+        invalidate_pkce_pair(ctx)
 
         return access_token, refresh_token
 
@@ -355,13 +367,10 @@ class ResultHandler(ApiHandler):
         """
 
         refresh_pkce_pair(self.ctx)
-        access_token = authenticate(
-            self.request, self.response, self.ctx.cv, self.ctx.cc
-        )
+        access_token = authenticate(self.request, self.response, self.ctx)
         if not access_token:
             # a redirect has been prepared; initialise authentication
             return
-        invalidate_pkce_pair(self.ctx)
 
         if not self.request.body:
             raise ApiError(
@@ -465,13 +474,10 @@ class CollectionsHandler(ApiHandler):
         """
 
         refresh_pkce_pair(self.ctx)
-        access_token = authenticate(
-            self.request, self.response, self.ctx.cv, self.ctx.cc
-        )
+        access_token = authenticate(self.request, self.response, self.ctx)
         if not access_token:
             # a redirect has been prepared (in do_authenticate); initialise authentication
             return
-        invalidate_pkce_pair(self.ctx)
 
         limit = _get_limit(self.request)
         offset = _get_offset(self.request)
@@ -497,13 +503,10 @@ class CollectionHandler(ApiHandler):
             return
 
         refresh_pkce_pair(self.ctx)
-        access_token = authenticate(
-            self.request, self.response, self.ctx.cv, self.ctx.cc
-        )
+        access_token = authenticate(self.request, self.response, self.ctx)
         if not access_token:
             # a redirect has been prepared; initialise authentication
             return
-        invalidate_pkce_pair(self.ctx)
 
         base_url = self.request.base_url
         db = collection_id.split("~")[0]
@@ -538,13 +541,10 @@ class CollectionItemsHandler(ApiHandler):
         """
 
         refresh_pkce_pair(self.ctx)
-        access_token = authenticate(
-            self.request, self.response, self.ctx.cv, self.ctx.cc
-        )
+        access_token = authenticate(self.request, self.response, self.ctx)
         if not access_token:
             # a redirect has been prepared; initialise authentication
             return
-        invalidate_pkce_pair(self.ctx)
 
         limit = _get_limit(self.request, STAC_DEFAULT_ITEMS_LIMIT)
         limit = STAC_MAX_ITEMS_LIMIT if limit > STAC_MAX_ITEMS_LIMIT else limit
@@ -572,13 +572,10 @@ class FeatureHandler(ApiHandler):
         """
 
         refresh_pkce_pair(self.ctx)
-        access_token = authenticate(
-            self.request, self.response, self.ctx.cv, self.ctx.cc
-        )
+        access_token = authenticate(self.request, self.response, self.ctx)
         if not access_token:
             # a redirect has been prepared; initialise authentication
             return
-        invalidate_pkce_pair(self.ctx)
 
         feature_id = item_id
         db = collection_id.split("~")[0]

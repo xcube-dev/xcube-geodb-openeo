@@ -7,7 +7,6 @@ geodb_openeo:
   kc_client_id:     placeholder
   kc_base_url:      placeholder
   kc_internal_client_id:     placeholder
-  kc_internal_client_secret:     placeholder
 
 api_spec:
   includes:

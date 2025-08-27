@@ -32,7 +32,6 @@ OPENEO_CONFIG_SCHEMA = JsonObjectSchema(
                 auth_domain=JsonStringSchema(),
                 kc_client_id=JsonStringSchema(),
                 kc_internal_client_id=JsonStringSchema(),
-                kc_internal_client_secret=JsonStringSchema(),
             )
         )
     ),
