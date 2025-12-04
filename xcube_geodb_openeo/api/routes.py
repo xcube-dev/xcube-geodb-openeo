@@ -21,6 +21,8 @@
 import base64
 import hashlib
 import json
+from urllib.parse import urlparse
+
 import jwt
 import jwt.algorithms
 import os
@@ -121,7 +123,8 @@ def maybe_refresh_token(
 def redirect_to_login(
     ctx: ServerContextT, kc_client_id: str, request: ApiRequest, response: ApiResponse
 ):
-    redirect_uri = request.url.split("?")[0]
+    base_url = request.url.split("?")[0]
+    redirect_uri = ctx.config["geodb_openeo"]["SERVER_URL"] + urlparse(base_url).path
     LOG.info("Refresh token invalid, redirecting to login")
     login_url = (
         f"{os.environ['KC_BASE_URL']}"
@@ -146,6 +149,12 @@ def redirect_to_login(
 def do_authenticate(
     request: ApiRequest, response: ApiResponse, ctx: ServerContextT
 ) -> Optional[Tuple[str, str]]:
+    if "Authorization" in request.headers:
+        access_token = (
+            request.headers["Authorization"].split("Bearer ")[1].replace("oidc/BC/", "")
+        )
+        return access_token, ""
+
     cookie = request.headers["Cookie"] if "Cookie" in request.headers else None
     if cookie and "access_token=" in cookie:
         LOG.debug("authorization via cookie")
@@ -153,9 +162,12 @@ def do_authenticate(
         refresh_token = cookie.split("refresh_token=")[1].split(";")[0]
         access_token = cookie.split("access_token=")[1].split(";")[0]
 
-        new_access_token, new_refresh_token = maybe_refresh_token(
+        tokens = maybe_refresh_token(
             access_token, refresh_token, ctx, request, response
         )
+        if not tokens:
+            return None
+        new_access_token, new_refresh_token = tokens
         if new_access_token != access_token or bool(
             os.getenv("SKIP_TOKEN_VALIDATION", False)
         ):
@@ -179,7 +191,8 @@ def do_authenticate(
             LOG.debug("...we are.")
             return access_token, refresh_token
 
-    redirect_uri = request.url.split("?")[0]
+    base_url = request.url.split("?")[0]
+    redirect_uri = ctx.config["geodb_openeo"]["SERVER_URL"] + urlparse(base_url).path
 
     first_arg = True
     for key, value in request.query.items():
@@ -195,7 +208,7 @@ def do_authenticate(
 
     if "code" not in request.query:
         LOG.info("authorization needs authentication first, redirecting to login")
-        return redirect_to_login(ctx, kc_client_id, request, response)
+        return redirect_to_login(ctx, kc_client_id, response)
     else:
         LOG.info("authorization via auth code, fetching token")
         code = request.query["code"][0]
@@ -289,7 +302,7 @@ class OidcHandler(ApiHandler):
             "providers": [
                 {
                     "id": "BC",
-                    "issuer": "https://kc.brockmann-consult.de/auth/realms/bc-services",
+                    "issuer": os.environ["KC_BASE_URL"],
                     "title": "BC - xcube geoDB",
                     "description": "Login with your xcube geoDB account.",
                     "scopes": ["openid"],
