@@ -208,7 +208,7 @@ def do_authenticate(
 
     if "code" not in request.query:
         LOG.info("authorization needs authentication first, redirecting to login")
-        return redirect_to_login(ctx, kc_client_id, response)
+        return redirect_to_login(ctx, kc_client_id, request, response)
     else:
         LOG.info("authorization via auth code, fetching token")
         code = request.query["code"][0]
