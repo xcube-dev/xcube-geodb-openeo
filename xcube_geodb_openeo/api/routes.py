@@ -286,7 +286,7 @@ class RootHandler(ApiHandler):
         """
         Information about the API version and supported endpoints / features.
         """
-        base_url = self.request.base_url
+        base_url = self.ctx.config["geodb_openeo"]["SERVER_URL"]
         self.response.finish(capabilities.get_root(self.ctx.config, base_url))
 
 
@@ -494,7 +494,7 @@ class CollectionsHandler(ApiHandler):
 
         limit = _get_limit(self.request)
         offset = _get_offset(self.request)
-        base_url = self.request.base_url
+        base_url = self.ctx.config["geodb_openeo"]["SERVER_URL"]
         self.ctx.get_collections(access_token, base_url, limit, offset)
         self.response.finish(self.ctx.collections)
 
@@ -521,7 +521,7 @@ class CollectionHandler(ApiHandler):
             # a redirect has been prepared; initialise authentication
             return
 
-        base_url = self.request.base_url
+        base_url = self.ctx.config["geodb_openeo"]["SERVER_URL"]
         db = collection_id.split("~")[0]
         name = collection_id.split("~")[1]
         collection = self.ctx.get_collection(
@@ -564,7 +564,7 @@ class CollectionItemsHandler(ApiHandler):
         limit = STAC_MIN_ITEMS_LIMIT if limit < STAC_MIN_ITEMS_LIMIT else limit
         offset = _get_offset(self.request)
         bbox = _get_bbox(self.request)
-        base_url = self.request.base_url
+        base_url = self.ctx.config["geodb_openeo"]["SERVER_URL"]
         db = collection_id.split("~")[0]
         name = collection_id.split("~")[1]
         items = self.ctx.get_collection_items(
@@ -593,7 +593,7 @@ class FeatureHandler(ApiHandler):
         feature_id = item_id
         db = collection_id.split("~")[0]
         name = collection_id.split("~")[1]
-        base_url = self.request.base_url
+        base_url = self.ctx.config["geodb_openeo"]["SERVER_URL"]
         try:
             feature = self.ctx.get_collection_item(
                 access_token, base_url, (db, name), feature_id

@@ -31,6 +31,7 @@ from geojson.geometry import Geometry
 from pandas import Series
 from xcube.constants import LOG
 from xcube_geodb.core.geodb import GeoDBClient
+from xcube_geodb.core.metadata import MetadataManager
 
 from ..defaults import STAC_VERSION, STAC_EXTENSIONS, STAC_DEFAULT_ITEMS_LIMIT
 
@@ -214,55 +215,41 @@ class GeoDBVectorSource(DataSource):
 
     def get_vector_cube_bbox(self) -> Tuple[float, float, float, float]:
         (db, name) = self.collection_id
-        path = f"/geodb_bbox_lut?bbox&table_name=eq.{db}_{name}"
-        response = self._geodb._db_interface.get(path)
-        geometry = None
-        if response.json():
-            geometry = response.json()[0]["bbox"]
-        if geometry:
-            vector_cube_bbox = shapely.wkt.loads(geometry).bounds
-        else:
-            vector_cube_bbox = self._geodb.get_collection_bbox(name, database=db)
+        path = "/rpc/geodb_get_metadata"
+        payload = {"collection": name, "db": db}
+        response = self._geodb._db_interface.post(path, payload)
+        vector_cube_bbox = response.json()["basic"]["spatial_extent"]
         if vector_cube_bbox:
+            vector_cube_bbox = vector_cube_bbox[0]
+            vector_cube_bbox = [
+                vector_cube_bbox["minx"],
+                vector_cube_bbox["miny"],
+                vector_cube_bbox["maxx"],
+                vector_cube_bbox["maxy"],
+            ]
             vector_cube_bbox = self._transform_bbox_crs(vector_cube_bbox, name, db)
 
         return vector_cube_bbox
 
     def get_metadata(self, full: bool = False) -> Dict:
         (db, name) = self.collection_id
+        path = "/rpc/geodb_get_metadata"
+        payload = {"collection": name, "db": db}
+        response = self._geodb._db_interface.post(path, payload).json()
+        md = MetadataManager(self._geodb, self._geodb._db_interface).from_json(
+            response, name, db
+        )
         col_names = list(self.collection_info["properties"].keys())
-        time_column = None
-        if full:
-            time_column = self._get_col_name(["date", "time", "timestamp", "datetime"])
-        if time_column:
-            LOG.debug(f"Loading time interval for {self.collection_id} from geoDB...")
-            earliest = self._geodb.get_collection_pg(
-                name, select=time_column, order=time_column, limit=1, database=db
-            )[time_column][0]
-            earliest = dateutil.parser.parse(earliest).isoformat() + "Z"
-            latest = self._geodb.get_collection_pg(
-                name,
-                select=time_column,
-                order=f"{time_column} DESC",
-                limit=1,
-                database=db,
-            )[time_column][0]
-            latest = dateutil.parser.parse(latest).isoformat() + "Z"
-            LOG.debug("...done.")
-        else:
-            earliest, latest = None, None
-
+        summaries = md.summaries
+        summaries["properties"] = col_names
+        temporal_extent = md.temporal_extent[0] if md.temporal_extent else None
         metadata = {
-            "title": f"{name}",
+            "title": f"{md.title}",
             "extent": {
-                "spatial": {
-                    "bbox": [[-180, -90, 180, 90]]
-                    if not full
-                    else [self.get_vector_cube_bbox()],
-                },
-                "temporal": {"interval": [[earliest, latest]]},
+                "spatial": {"bbox": md.spatial_extent[0]},
+                "temporal": {"interval": temporal_extent},
             },
-            "summaries": {"properties": col_names},
+            "summaries": summaries,
         }
         return metadata
 

@@ -56,4 +56,4 @@ COPY --chown=$MAMBA_USER:$MAMBA_USER ../xcube_geodb_openeo /tmp/xcube_geodb_open
 WORKDIR /tmp
 RUN python setup.py install
 
-CMD ["python", "-m", "xcube.cli.main", "--loglevel=DETAIL", "--traceback", "serve", "-vvv", "-c", "/etc/config/config.yml"]
+CMD ["python", "-m", "xcube.cli.main", "--loglevel=DETAIL", "--traceback", "serve", "-v", "-c", "/etc/config/config.yml"]
