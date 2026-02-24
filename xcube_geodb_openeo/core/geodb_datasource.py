@@ -243,6 +243,8 @@ class GeoDBVectorSource(DataSource):
         summaries = md.summaries
         summaries["properties"] = col_names
         temporal_extent = md.temporal_extent[0] if md.temporal_extent else None
+        if not temporal_extent:
+            temporal_extent = [[None, None]]
         metadata = {
             "title": f"{md.title}",
             "extent": {

@@ -546,7 +546,7 @@ class CollectionItemsHandler(ApiHandler):
         Returns the features.
 
         Args:
-            limit (int):  Optional, limits the number of items presented in
+            limit (int): Optional, limits the number of items presented in
             the response document.
             offset (int): Optional, collections are listed starting at offset.
             bbox (array of numbers): Only features that intersect the bounding
