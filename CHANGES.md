@@ -1,3 +1,14 @@
+## 0.1.3
+
+This version:
+- fixes a bug in the STAC backend
+
+## 0.1.2
+
+This version:
+- finalised user authentication
+- uses the metadata from geoDB
+
 ## 0.1.1
 
 This version:
