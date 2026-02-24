@@ -14,6 +14,7 @@ dependencies:
   - pandas
   - pyjwt
   - python-dotenv
+  - pytz
   - urllib3
   - requests
   - shapely
