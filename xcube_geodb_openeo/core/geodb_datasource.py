@@ -245,10 +245,15 @@ class GeoDBVectorSource(DataSource):
         temporal_extent = md.temporal_extent[0] if md.temporal_extent else None
         if not temporal_extent:
             temporal_extent = [[None, None]]
+        # workaround for geoDB issue #131
+        if md.spatial_extent == [-180, -90, 180, 90]:
+            spatial_extent = [[-180, -90, 180, 90]]
+        else:
+            spatial_extent = md.spatial_extent[0]
         metadata = {
             "title": f"{md.title}",
             "extent": {
-                "spatial": {"bbox": md.spatial_extent[0]},
+                "spatial": {"bbox": spatial_extent},
                 "temporal": {"interval": temporal_extent},
             },
             "summaries": summaries,
